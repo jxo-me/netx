@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jxo-me/netx/sdk/core/config"
+	"github.com/jxo-me/netx/sdk/config"
 	"github.com/jxo-me/netx/sdk/core/limiter/conn"
 	"github.com/jxo-me/netx/sdk/core/limiter/traffic"
 	mdx "github.com/jxo-me/netx/sdk/core/metadata"

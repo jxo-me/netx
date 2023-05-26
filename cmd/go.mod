@@ -8,6 +8,11 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
+replace (
+	//github.com/gogf/gf/v2 => ../gf
+	github.com/jxo-me/netx/sdk => ../sdk
+)
+
 require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect

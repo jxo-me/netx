@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 
 	"gopkg.in/natefinch/lumberjack.v2"
-	"github.com/jxo-me/netx/sdk/core/api"
-	"github.com/jxo-me/netx/sdk/core/config"
-	"github.com/jxo-me/netx/sdk/core/config/parsing"
+	"github.com/jxo-me/netx/sdk/api"
+	"github.com/jxo-me/netx/sdk/config"
+	"github.com/jxo-me/netx/sdk/config/parsing"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	xlogger "github.com/jxo-me/netx/sdk/core/logger"
 	metrics "github.com/jxo-me/netx/sdk/core/metrics/service"

@@ -6,8 +6,8 @@ import (
 	"github.com/jxo-me/netx/sdk"
 	"os"
 
-	"github.com/jxo-me/netx/sdk/core/config"
-	"github.com/jxo-me/netx/sdk/core/config/parsing"
+	"github.com/jxo-me/netx/sdk/config"
+	"github.com/jxo-me/netx/sdk/config/parsing"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	xmetrics "github.com/jxo-me/netx/sdk/core/metrics"
 )
