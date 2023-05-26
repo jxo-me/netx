@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createRateLimiterRequest
@@ -40,7 +39,7 @@ func createRateLimiter(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseRateLimiter(&req.Data)
+	v := sdk.Runtime.ParseRateLimiter(&req.Data)
 
 	if err := sdk.Runtime.RateLimiterRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +93,7 @@ func updateRateLimiter(ctx *gin.Context) {
 
 	req.Data.Name = req.Limiter
 
-	v := parsing.ParseRateLimiter(&req.Data)
+	v := sdk.Runtime.ParseRateLimiter(&req.Data)
 
 	sdk.Runtime.RateLimiterRegistry().Unregister(req.Limiter)
 

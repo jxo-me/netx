@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createAdmissionRequest
@@ -40,7 +39,7 @@ func createAdmission(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseAdmission(&req.Data)
+	v := sdk.Runtime.ParseAdmission(&req.Data)
 
 	if err := sdk.Runtime.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +93,7 @@ func updateAdmission(ctx *gin.Context) {
 
 	req.Data.Name = req.Admission
 
-	v := parsing.ParseAdmission(&req.Data)
+	v := sdk.Runtime.ParseAdmission(&req.Data)
 
 	sdk.Runtime.AdmissionRegistry().Unregister(req.Admission)
 

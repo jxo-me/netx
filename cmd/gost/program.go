@@ -2,12 +2,11 @@ package main
 
 import (
 	"github.com/judwhite/go-svc"
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 	"os"
 
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	xmetrics "github.com/jxo-me/netx/sdk/core/metrics"
 )
@@ -73,7 +72,7 @@ func (p *program) Init(env svc.Environment) error {
 		}
 	}
 
-	logger.SetDefault(logFromConfig(cfg.Log))
+	logger.SetDefault(sdk.Runtime.LogFromConfig(cfg.Log))
 
 	if outputFormat != "" {
 		if err := cfg.Write(os.Stdout, outputFormat); err != nil {
@@ -82,7 +81,7 @@ func (p *program) Init(env svc.Environment) error {
 		os.Exit(0)
 	}
 
-	parsing.BuildDefaultTLSConfig(cfg.TLS)
+	sdk.Runtime.BuildDefaultTLSConfig(cfg.TLS)
 
 	config.Set(cfg)
 
@@ -94,7 +93,7 @@ func (p *program) Start() error {
 	cfg := config.Global()
 
 	if cfg.API != nil {
-		s, err := buildAPIService(cfg.API)
+		s, err := sdk.Runtime.BuildAPIService(cfg.API)
 		if err != nil {
 			return err
 		}
@@ -118,7 +117,7 @@ func (p *program) Start() error {
 	if cfg.Metrics != nil {
 		xmetrics.Init(xmetrics.NewMetrics())
 		if cfg.Metrics.Addr != "" {
-			s, err := buildMetricsService(cfg.Metrics)
+			s, err := sdk.Runtime.BuildMetricsService(cfg.Metrics)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -130,7 +129,7 @@ func (p *program) Start() error {
 		}
 	}
 
-	for _, svc := range buildService(cfg) {
+	for _, svc := range sdk.Runtime.BuildService(cfg) {
 		svc := svc
 		go func() {
 			svc.Serve()

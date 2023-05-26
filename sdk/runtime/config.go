@@ -1,22 +1,20 @@
-package main
+package runtime
 
 import (
 	"io"
-	"github.com/jxo-me/netx/sdk"
 	"os"
 	"path/filepath"
 
-	"gopkg.in/natefinch/lumberjack.v2"
 	"github.com/jxo-me/netx/sdk/api"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	xlogger "github.com/jxo-me/netx/sdk/core/logger"
 	metrics "github.com/jxo-me/netx/sdk/core/metrics/service"
 	"github.com/jxo-me/netx/sdk/core/service"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func buildService(cfg *config.Config) (services []service.IService) {
+func (a *Application) BuildService(cfg *config.Config) (services []service.IService) {
 	if cfg == nil {
 		return
 	}
@@ -24,116 +22,116 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	log := logger.Default()
 
 	for _, autherCfg := range cfg.Authers {
-		if auther := parsing.ParseAuther(autherCfg); auther != nil {
-			if err := sdk.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
+		if auther := a.ParseAuther(autherCfg); auther != nil {
+			if err := a.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, admissionCfg := range cfg.Admissions {
-		if adm := parsing.ParseAdmission(admissionCfg); adm != nil {
-			if err := sdk.Runtime.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
+		if adm := a.ParseAdmission(admissionCfg); adm != nil {
+			if err := a.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, bypassCfg := range cfg.Bypasses {
-		if bp := parsing.ParseBypass(bypassCfg); bp != nil {
-			if err := sdk.Runtime.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
+		if bp := a.ParseBypass(bypassCfg); bp != nil {
+			if err := a.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, resolverCfg := range cfg.Resolvers {
-		r, err := parsing.ParseResolver(resolverCfg)
+		r, err := a.ParseResolver(resolverCfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if r != nil {
-			if err := sdk.Runtime.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
+			if err := a.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, hostsCfg := range cfg.Hosts {
-		if h := parsing.ParseHosts(hostsCfg); h != nil {
-			if err := sdk.Runtime.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
+		if h := a.ParseHosts(hostsCfg); h != nil {
+			if err := a.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, ingressCfg := range cfg.Ingresses {
-		if h := parsing.ParseIngress(ingressCfg); h != nil {
-			if err := sdk.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
+		if h := a.ParseIngress(ingressCfg); h != nil {
+			if err := a.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, recorderCfg := range cfg.Recorders {
-		if h := parsing.ParseRecorder(recorderCfg); h != nil {
-			if err := sdk.Runtime.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
+		if h := a.ParseRecorder(recorderCfg); h != nil {
+			if err := a.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, limiterCfg := range cfg.Limiters {
-		if h := parsing.ParseTrafficLimiter(limiterCfg); h != nil {
-			if err := sdk.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+		if h := a.ParseTrafficLimiter(limiterCfg); h != nil {
+			if err := a.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, limiterCfg := range cfg.CLimiters {
-		if h := parsing.ParseConnLimiter(limiterCfg); h != nil {
-			if err := sdk.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+		if h := a.ParseConnLimiter(limiterCfg); h != nil {
+			if err := a.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, limiterCfg := range cfg.RLimiters {
-		if h := parsing.ParseRateLimiter(limiterCfg); h != nil {
-			if err := sdk.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+		if h := a.ParseRateLimiter(limiterCfg); h != nil {
+			if err := a.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, hopCfg := range cfg.Hops {
-		hop, err := parsing.ParseHop(hopCfg)
+		hop, err := a.ParseHop(hopCfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if hop != nil {
-			if err := sdk.Runtime.HopRegistry().Register(hopCfg.Name, hop); err != nil {
+			if err := a.HopRegistry().Register(hopCfg.Name, hop); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, chainCfg := range cfg.Chains {
-		c, err := parsing.ParseChain(chainCfg)
+		c, err := a.ParseChain(chainCfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if c != nil {
-			if err := sdk.Runtime.ChainRegistry().Register(chainCfg.Name, c); err != nil {
+			if err := a.ChainRegistry().Register(chainCfg.Name, c); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
 	for _, svcCfg := range cfg.Services {
-		svc, err := parsing.ParseService(svcCfg)
+		svc, err := a.ParseService(svcCfg)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if svc != nil {
-			if err := sdk.Runtime.ServiceRegistry().Register(svcCfg.Name, svc); err != nil {
+			if err := a.ServiceRegistry().Register(svcCfg.Name, svc); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -143,7 +141,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	return
 }
 
-func logFromConfig(cfg *config.LogConfig) logger.ILogger {
+func (a *Application) LogFromConfig(cfg *config.LogConfig) logger.ILogger {
 	if cfg == nil {
 		cfg = &config.LogConfig{}
 	}
@@ -185,10 +183,10 @@ func logFromConfig(cfg *config.LogConfig) logger.ILogger {
 	return xlogger.NewLogger(opts...)
 }
 
-func buildAPIService(cfg *config.APIConfig) (service.IService, error) {
-	auther := parsing.ParseAutherFromAuth(cfg.Auth)
+func (a *Application) BuildAPIService(cfg *config.APIConfig) (service.IService, error) {
+	auther := a.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
-		auther = sdk.Runtime.AutherRegistry().Get(cfg.Auther)
+		auther = a.AutherRegistry().Get(cfg.Auther)
 	}
 	return api.NewService(
 		cfg.Addr,
@@ -198,7 +196,7 @@ func buildAPIService(cfg *config.APIConfig) (service.IService, error) {
 	)
 }
 
-func buildMetricsService(cfg *config.MetricsConfig) (service.IService, error) {
+func (a *Application) BuildMetricsService(cfg *config.MetricsConfig) (service.IService, error) {
 	return metrics.NewService(
 		cfg.Addr,
 		metrics.PathOption(cfg.Path),

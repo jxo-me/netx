@@ -1,4 +1,4 @@
-package parsing
+package runtime
 
 import (
 	"crypto"
@@ -15,15 +15,15 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/sdk/config"
-	tls_util "github.com/jxo-me/netx/sdk/internal/util/tls"
 	"github.com/jxo-me/netx/sdk/core/logger"
+	tls_util "github.com/jxo-me/netx/sdk/internal/util/tls"
 )
 
 var (
 	defaultTLSConfig *tls.Config
 )
 
-func BuildDefaultTLSConfig(cfg *config.TLSConfig) {
+func (a *Application) BuildDefaultTLSConfig(cfg *config.TLSConfig) {
 	log := logger.Default()
 
 	if cfg == nil {
@@ -37,7 +37,7 @@ func BuildDefaultTLSConfig(cfg *config.TLSConfig) {
 	tlsConfig, err := tls_util.LoadDefaultConfig(cfg.CertFile, cfg.KeyFile, cfg.CAFile)
 	if err != nil {
 		// generate random self-signed certificate.
-		cert, err := genCertificate(cfg.Validity, cfg.Organization, cfg.CommonName)
+		cert, err := a.genCertificate(cfg.Validity, cfg.Organization, cfg.CommonName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -51,15 +51,15 @@ func BuildDefaultTLSConfig(cfg *config.TLSConfig) {
 	defaultTLSConfig = tlsConfig
 }
 
-func genCertificate(validity time.Duration, org string, cn string) (cert tls.Certificate, err error) {
-	rawCert, rawKey, err := generateKeyPair(validity, org, cn)
+func (a *Application) genCertificate(validity time.Duration, org string, cn string) (cert tls.Certificate, err error) {
+	rawCert, rawKey, err := a.generateKeyPair(validity, org, cn)
 	if err != nil {
 		return
 	}
 	return tls.X509KeyPair(rawCert, rawKey)
 }
 
-func generateKeyPair(validity time.Duration, org string, cn string) (rawCert, rawKey []byte, err error) {
+func (a *Application) generateKeyPair(validity time.Duration, org string, cn string) (rawCert, rawKey []byte, err error) {
 	// Create private key and self-signed certificate
 	// Adapted from https://golang.org/src/crypto/tls/generate_cert.go
 
@@ -109,7 +109,7 @@ func generateKeyPair(validity time.Duration, org string, cn string) (rawCert, ra
 	}
 
 	template.DNSNames = append(template.DNSNames, cn)
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(priv), priv)
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, a.publicKey(priv), priv)
 	if err != nil {
 		return
 	}
@@ -124,7 +124,7 @@ func generateKeyPair(validity time.Duration, org string, cn string) (rawCert, ra
 	return
 }
 
-func publicKey(priv crypto.PrivateKey) any {
+func (a *Application) publicKey(priv crypto.PrivateKey) any {
 	switch k := priv.(type) {
 	case *rsa.PrivateKey:
 		return &k.PublicKey

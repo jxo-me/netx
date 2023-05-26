@@ -1,27 +1,26 @@
-package parsing
+package runtime
 
 import (
 	"fmt"
 	"net"
-	"github.com/jxo-me/netx/sdk"
 	"strings"
 	"time"
 
+	"github.com/jxo-me/netx/sdk/config"
 	auther "github.com/jxo-me/netx/sdk/core/auth"
 	"github.com/jxo-me/netx/sdk/core/bypass"
 	"github.com/jxo-me/netx/sdk/core/chain"
 	xchain "github.com/jxo-me/netx/sdk/core/chain"
-	"github.com/jxo-me/netx/sdk/config"
 	"github.com/jxo-me/netx/sdk/core/connector"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	tls_util "github.com/jxo-me/netx/sdk/internal/util/tls"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/core/metadata"
 	mdx "github.com/jxo-me/netx/sdk/core/metadata"
 	mdutil "github.com/jxo-me/netx/sdk/core/metadata/util"
+	tls_util "github.com/jxo-me/netx/sdk/internal/util/tls"
 )
 
-func ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
+func (a *Application) ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -46,11 +45,11 @@ func ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
 		var err error
 
 		if len(ch.Nodes) > 0 {
-			if hop, err = ParseHop(ch); err != nil {
+			if hop, err = a.ParseHop(ch); err != nil {
 				return nil, err
 			}
 		} else {
-			hop = sdk.Runtime.HopRegistry().Get(ch.Name)
+			hop = a.HopRegistry().Get(ch.Name)
 		}
 		if hop != nil {
 			c.AddHop(hop)
@@ -60,7 +59,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
 	return c, nil
 }
 
-func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
+func (a *Application) ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -121,9 +120,9 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 			"kind": "connector",
 		})
 		var cr connector.IConnector
-		if rf := sdk.Runtime.ConnectorRegistry().Get(v.Connector.Type); rf != nil {
+		if rf := a.ConnectorRegistry().Get(v.Connector.Type); rf != nil {
 			cr = rf(
-				connector.AuthOption(parseAuth(v.Connector.Auth)),
+				connector.AuthOption(a.parseAuth(v.Connector.Auth)),
 				connector.TLSConfigOption(tlsConfig),
 				connector.LoggerOption(connectorLogger),
 			)
@@ -164,9 +163,9 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 		})
 
 		var d dialer.IDialer
-		if rf := sdk.Runtime.DialerRegistry().Get(v.Dialer.Type); rf != nil {
+		if rf := a.DialerRegistry().Get(v.Dialer.Type); rf != nil {
 			d = rf(
-				dialer.AuthOption(parseAuth(v.Dialer.Auth)),
+				dialer.AuthOption(a.parseAuth(v.Dialer.Auth)),
 				dialer.TLSConfigOption(tlsConfig),
 				dialer.LoggerOption(dialerLogger),
 				dialer.ProxyProtocolOption(ppv),
@@ -222,9 +221,9 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 
 		opts := []chain.NodeOption{
 			chain.TransportNodeOption(tr),
-			chain.BypassNodeOption(bypass.BypassGroup(bypassList(v.Bypass, v.Bypasses...)...)),
-			chain.ResoloverNodeOption(sdk.Runtime.ResolverRegistry().Get(v.Resolver)),
-			chain.HostMapperNodeOption(sdk.Runtime.HostsRegistry().Get(v.Hosts)),
+			chain.BypassNodeOption(bypass.BypassGroup(a.bypassList(v.Bypass, v.Bypasses...)...)),
+			chain.ResoloverNodeOption(a.ResolverRegistry().Get(v.Resolver)),
+			chain.HostMapperNodeOption(a.HostsRegistry().Get(v.Hosts)),
 			chain.MetadataNodeOption(nm),
 			chain.HostNodeOption(host),
 			chain.ProtocolNodeOption(v.Protocol),
@@ -258,13 +257,13 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 		nodes = append(nodes, node)
 	}
 
-	sel := parseNodeSelector(cfg.Selector)
+	sel := a.parseNodeSelector(cfg.Selector)
 	if sel == nil {
-		sel = defaultNodeSelector()
+		sel = a.defaultNodeSelector()
 	}
 	return xchain.NewChainHop(nodes,
 		xchain.SelectorHopOption(sel),
-		xchain.BypassHopOption(bypass.BypassGroup(bypassList(cfg.Bypass, cfg.Bypasses...)...)),
+		xchain.BypassHopOption(bypass.BypassGroup(a.bypassList(cfg.Bypass, cfg.Bypasses...)...)),
 		xchain.LoggerHopOption(hopLogger),
 	), nil
 }

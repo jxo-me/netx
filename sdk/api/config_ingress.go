@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createIngressRequest
@@ -40,7 +39,7 @@ func createIngress(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseIngress(&req.Data)
+	v := sdk.Runtime.ParseIngress(&req.Data)
 
 	if err := sdk.Runtime.IngressRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +93,7 @@ func updateIngress(ctx *gin.Context) {
 
 	req.Data.Name = req.Ingress
 
-	v := parsing.ParseIngress(&req.Data)
+	v := sdk.Runtime.ParseIngress(&req.Data)
 
 	sdk.Runtime.IngressRegistry().Unregister(req.Ingress)
 

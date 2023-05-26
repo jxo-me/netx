@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createHopRequest
@@ -40,7 +39,7 @@ func createHop(ctx *gin.Context) {
 		return
 	}
 
-	v, err := parsing.ParseHop(&req.Data)
+	v, err := sdk.Runtime.ParseHop(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
@@ -99,7 +98,7 @@ func updateHop(ctx *gin.Context) {
 
 	req.Data.Name = req.Hop
 
-	v, err := parsing.ParseHop(&req.Data)
+	v, err := sdk.Runtime.ParseHop(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return

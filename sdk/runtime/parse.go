@@ -1,16 +1,12 @@
-package parsing
+package runtime
 
 import (
 	"context"
 	"crypto/tls"
 	"net"
 	"net/url"
-	"github.com/jxo-me/netx/sdk"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/jxo-me/netx/sdk/config"
 	"github.com/jxo-me/netx/sdk/core/admission"
 	admission_impl "github.com/jxo-me/netx/sdk/core/admission"
 	"github.com/jxo-me/netx/sdk/core/auth"
@@ -18,12 +14,10 @@ import (
 	"github.com/jxo-me/netx/sdk/core/bypass"
 	bypass_impl "github.com/jxo-me/netx/sdk/core/bypass"
 	"github.com/jxo-me/netx/sdk/core/chain"
-	"github.com/jxo-me/netx/sdk/config"
 	"github.com/jxo-me/netx/sdk/core/hosts"
 	xhosts "github.com/jxo-me/netx/sdk/core/hosts"
 	"github.com/jxo-me/netx/sdk/core/ingress"
 	xingress "github.com/jxo-me/netx/sdk/core/ingress"
-	"github.com/jxo-me/netx/sdk/internal/loader"
 	"github.com/jxo-me/netx/sdk/core/limiter/conn"
 	xconn "github.com/jxo-me/netx/sdk/core/limiter/conn"
 	"github.com/jxo-me/netx/sdk/core/limiter/rate"
@@ -37,6 +31,11 @@ import (
 	resolver_impl "github.com/jxo-me/netx/sdk/core/resolver"
 	"github.com/jxo-me/netx/sdk/core/selector"
 	xs "github.com/jxo-me/netx/sdk/core/selector"
+	"github.com/jxo-me/netx/sdk/internal/loader"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -51,13 +50,13 @@ const (
 	mdKeyIgnoreChain   = "ignoreChain"
 )
 
-func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
+func (a *Application) ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
 	if cfg == nil {
 		return nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 		}
@@ -107,7 +106,7 @@ func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
 	return auth_impl.NewAuthenticator(opts...)
 }
 
-func ParseAutherFromAuth(au *config.AuthConfig) auth.IAuthenticator {
+func (a *Application) ParseAutherFromAuth(au *config.AuthConfig) auth.IAuthenticator {
 	if au == nil || au.Username == "" {
 		return nil
 	}
@@ -123,7 +122,7 @@ func ParseAutherFromAuth(au *config.AuthConfig) auth.IAuthenticator {
 	)
 }
 
-func parseAuth(cfg *config.AuthConfig) *url.Userinfo {
+func (a *Application) parseAuth(cfg *config.AuthConfig) *url.Userinfo {
 	if cfg == nil || cfg.Username == "" {
 		return nil
 	}
@@ -134,7 +133,7 @@ func parseAuth(cfg *config.AuthConfig) *url.Userinfo {
 	return url.UserPassword(cfg.Username, cfg.Password)
 }
 
-func parseChainSelector(cfg *config.SelectorConfig) selector.Selector[chain.IChainer] {
+func (a *Application) parseChainSelector(cfg *config.SelectorConfig) selector.Selector[chain.IChainer] {
 	if cfg == nil {
 		return nil
 	}
@@ -159,7 +158,7 @@ func parseChainSelector(cfg *config.SelectorConfig) selector.Selector[chain.ICha
 	)
 }
 
-func parseNodeSelector(cfg *config.SelectorConfig) selector.Selector[*chain.Node] {
+func (a *Application) parseNodeSelector(cfg *config.SelectorConfig) selector.Selector[*chain.Node] {
 	if cfg == nil {
 		return nil
 	}
@@ -185,13 +184,13 @@ func parseNodeSelector(cfg *config.SelectorConfig) selector.Selector[*chain.Node
 	)
 }
 
-func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
+func (a *Application) ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 	if cfg == nil {
 		return nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 		}
@@ -234,13 +233,13 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 	return admission_impl.NewAdmission(opts...)
 }
 
-func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
+func (a *Application) ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
 	if cfg == nil {
 		return nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 		}
@@ -283,13 +282,13 @@ func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
 	return bypass_impl.NewBypass(opts...)
 }
 
-func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
+func (a *Application) ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	if cfg == nil {
 		return nil, nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 			return nil, err
@@ -307,7 +306,7 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	for _, server := range cfg.Nameservers {
 		nameservers = append(nameservers, resolver_impl.NameServer{
 			Addr:     server.Addr,
-			Chain:    sdk.Runtime.ChainRegistry().Get(server.Chain),
+			Chain:    a.ChainRegistry().Get(server.Chain),
 			TTL:      server.TTL,
 			Timeout:  server.Timeout,
 			ClientIP: net.ParseIP(server.ClientIP),
@@ -327,13 +326,13 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	)
 }
 
-func ParseHosts(cfg *config.HostsConfig) hosts.IHostMapper {
+func (a *Application) ParseHosts(cfg *config.HostsConfig) hosts.IHostMapper {
 	if cfg == nil {
 		return nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 		}
@@ -399,13 +398,13 @@ func ParseHosts(cfg *config.HostsConfig) hosts.IHostMapper {
 	return xhosts.NewHostMapper(opts...)
 }
 
-func ParseIngress(cfg *config.IngressConfig) ingress.IIngress {
+func (a *Application) ParseIngress(cfg *config.IngressConfig) ingress.IIngress {
 	if cfg == nil {
 		return nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 		}
@@ -467,13 +466,13 @@ func ParseIngress(cfg *config.IngressConfig) ingress.IIngress {
 	return xingress.NewIngress(opts...)
 }
 
-func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
+func (a *Application) ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	if cfg == nil {
 		return nil
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
+		c, err := a.newPluginConn(cfg.Plugin)
 		if err != nil {
 			logger.Default().Error(err)
 		}
@@ -520,7 +519,7 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	return
 }
 
-func defaultNodeSelector() selector.Selector[*chain.Node] {
+func (a *Application) defaultNodeSelector() selector.Selector[*chain.Node] {
 	return xs.NewSelector(
 		xs.RoundRobinStrategy[*chain.Node](),
 		xs.FailFilter[*chain.Node](xs.DefaultMaxFails, xs.DefaultFailTimeout),
@@ -528,7 +527,7 @@ func defaultNodeSelector() selector.Selector[*chain.Node] {
 	)
 }
 
-func defaultChainSelector() selector.Selector[chain.IChainer] {
+func (a *Application) defaultChainSelector() selector.Selector[chain.IChainer] {
 	return xs.NewSelector(
 		xs.RoundRobinStrategy[chain.IChainer](),
 		xs.FailFilter[chain.IChainer](xs.DefaultMaxFails, xs.DefaultFailTimeout),
@@ -536,7 +535,7 @@ func defaultChainSelector() selector.Selector[chain.IChainer] {
 	)
 }
 
-func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.ITrafficLimiter) {
+func (a *Application) ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.ITrafficLimiter) {
 	if cfg == nil {
 		return nil
 	}
@@ -582,7 +581,7 @@ func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.ITrafficLimiter
 	return xtraffic.NewTrafficLimiter(opts...)
 }
 
-func ParseConnLimiter(cfg *config.LimiterConfig) (lim conn.IConnLimiter) {
+func (a *Application) ParseConnLimiter(cfg *config.LimiterConfig) (lim conn.IConnLimiter) {
 	if cfg == nil {
 		return nil
 	}
@@ -628,7 +627,7 @@ func ParseConnLimiter(cfg *config.LimiterConfig) (lim conn.IConnLimiter) {
 	return xconn.NewConnLimiter(opts...)
 }
 
-func ParseRateLimiter(cfg *config.LimiterConfig) (lim rate.IRateLimiter) {
+func (a *Application) ParseRateLimiter(cfg *config.LimiterConfig) (lim rate.IRateLimiter) {
 	if cfg == nil {
 		return nil
 	}
@@ -674,7 +673,7 @@ func ParseRateLimiter(cfg *config.LimiterConfig) (lim rate.IRateLimiter) {
 	return xrate.NewRateLimiter(opts...)
 }
 
-func newPluginConn(cfg *config.PluginConfig) (*grpc.ClientConn, error) {
+func (a *Application) newPluginConn(cfg *config.PluginConfig) (*grpc.ClientConn, error) {
 	grpcOpts := []grpc.DialOption{
 		// grpc.WithBlock(),
 		grpc.WithConnectParams(grpc.ConnectParams{

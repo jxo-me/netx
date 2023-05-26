@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createServiceRequest
@@ -45,7 +44,7 @@ func createService(ctx *gin.Context) {
 		return
 	}
 
-	svc, err := parsing.ParseService(&req.Data)
+	svc, err := sdk.Runtime.ParseService(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
@@ -108,7 +107,7 @@ func updateService(ctx *gin.Context) {
 
 	req.Data.Name = req.Service
 
-	svc, err := parsing.ParseService(&req.Data)
+	svc, err := sdk.Runtime.ParseService(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return

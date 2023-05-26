@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createLimiterRequest
@@ -40,7 +39,7 @@ func createLimiter(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseTrafficLimiter(&req.Data)
+	v := sdk.Runtime.ParseTrafficLimiter(&req.Data)
 
 	if err := sdk.Runtime.TrafficLimiterRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +93,7 @@ func updateLimiter(ctx *gin.Context) {
 
 	req.Data.Name = req.Limiter
 
-	v := parsing.ParseTrafficLimiter(&req.Data)
+	v := sdk.Runtime.ParseTrafficLimiter(&req.Data)
 
 	sdk.Runtime.TrafficLimiterRegistry().Unregister(req.Limiter)
 

@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createResolverRequest
@@ -40,7 +39,7 @@ func createResolver(ctx *gin.Context) {
 		return
 	}
 
-	v, err := parsing.ParseResolver(&req.Data)
+	v, err := sdk.Runtime.ParseResolver(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
@@ -98,7 +97,7 @@ func updateResolver(ctx *gin.Context) {
 
 	req.Data.Name = req.Resolver
 
-	v, err := parsing.ParseResolver(&req.Data)
+	v, err := sdk.Runtime.ParseResolver(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return

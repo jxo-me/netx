@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
 	"github.com/jxo-me/netx/sdk"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/sdk/config"
-	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createChainRequest
@@ -40,7 +39,7 @@ func createChain(ctx *gin.Context) {
 		return
 	}
 
-	v, err := parsing.ParseChain(&req.Data)
+	v, err := sdk.Runtime.ParseChain(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
@@ -99,7 +98,7 @@ func updateChain(ctx *gin.Context) {
 
 	req.Data.Name = req.Chain
 
-	v, err := parsing.ParseChain(&req.Data)
+	v, err := sdk.Runtime.ParseChain(&req.Data)
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
