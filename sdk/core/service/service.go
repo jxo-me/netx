@@ -11,7 +11,7 @@ import (
 	"github.com/rs/xid"
 	"github.com/jxo-me/netx/sdk/core/admission"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	sx "github.com/jxo-me/netx/sdk/core/internal/util/selector"
+	sx "github.com/jxo-me/netx/sdk/internal/util/selector"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/core/metrics"

@@ -4,7 +4,7 @@ import (
 	"net"
 	"strings"
 
-	tap_util "github.com/jxo-me/netx/sdk/core/internal/util/tap"
+	tap_util "github.com/jxo-me/netx/sdk/internal/util/tap"
 	mdata "github.com/jxo-me/netx/sdk/core/metadata"
 	mdutil "github.com/jxo-me/netx/sdk/core/metadata/util"
 )

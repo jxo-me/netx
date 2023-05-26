@@ -10,7 +10,7 @@ import (
 
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/core/service"

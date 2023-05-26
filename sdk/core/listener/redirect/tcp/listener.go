@@ -6,8 +6,8 @@ import (
 	"time"
 
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/proxyproto"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/proxyproto"
 	climiter "github.com/jxo-me/netx/sdk/core/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"

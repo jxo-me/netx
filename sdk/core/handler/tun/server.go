@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
 	"github.com/jxo-me/netx/sdk/core/common/bufpool"
-	tun_util "github.com/jxo-me/netx/sdk/core/internal/util/tun"
+	tun_util "github.com/jxo-me/netx/sdk/internal/util/tun"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

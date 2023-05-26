@@ -8,9 +8,9 @@ import (
 
 	"github.com/pion/dtls/v2"
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/proxyproto"
-	xdtls "github.com/jxo-me/netx/sdk/core/internal/util/dtls"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/proxyproto"
+	xdtls "github.com/jxo-me/netx/sdk/internal/util/dtls"
 	climiter "github.com/jxo-me/netx/sdk/core/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"

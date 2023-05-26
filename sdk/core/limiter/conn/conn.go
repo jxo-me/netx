@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/yl2chen/cidranger"
-	"github.com/jxo-me/netx/sdk/core/internal/loader"
+	"github.com/jxo-me/netx/sdk/internal/loader"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

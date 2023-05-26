@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jxo-me/netx/sdk/core/config"
+	"github.com/jxo-me/netx/sdk/config"
 )
 
 // swagger:parameters getConfigRequest

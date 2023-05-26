@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/jxo-me/netx/sdk/core/internal/util/mux"
+	"github.com/jxo-me/netx/sdk/internal/util/mux"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	mdata "github.com/jxo-me/netx/sdk/core/metadata"
 	mdx "github.com/jxo-me/netx/sdk/core/metadata"

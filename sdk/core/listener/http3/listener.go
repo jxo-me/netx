@@ -7,7 +7,7 @@ import (
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"

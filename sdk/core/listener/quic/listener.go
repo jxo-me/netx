@@ -6,8 +6,8 @@ import (
 
 	"github.com/quic-go/quic-go"
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	quic_util "github.com/jxo-me/netx/sdk/core/internal/util/quic"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	quic_util "github.com/jxo-me/netx/sdk/internal/util/quic"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"

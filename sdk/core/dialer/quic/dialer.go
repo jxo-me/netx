@@ -8,7 +8,7 @@ import (
 
 	"github.com/quic-go/quic-go"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	quic_util "github.com/jxo-me/netx/sdk/core/internal/util/quic"
+	quic_util "github.com/jxo-me/netx/sdk/internal/util/quic"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )

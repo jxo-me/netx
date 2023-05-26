@@ -14,7 +14,7 @@ import (
 	"github.com/jxo-me/netx/sdk/core/common/bufpool"
 	"github.com/jxo-me/netx/sdk/core/handler"
 	"github.com/jxo-me/netx/sdk/core/hosts"
-	resolver_util "github.com/jxo-me/netx/sdk/core/internal/util/resolver"
+	resolver_util "github.com/jxo-me/netx/sdk/internal/util/resolver"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/core/resolver/exchanger"

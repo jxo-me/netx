@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/udp"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/udp"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic"
 	"github.com/jxo-me/netx/sdk/core/metadata"
 )

@@ -8,8 +8,8 @@ import (
 	"syscall"
 
 	"github.com/jxo-me/netx/sdk/core/admission"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/udp"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/udp"
 	"github.com/jxo-me/netx/sdk/core/metadata"
 )
 

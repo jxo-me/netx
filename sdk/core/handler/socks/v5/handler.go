@@ -8,7 +8,7 @@ import (
 
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	"github.com/jxo-me/netx/sdk/core/internal/util/socks"
+	"github.com/jxo-me/netx/sdk/internal/util/socks"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/gosocks5"
 )

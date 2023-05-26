@@ -4,7 +4,7 @@ import (
 	"io"
 	"net"
 
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 )
 
 type Conn interface {

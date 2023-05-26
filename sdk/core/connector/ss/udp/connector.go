@@ -8,8 +8,8 @@ import (
 
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/jxo-me/netx/sdk/core/connector"
-	"github.com/jxo-me/netx/sdk/core/internal/util/relay"
-	"github.com/jxo-me/netx/sdk/core/internal/util/ss"
+	"github.com/jxo-me/netx/sdk/internal/util/relay"
+	"github.com/jxo-me/netx/sdk/internal/util/ss"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

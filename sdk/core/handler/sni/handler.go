@@ -17,9 +17,9 @@ import (
 
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	xio "github.com/jxo-me/netx/sdk/core/internal/io"
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
-	sx "github.com/jxo-me/netx/sdk/core/internal/util/selector"
+	xio "github.com/jxo-me/netx/sdk/internal/io"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
+	sx "github.com/jxo-me/netx/sdk/internal/util/selector"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	dissector "github.com/jxo-me/netx/sdk/tls-dissector"

@@ -6,7 +6,7 @@ import (
 
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
 	"github.com/jxo-me/netx/sdk/core/chain"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"

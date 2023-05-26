@@ -8,8 +8,8 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"github.com/jxo-me/netx/sdk/core/internal/net/udp"
-	"github.com/jxo-me/netx/sdk/core/internal/util/socks"
+	"github.com/jxo-me/netx/sdk/internal/net/udp"
+	"github.com/jxo-me/netx/sdk/internal/util/socks"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

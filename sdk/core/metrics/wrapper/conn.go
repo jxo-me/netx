@@ -6,8 +6,8 @@ import (
 	"net"
 	"syscall"
 
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/udp"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/udp"
 	"github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/core/metrics"
 	xmetrics "github.com/jxo-me/netx/sdk/core/metrics"

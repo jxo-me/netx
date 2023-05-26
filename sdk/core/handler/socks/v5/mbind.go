@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/util/mux"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/util/mux"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/gosocks5"
 )

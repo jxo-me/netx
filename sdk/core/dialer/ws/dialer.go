@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	ws_util "github.com/jxo-me/netx/sdk/core/internal/util/ws"
+	ws_util "github.com/jxo-me/netx/sdk/internal/util/ws"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

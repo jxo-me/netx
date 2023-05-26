@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"github.com/jxo-me/netx/sdk/core/internal/loader"
-	"github.com/jxo-me/netx/sdk/core/internal/matcher"
+	"github.com/jxo-me/netx/sdk/internal/loader"
+	"github.com/jxo-me/netx/sdk/internal/matcher"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

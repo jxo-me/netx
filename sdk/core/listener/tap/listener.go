@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	pb "github.com/jxo-me/netx/sdk/core/internal/util/grpc/proto"
+	pb "github.com/jxo-me/netx/sdk/internal/util/grpc/proto"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

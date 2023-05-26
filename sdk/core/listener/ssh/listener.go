@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/proxyproto"
-	ssh_util "github.com/jxo-me/netx/sdk/core/internal/util/ssh"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/proxyproto"
+	ssh_util "github.com/jxo-me/netx/sdk/internal/util/ssh"
 	climiter "github.com/jxo-me/netx/sdk/core/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"

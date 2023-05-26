@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	sx "github.com/jxo-me/netx/sdk/core/internal/util/selector"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	sx "github.com/jxo-me/netx/sdk/internal/util/selector"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/relay"
 )

@@ -10,8 +10,8 @@ import (
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/common/bufpool"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	"github.com/jxo-me/netx/sdk/core/internal/util/relay"
-	"github.com/jxo-me/netx/sdk/core/internal/util/ss"
+	"github.com/jxo-me/netx/sdk/internal/util/relay"
+	"github.com/jxo-me/netx/sdk/internal/util/ss"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )

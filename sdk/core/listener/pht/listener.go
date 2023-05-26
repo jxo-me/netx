@@ -6,8 +6,8 @@ import (
 	"net"
 
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	pht_util "github.com/jxo-me/netx/sdk/core/internal/util/pht"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	pht_util "github.com/jxo-me/netx/sdk/internal/util/pht"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"

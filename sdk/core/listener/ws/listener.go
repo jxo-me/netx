@@ -9,9 +9,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/proxyproto"
-	ws_util "github.com/jxo-me/netx/sdk/core/internal/util/ws"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/proxyproto"
+	ws_util "github.com/jxo-me/netx/sdk/internal/util/ws"
 	climiter "github.com/jxo-me/netx/sdk/core/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"

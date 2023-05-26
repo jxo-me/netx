@@ -10,7 +10,7 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	pht_util "github.com/jxo-me/netx/sdk/core/internal/util/pht"
+	pht_util "github.com/jxo-me/netx/sdk/internal/util/pht"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

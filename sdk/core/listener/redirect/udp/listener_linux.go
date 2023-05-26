@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/sys/unix"
 	"github.com/jxo-me/netx/sdk/core/common/bufpool"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 )
 
 func (l *redirectListener) listenUDP(addr string) (*net.UDPConn, error) {

@@ -14,8 +14,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/jxo-me/netx/sdk/core/config"
-	tls_util "github.com/jxo-me/netx/sdk/core/internal/util/tls"
+	"github.com/jxo-me/netx/sdk/config"
+	tls_util "github.com/jxo-me/netx/sdk/internal/util/tls"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

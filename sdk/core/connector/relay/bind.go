@@ -8,8 +8,8 @@ import (
 
 	"github.com/jxo-me/netx/sdk/core/common/net/udp"
 	"github.com/jxo-me/netx/sdk/core/connector"
-	"github.com/jxo-me/netx/sdk/core/internal/util/mux"
-	relay_util "github.com/jxo-me/netx/sdk/core/internal/util/relay"
+	"github.com/jxo-me/netx/sdk/internal/util/mux"
+	relay_util "github.com/jxo-me/netx/sdk/internal/util/relay"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/relay"
 )

@@ -7,7 +7,7 @@ import (
 	"github.com/quic-go/quic-go"
 	"golang.org/x/net/icmp"
 	admission "github.com/jxo-me/netx/sdk/core/admission/wrapper"
-	icmp_pkg "github.com/jxo-me/netx/sdk/core/internal/util/icmp"
+	icmp_pkg "github.com/jxo-me/netx/sdk/internal/util/icmp"
 	limiter "github.com/jxo-me/netx/sdk/core/limiter/traffic/wrapper"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"

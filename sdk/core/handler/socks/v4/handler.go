@@ -8,8 +8,8 @@ import (
 
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
-	sx "github.com/jxo-me/netx/sdk/core/internal/util/selector"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
+	sx "github.com/jxo-me/netx/sdk/internal/util/selector"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/gosocks4"

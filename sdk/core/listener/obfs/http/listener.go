@@ -12,8 +12,8 @@ import (
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	metrics "github.com/jxo-me/netx/sdk/core/metrics/wrapper"
 
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
-	"github.com/jxo-me/netx/sdk/core/internal/net/proxyproto"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
+	"github.com/jxo-me/netx/sdk/internal/net/proxyproto"
 )
 
 type obfsListener struct {

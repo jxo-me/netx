@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"golang.org/x/crypto/ssh"
-	ssh_util "github.com/jxo-me/netx/sdk/core/internal/util/ssh"
+	ssh_util "github.com/jxo-me/netx/sdk/internal/util/ssh"
 	mdata "github.com/jxo-me/netx/sdk/core/metadata"
 	mdutil "github.com/jxo-me/netx/sdk/core/metadata/util"
 )

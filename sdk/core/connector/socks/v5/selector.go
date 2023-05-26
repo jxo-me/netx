@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/jxo-me/netx/sdk/core/internal/util/socks"
+	"github.com/jxo-me/netx/sdk/internal/util/socks"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/gosocks5"
 )

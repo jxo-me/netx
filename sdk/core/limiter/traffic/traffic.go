@@ -12,7 +12,7 @@ import (
 	"github.com/alecthomas/units"
 	"github.com/patrickmn/go-cache"
 	"github.com/yl2chen/cidranger"
-	"github.com/jxo-me/netx/sdk/core/internal/loader"
+	"github.com/jxo-me/netx/sdk/internal/loader"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

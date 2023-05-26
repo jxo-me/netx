@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/jxo-me/netx/sdk/core/connector"
-	ssh_util "github.com/jxo-me/netx/sdk/core/internal/util/ssh"
+	ssh_util "github.com/jxo-me/netx/sdk/internal/util/ssh"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

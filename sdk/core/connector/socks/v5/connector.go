@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/sdk/core/connector"
-	"github.com/jxo-me/netx/sdk/core/internal/util/socks"
+	"github.com/jxo-me/netx/sdk/internal/util/socks"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/gosocks5"

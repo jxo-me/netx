@@ -9,7 +9,7 @@ import (
 	"github.com/miekg/dns"
 	"google.golang.org/grpc"
 	"github.com/jxo-me/netx/sdk/core/chain"
-	resolver_util "github.com/jxo-me/netx/sdk/core/internal/util/resolver"
+	resolver_util "github.com/jxo-me/netx/sdk/internal/util/resolver"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/core/resolver/exchanger"
 )

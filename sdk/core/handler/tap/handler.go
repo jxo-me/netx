@@ -16,8 +16,8 @@ import (
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/common/bufpool"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	"github.com/jxo-me/netx/sdk/core/internal/util/ss"
-	tap_util "github.com/jxo-me/netx/sdk/core/internal/util/tap"
+	"github.com/jxo-me/netx/sdk/internal/util/ss"
+	tap_util "github.com/jxo-me/netx/sdk/internal/util/tap"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )

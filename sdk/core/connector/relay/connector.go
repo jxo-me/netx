@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/sdk/core/connector"
-	relay_util "github.com/jxo-me/netx/sdk/core/internal/util/relay"
+	relay_util "github.com/jxo-me/netx/sdk/internal/util/relay"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/relay"
 )

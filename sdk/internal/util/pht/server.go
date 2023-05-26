@@ -19,7 +19,7 @@ import (
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/xid"
 	"github.com/jxo-me/netx/sdk/core/common/bufpool"
-	xnet "github.com/jxo-me/netx/sdk/core/internal/net"
+	xnet "github.com/jxo-me/netx/sdk/internal/net"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

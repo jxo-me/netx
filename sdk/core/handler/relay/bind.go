@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	"github.com/jxo-me/netx/sdk/core/internal/net/udp"
-	"github.com/jxo-me/netx/sdk/core/internal/util/mux"
-	relay_util "github.com/jxo-me/netx/sdk/core/internal/util/relay"
+	"github.com/jxo-me/netx/sdk/internal/net/udp"
+	"github.com/jxo-me/netx/sdk/internal/util/mux"
+	relay_util "github.com/jxo-me/netx/sdk/internal/util/relay"
 	"github.com/jxo-me/netx/sdk/core/listener"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	metrics "github.com/jxo-me/netx/sdk/core/metrics/wrapper"

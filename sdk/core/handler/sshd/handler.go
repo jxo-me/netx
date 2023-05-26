@@ -12,8 +12,8 @@ import (
 	"golang.org/x/crypto/ssh"
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
-	sshd_util "github.com/jxo-me/netx/sdk/core/internal/util/sshd"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
+	sshd_util "github.com/jxo-me/netx/sdk/internal/util/sshd"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )

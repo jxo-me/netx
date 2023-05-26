@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/relay"
 )

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/peer"
-	pb "github.com/jxo-me/netx/sdk/core/internal/util/grpc/proto"
+	pb "github.com/jxo-me/netx/sdk/internal/util/grpc/proto"
 	"github.com/jxo-me/netx/sdk/core/logger"
 )
 

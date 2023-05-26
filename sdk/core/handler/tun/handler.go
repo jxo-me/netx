@@ -11,7 +11,7 @@ import (
 	"github.com/songgao/water/waterutil"
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	tun_util "github.com/jxo-me/netx/sdk/core/internal/util/tun"
+	tun_util "github.com/jxo-me/netx/sdk/internal/util/tun"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
 

@@ -11,7 +11,7 @@ import (
 	"github.com/quic-go/quic-go"
 	"golang.org/x/net/icmp"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	icmp_pkg "github.com/jxo-me/netx/sdk/core/internal/util/icmp"
+	icmp_pkg "github.com/jxo-me/netx/sdk/internal/util/icmp"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )

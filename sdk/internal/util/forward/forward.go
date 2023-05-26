@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	xio "github.com/jxo-me/netx/sdk/core/internal/io"
+	xio "github.com/jxo-me/netx/sdk/internal/io"
 	dissector "github.com/jxo-me/netx/sdk/tls-dissector"
 )
 

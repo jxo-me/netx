@@ -10,9 +10,9 @@ import (
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/jxo-me/netx/sdk/core/chain"
 	"github.com/jxo-me/netx/sdk/core/handler"
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
-	sx "github.com/jxo-me/netx/sdk/core/internal/util/selector"
-	"github.com/jxo-me/netx/sdk/core/internal/util/ss"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
+	sx "github.com/jxo-me/netx/sdk/internal/util/selector"
+	"github.com/jxo-me/netx/sdk/internal/util/ss"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/gosocks5"
 )

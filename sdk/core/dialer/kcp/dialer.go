@@ -11,7 +11,7 @@ import (
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	kcp_util "github.com/jxo-me/netx/sdk/core/internal/util/kcp"
+	kcp_util "github.com/jxo-me/netx/sdk/internal/util/kcp"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )

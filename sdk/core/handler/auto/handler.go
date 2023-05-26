@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/sdk/core/handler"
-	netpkg "github.com/jxo-me/netx/sdk/core/internal/net"
+	netpkg "github.com/jxo-me/netx/sdk/internal/net"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 	"github.com/jxo-me/netx/sdk/gosocks4"

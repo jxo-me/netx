@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/jxo-me/netx/sdk/core/internal/util/mux"
+	"github.com/jxo-me/netx/sdk/internal/util/mux"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/gosocks5"
 )

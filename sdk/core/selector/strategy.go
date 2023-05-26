@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	sx "github.com/jxo-me/netx/sdk/core/internal/util/selector"
+	sx "github.com/jxo-me/netx/sdk/internal/util/selector"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	"github.com/jxo-me/netx/sdk/core/metadata"
 	mdutil "github.com/jxo-me/netx/sdk/core/metadata/util"

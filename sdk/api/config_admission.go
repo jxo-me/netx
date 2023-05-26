@@ -5,8 +5,8 @@ import (
 	"github.com/jxo-me/netx/sdk"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jxo-me/netx/sdk/core/config"
-	"github.com/jxo-me/netx/sdk/core/config/parsing"
+	"github.com/jxo-me/netx/sdk/config"
+	"github.com/jxo-me/netx/sdk/config/parsing"
 )
 
 // swagger:parameters createAdmissionRequest

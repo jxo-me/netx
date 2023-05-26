@@ -7,7 +7,7 @@ import (
 
 	"github.com/vishvananda/netlink"
 
-	tun_util "github.com/jxo-me/netx/sdk/core/internal/util/tun"
+	tun_util "github.com/jxo-me/netx/sdk/internal/util/tun"
 )
 
 func (l *tunListener) createTun() (dev io.ReadWriteCloser, name string, ip net.IP, err error) {

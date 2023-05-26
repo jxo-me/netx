@@ -3,7 +3,7 @@ package kcp
 import (
 	"encoding/json"
 
-	kcp_util "github.com/jxo-me/netx/sdk/core/internal/util/kcp"
+	kcp_util "github.com/jxo-me/netx/sdk/internal/util/kcp"
 	mdata "github.com/jxo-me/netx/sdk/core/metadata"
 	mdutil "github.com/jxo-me/netx/sdk/core/metadata/util"
 )

@@ -7,7 +7,7 @@ import (
 
 	"github.com/pion/dtls/v2"
 	"github.com/jxo-me/netx/sdk/core/dialer"
-	xdtls "github.com/jxo-me/netx/sdk/core/internal/util/dtls"
+	xdtls "github.com/jxo-me/netx/sdk/internal/util/dtls"
 	"github.com/jxo-me/netx/sdk/core/logger"
 	md "github.com/jxo-me/netx/sdk/core/metadata"
 )
