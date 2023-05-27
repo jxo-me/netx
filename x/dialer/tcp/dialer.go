@@ -7,12 +7,7 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.DialerRegistry().Register("tcp", NewDialer)
-}
 
 type tcpDialer struct {
 	md     metadata

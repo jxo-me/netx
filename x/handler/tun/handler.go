@@ -12,7 +12,6 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
 	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/songgao/water/waterutil"
 )
 
@@ -20,10 +19,6 @@ var (
 	ErrTun        = errors.New("tun device error")
 	ErrInvalidNet = errors.New("invalid net IP")
 )
-
-func init() {
-	registry.HandlerRegistry().Register("tun", NewHandler)
-}
 
 type tunHandler struct {
 	hop     chain.IHop

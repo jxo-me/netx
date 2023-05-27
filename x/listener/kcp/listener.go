@@ -12,15 +12,10 @@ import (
 	kcp_util "github.com/jxo-me/netx/x/internal/util/kcp"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("kcp", NewListener)
-}
 
 type kcpListener struct {
 	conn    net.PacketConn

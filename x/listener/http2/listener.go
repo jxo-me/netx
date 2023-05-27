@@ -16,13 +16,8 @@ import (
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	mdx "github.com/jxo-me/netx/x/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"golang.org/x/net/http2"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("http2", NewListener)
-}
 
 type http2Listener struct {
 	server  *http.Server

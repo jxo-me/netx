@@ -15,12 +15,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("http2", NewConnector)
-}
 
 type http2Connector struct {
 	md      metadata

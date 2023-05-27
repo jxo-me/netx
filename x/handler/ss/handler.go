@@ -14,13 +14,8 @@ import (
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
 	"github.com/jxo-me/netx/x/internal/util/ss"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("ss", NewHandler)
-}
 
 type ssHandler struct {
 	cipher  core.Cipher

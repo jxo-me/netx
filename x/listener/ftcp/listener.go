@@ -11,13 +11,8 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/xtaci/tcpraw"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("ftcp", NewListener)
-}
 
 type ftcpListener struct {
 	ln      net.Listener

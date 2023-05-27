@@ -8,28 +8,28 @@ import (
 	"github.com/jxo-me/netx/core/selector"
 )
 
-type chainRegistry struct {
+type ChainRegistry struct {
 	registry[chain.IChainer]
 }
 
-func (r *chainRegistry) Register(name string, v chain.IChainer) error {
+func (r *ChainRegistry) Register(name string, v chain.IChainer) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *chainRegistry) Get(name string) chain.IChainer {
+func (r *ChainRegistry) Get(name string) chain.IChainer {
 	if name != "" {
 		return &chainWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *chainRegistry) get(name string) chain.IChainer {
+func (r *ChainRegistry) get(name string) chain.IChainer {
 	return r.registry.Get(name)
 }
 
 type chainWrapper struct {
 	name string
-	r    *chainRegistry
+	r    *ChainRegistry
 }
 
 func (w *chainWrapper) Marker() selector.IMarker {

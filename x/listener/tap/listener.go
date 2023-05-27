@@ -12,12 +12,7 @@ import (
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	mdx "github.com/jxo-me/netx/x/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("tap", NewListener)
-}
 
 type tapListener struct {
 	addr    net.Addr

@@ -6,28 +6,28 @@ import (
 	"github.com/jxo-me/netx/core/ingress"
 )
 
-type ingressRegistry struct {
+type IngressRegistry struct {
 	registry[ingress.IIngress]
 }
 
-func (r *ingressRegistry) Register(name string, v ingress.IIngress) error {
+func (r *IngressRegistry) Register(name string, v ingress.IIngress) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *ingressRegistry) Get(name string) ingress.IIngress {
+func (r *IngressRegistry) Get(name string) ingress.IIngress {
 	if name != "" {
 		return &ingressWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *ingressRegistry) get(name string) ingress.IIngress {
+func (r *IngressRegistry) get(name string) ingress.IIngress {
 	return r.registry.Get(name)
 }
 
 type ingressWrapper struct {
 	name string
-	r    *ingressRegistry
+	r    *IngressRegistry
 }
 
 func (w *ingressWrapper) Get(ctx context.Context, host string) string {

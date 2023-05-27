@@ -18,7 +18,6 @@ import (
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -27,10 +26,6 @@ const (
 	DirectForwardRequest = "direct-tcpip"  // RFC 4254 7.2
 	RemoteForwardRequest = "tcpip-forward" // RFC 4254 7.1
 )
-
-func init() {
-	registry.ListenerRegistry().Register("sshd", NewListener)
-}
 
 type sshdListener struct {
 	net.Listener

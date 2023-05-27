@@ -12,31 +12,32 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/recorder"
-	"github.com/jxo-me/netx/core/registry"
+	reg "github.com/jxo-me/netx/core/registry"
 	"github.com/jxo-me/netx/core/resolver"
 	"github.com/jxo-me/netx/core/service"
+	"github.com/jxo-me/netx/x/registry"
 
-	"github.com/jxo-me/netx/config"
+	"github.com/jxo-me/netx/x/config"
 )
 
-type Runtime interface {
-	AdmissionRegistry() registry.IRegistry[admission.IAdmission]
-	AutherRegistry() registry.IRegistry[auth.IAuthenticator]
-	BypassRegistry() registry.IRegistry[bypass.IBypass]
-	ChainRegistry() registry.IRegistry[chain.IChainer]
-	ConnectorRegistry() registry.IRegistry[registry.NewConnector]
-	ConnLimiterRegistry() registry.IRegistry[conn.IConnLimiter]
-	DialerRegistry() registry.IRegistry[registry.NewDialer]
-	HandlerRegistry() registry.IRegistry[registry.NewHandler]
-	HopRegistry() registry.IRegistry[chain.IHop]
-	HostsRegistry() registry.IRegistry[hosts.IHostMapper]
-	IngressRegistry() registry.IRegistry[ingress.IIngress]
-	ListenerRegistry() registry.IRegistry[registry.NewListener]
-	RateLimiterRegistry() registry.IRegistry[rate.IRateLimiter]
-	RecorderRegistry() registry.IRegistry[recorder.IRecorder]
-	ResolverRegistry() registry.IRegistry[resolver.IResolver]
-	ServiceRegistry() registry.IRegistry[service.IService]
-	TrafficLimiterRegistry() registry.IRegistry[traffic.ITrafficLimiter]
+type IRuntime interface {
+	AdmissionRegistry() reg.IRegistry[admission.IAdmission]
+	AutherRegistry() reg.IRegistry[auth.IAuthenticator]
+	BypassRegistry() reg.IRegistry[bypass.IBypass]
+	ChainRegistry() reg.IRegistry[chain.IChainer]
+	ConnectorRegistry() reg.IRegistry[registry.NewConnector]
+	ConnLimiterRegistry() reg.IRegistry[conn.IConnLimiter]
+	DialerRegistry() reg.IRegistry[registry.NewDialer]
+	HandlerRegistry() reg.IRegistry[registry.NewHandler]
+	HopRegistry() reg.IRegistry[chain.IHop]
+	HostsRegistry() reg.IRegistry[hosts.IHostMapper]
+	IngressRegistry() reg.IRegistry[ingress.IIngress]
+	ListenerRegistry() reg.IRegistry[registry.NewListener]
+	RateLimiterRegistry() reg.IRegistry[rate.IRateLimiter]
+	RecorderRegistry() reg.IRegistry[recorder.IRecorder]
+	ResolverRegistry() reg.IRegistry[resolver.IResolver]
+	ServiceRegistry() reg.IRegistry[service.IService]
+	TrafficLimiterRegistry() reg.IRegistry[traffic.ITrafficLimiter]
 
 	// config
 	BuildService(cfg *config.Config) (services []service.IService)

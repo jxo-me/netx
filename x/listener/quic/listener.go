@@ -12,13 +12,8 @@ import (
 	quic_util "github.com/jxo-me/netx/x/internal/util/quic"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/quic-go/quic-go"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("quic", NewListener)
-}
 
 type quicListener struct {
 	ln      quic.EarlyListener

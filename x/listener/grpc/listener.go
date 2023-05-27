@@ -14,15 +14,10 @@ import (
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("grpc", NewListener)
-}
 
 type grpcListener struct {
 	addr    net.Addr

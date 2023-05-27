@@ -7,11 +7,11 @@ import (
 
 type NewHandler func(opts ...handler.Option) handler.IHandler
 
-type handlerRegistry struct {
+type HandlerRegistry struct {
 	registry[NewHandler]
 }
 
-func (r *handlerRegistry) Register(name string, v NewHandler) error {
+func (r *HandlerRegistry) Register(name string, v NewHandler) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

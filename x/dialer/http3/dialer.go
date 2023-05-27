@@ -10,15 +10,9 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	pht_util "github.com/jxo-me/netx/x/internal/util/pht"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
-
-func init() {
-	registry.DialerRegistry().Register("http3", NewDialer)
-	registry.DialerRegistry().Register("h3", NewDialer)
-}
 
 type http3Dialer struct {
 	clients     map[string]*pht_util.Client

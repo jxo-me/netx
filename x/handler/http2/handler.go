@@ -26,12 +26,7 @@ import (
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("http2", NewHandler)
-}
 
 type http2Handler struct {
 	router  *chain.Router

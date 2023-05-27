@@ -9,13 +9,8 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	ssh_util "github.com/jxo-me/netx/x/internal/util/ssh"
-	"github.com/jxo-me/netx/x/registry"
 	"golang.org/x/crypto/ssh"
 )
-
-func init() {
-	registry.DialerRegistry().Register("sshd", NewDialer)
-}
 
 type sshdDialer struct {
 	sessions     map[string]*ssh_util.Session

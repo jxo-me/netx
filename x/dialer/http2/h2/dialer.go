@@ -15,14 +15,8 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 	"golang.org/x/net/http2"
 )
-
-func init() {
-	registry.DialerRegistry().Register("h2", NewTLSDialer)
-	registry.DialerRegistry().Register("h2c", NewDialer)
-}
 
 type h2Dialer struct {
 	clients     map[string]*http.Client

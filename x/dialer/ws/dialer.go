@@ -10,13 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.DialerRegistry().Register("ws", NewDialer)
-	registry.DialerRegistry().Register("wss", NewTLSDialer)
-}
 
 type wsDialer struct {
 	tlsEnabled bool

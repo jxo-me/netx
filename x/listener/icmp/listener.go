@@ -11,14 +11,9 @@ import (
 	icmp_pkg "github.com/jxo-me/netx/x/internal/util/icmp"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/quic-go/quic-go"
 	"golang.org/x/net/icmp"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("icmp", NewListener)
-}
 
 type icmpListener struct {
 	ln      quic.EarlyListener

@@ -323,8 +323,8 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	svc := &config.ServiceConfig{
 		Addr: url.Host,
 	}
-
-	if h := registry.HandlerRegistry().Get(handler); h == nil {
+	netx.Runtime
+	if h := runtime.HandlerRegistry().Get(handler); h == nil {
 		handler = "auto"
 	}
 	if ln := registry.ListenerRegistry().Get(listener); ln == nil {

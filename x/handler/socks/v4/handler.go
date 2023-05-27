@@ -13,18 +13,12 @@ import (
 	"github.com/jxo-me/netx/gosocks4"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 var (
 	ErrUnknownCmd    = errors.New("socks4: unknown command")
 	ErrUnimplemented = errors.New("socks4: unimplemented")
 )
-
-func init() {
-	registry.HandlerRegistry().Register("socks4", NewHandler)
-	registry.HandlerRegistry().Register("socks4a", NewHandler)
-}
 
 type socks4Handler struct {
 	router  *chain.Router

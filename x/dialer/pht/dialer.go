@@ -10,13 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	pht_util "github.com/jxo-me/netx/x/internal/util/pht"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.DialerRegistry().Register("pht", NewDialer)
-	registry.DialerRegistry().Register("phts", NewTLSDialer)
-}
 
 type phtDialer struct {
 	clients     map[string]*pht_util.Client

@@ -16,7 +16,6 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	xchain "github.com/jxo-me/netx/x/chain"
 	resolver_util "github.com/jxo-me/netx/x/internal/util/resolver"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/jxo-me/netx/x/resolver/exchanger"
 	"github.com/miekg/dns"
 )
@@ -24,10 +23,6 @@ import (
 const (
 	defaultNameserver = "udp://127.0.0.1:53"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("dns", NewHandler)
-}
 
 type dnsHandler struct {
 	hop        chain.IHop

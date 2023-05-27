@@ -19,14 +19,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/util/forward"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("tcp", NewHandler)
-	registry.HandlerRegistry().Register("udp", NewHandler)
-	registry.HandlerRegistry().Register("forward", NewHandler)
-}
 
 type forwardHandler struct {
 	hop     chain.IHop

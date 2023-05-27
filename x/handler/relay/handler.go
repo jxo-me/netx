@@ -15,7 +15,6 @@ import (
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/registry"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -25,10 +24,6 @@ var (
 	ErrUnauthorized = errors.New("relay: unauthorized")
 	ErrRateLimit    = errors.New("relay: rate limiting exceeded")
 )
-
-func init() {
-	registry.HandlerRegistry().Register("relay", NewHandler)
-}
 
 type relayHandler struct {
 	hop     chain.IHop

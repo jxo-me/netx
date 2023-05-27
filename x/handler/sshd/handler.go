@@ -15,7 +15,6 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	sshd_util "github.com/jxo-me/netx/x/internal/util/sshd"
-	"github.com/jxo-me/netx/x/registry"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -23,10 +22,6 @@ import (
 const (
 	ForwardedTCPReturnRequest = "forwarded-tcpip" // RFC 4254 7.2
 )
-
-func init() {
-	registry.HandlerRegistry().Register("sshd", NewHandler)
-}
 
 type forwardHandler struct {
 	router  *chain.Router

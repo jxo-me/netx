@@ -16,13 +16,8 @@ import (
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/pion/dtls/v2"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("dtls", NewListener)
-}
 
 type dtlsListener struct {
 	ln      net.Listener

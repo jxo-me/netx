@@ -8,17 +8,12 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	pb "github.com/jxo-me/netx/x/internal/util/grpc/proto"
-	"github.com/jxo-me/netx/x/registry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
-
-func init() {
-	registry.DialerRegistry().Register("grpc", NewDialer)
-}
 
 type grpcDialer struct {
 	clients     map[string]pb.GostTunelClientX

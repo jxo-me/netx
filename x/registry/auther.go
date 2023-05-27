@@ -6,28 +6,28 @@ import (
 	"github.com/jxo-me/netx/core/auth"
 )
 
-type autherRegistry struct {
+type AutherRegistry struct {
 	registry[auth.IAuthenticator]
 }
 
-func (r *autherRegistry) Register(name string, v auth.IAuthenticator) error {
+func (r *AutherRegistry) Register(name string, v auth.IAuthenticator) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *autherRegistry) Get(name string) auth.IAuthenticator {
+func (r *AutherRegistry) Get(name string) auth.IAuthenticator {
 	if name != "" {
 		return &autherWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *autherRegistry) get(name string) auth.IAuthenticator {
+func (r *AutherRegistry) get(name string) auth.IAuthenticator {
 	return r.registry.Get(name)
 }
 
 type autherWrapper struct {
 	name string
-	r    *autherRegistry
+	r    *AutherRegistry
 }
 
 func (w *autherWrapper) Authenticate(ctx context.Context, user, password string) bool {

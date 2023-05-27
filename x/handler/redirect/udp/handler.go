@@ -10,12 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("redu", NewHandler)
-}
 
 type redirectHandler struct {
 	router  *chain.Router

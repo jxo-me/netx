@@ -12,14 +12,9 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	icmp_pkg "github.com/jxo-me/netx/x/internal/util/icmp"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/quic-go/quic-go"
 	"golang.org/x/net/icmp"
 )
-
-func init() {
-	registry.DialerRegistry().Register("icmp", NewDialer)
-}
 
 type icmpDialer struct {
 	sessions     map[string]*quicSession

@@ -10,13 +10,8 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	quic_util "github.com/jxo-me/netx/x/internal/util/quic"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/quic-go/quic-go"
 )
-
-func init() {
-	registry.DialerRegistry().Register("quic", NewDialer)
-}
 
 type quicDialer struct {
 	sessions     map[string]*quicSession

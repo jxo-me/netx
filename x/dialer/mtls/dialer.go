@@ -11,13 +11,8 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/xtaci/smux"
 )
-
-func init() {
-	registry.DialerRegistry().Register("mtls", NewDialer)
-}
 
 type mtlsDialer struct {
 	sessions     map[string]*muxSession

@@ -23,12 +23,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("http", NewHandler)
-}
 
 type httpHandler struct {
 	router  *chain.Router

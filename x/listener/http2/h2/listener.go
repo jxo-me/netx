@@ -17,15 +17,9 @@ import (
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("h2c", NewListener)
-	registry.ListenerRegistry().Register("h2", NewTLSListener)
-}
 
 type h2Listener struct {
 	server  *http.Server

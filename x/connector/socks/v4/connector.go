@@ -11,13 +11,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks4"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("socks4", NewConnector)
-	registry.ConnectorRegistry().Register("socks4a", NewConnector)
-}
 
 type socks4Connector struct {
 	md      metadata

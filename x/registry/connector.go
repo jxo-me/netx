@@ -7,11 +7,11 @@ import (
 
 type NewConnector func(opts ...connector.Option) connector.IConnector
 
-type connectorRegistry struct {
+type ConnectorRegistry struct {
 	registry[NewConnector]
 }
 
-func (r *connectorRegistry) Register(name string, v NewConnector) error {
+func (r *ConnectorRegistry) Register(name string, v NewConnector) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

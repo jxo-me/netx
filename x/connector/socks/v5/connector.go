@@ -13,13 +13,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks5"
 	"github.com/jxo-me/netx/x/internal/util/socks"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("socks5", NewConnector)
-	registry.ConnectorRegistry().Register("socks", NewConnector)
-}
 
 type socks5Connector struct {
 	selector gosocks5.Selector

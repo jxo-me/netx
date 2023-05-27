@@ -16,13 +16,8 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/miekg/dns"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("dns", NewListener)
-}
 
 type dnsListener struct {
 	addr    net.Addr

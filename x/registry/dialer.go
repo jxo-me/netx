@@ -7,11 +7,11 @@ import (
 
 type NewDialer func(opts ...dialer.Option) dialer.IDialer
 
-type dialerRegistry struct {
+type DialerRegistry struct {
 	registry[NewDialer]
 }
 
-func (r *dialerRegistry) Register(name string, v NewDialer) error {
+func (r *DialerRegistry) Register(name string, v NewDialer) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

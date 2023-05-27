@@ -11,15 +11,10 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	kcp_util "github.com/jxo-me/netx/x/internal/util/kcp"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
 )
-
-func init() {
-	registry.DialerRegistry().Register("kcp", NewDialer)
-}
 
 type kcpDialer struct {
 	sessions     map[string]*muxSession

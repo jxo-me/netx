@@ -10,14 +10,9 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	mdx "github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("http3", NewListener)
-}
 
 type http3Listener struct {
 	server  *http3.Server

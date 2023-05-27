@@ -10,13 +10,8 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/x/internal/util/relay"
 	"github.com/jxo-me/netx/x/internal/util/ss"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("ssu", NewConnector)
-}
 
 type ssuConnector struct {
 	cipher  core.Cipher

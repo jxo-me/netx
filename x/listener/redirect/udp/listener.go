@@ -9,12 +9,7 @@ import (
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("redu", NewListener)
-}
 
 type redirectListener struct {
 	ln      *net.UDPConn

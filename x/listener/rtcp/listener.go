@@ -13,12 +13,7 @@ import (
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("rtcp", NewListener)
-}
 
 type rtcpListener struct {
 	laddr   net.Addr

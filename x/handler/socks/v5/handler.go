@@ -11,17 +11,11 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks5"
 	"github.com/jxo-me/netx/x/internal/util/socks"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 var (
 	ErrUnknownCmd = errors.New("socks5: unknown command")
 )
-
-func init() {
-	registry.HandlerRegistry().Register("socks5", NewHandler)
-	registry.HandlerRegistry().Register("socks", NewHandler)
-}
 
 type socks5Handler struct {
 	selector gosocks5.Selector

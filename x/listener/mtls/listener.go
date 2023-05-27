@@ -14,13 +14,8 @@ import (
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/xtaci/smux"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("mtls", NewListener)
-}
 
 type mtlsListener struct {
 	net.Listener

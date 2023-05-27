@@ -6,28 +6,28 @@ import (
 	"github.com/jxo-me/netx/core/bypass"
 )
 
-type bypassRegistry struct {
+type BypassRegistry struct {
 	registry[bypass.IBypass]
 }
 
-func (r *bypassRegistry) Register(name string, v bypass.IBypass) error {
+func (r *BypassRegistry) Register(name string, v bypass.IBypass) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *bypassRegistry) Get(name string) bypass.IBypass {
+func (r *BypassRegistry) Get(name string) bypass.IBypass {
 	if name != "" {
 		return &bypassWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *bypassRegistry) get(name string) bypass.IBypass {
+func (r *BypassRegistry) get(name string) bypass.IBypass {
 	return r.registry.Get(name)
 }
 
 type bypassWrapper struct {
 	name string
-	r    *bypassRegistry
+	r    *BypassRegistry
 }
 
 func (w *bypassWrapper) Contains(ctx context.Context, addr string) bool {

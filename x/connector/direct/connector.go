@@ -6,13 +6,7 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("direct", NewConnector)
-	registry.ConnectorRegistry().Register("virtual", NewConnector)
-}
 
 type directConnector struct {
 	options connector.Options

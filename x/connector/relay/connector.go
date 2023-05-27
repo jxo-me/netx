@@ -10,12 +10,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/relay"
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("relay", NewConnector)
-}
 
 type relayConnector struct {
 	md      metadata

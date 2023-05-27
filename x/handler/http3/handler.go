@@ -14,12 +14,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("http3", NewHandler)
-}
 
 type http3Handler struct {
 	hop     chain.IHop

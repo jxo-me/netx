@@ -6,12 +6,7 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("forward", NewConnector)
-}
 
 type forwardConnector struct {
 	options connector.Options

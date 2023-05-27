@@ -8,12 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
 	ssh_util "github.com/jxo-me/netx/x/internal/util/ssh"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ConnectorRegistry().Register("sshd", NewConnector)
-}
 
 type sshdConnector struct {
 	options connector.Options

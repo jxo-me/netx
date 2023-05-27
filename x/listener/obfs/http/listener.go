@@ -14,12 +14,7 @@ import (
 
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.ListenerRegistry().Register("ohttp", NewListener)
-}
 
 type obfsListener struct {
 	net.Listener

@@ -21,14 +21,7 @@ import (
 	dissector "github.com/jxo-me/netx/tls-dissector"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/registry"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("red", NewHandler)
-	registry.HandlerRegistry().Register("redir", NewHandler)
-	registry.HandlerRegistry().Register("redirect", NewHandler)
-}
 
 type redirectHandler struct {
 	router  *chain.Router

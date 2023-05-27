@@ -17,15 +17,10 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/x/internal/util/ss"
 	tap_util "github.com/jxo-me/netx/x/internal/util/tap"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/shadowsocks/go-shadowsocks2/shadowaead"
 	"github.com/songgao/water/waterutil"
 )
-
-func init() {
-	registry.HandlerRegistry().Register("tap", NewHandler)
-}
 
 type tapHandler struct {
 	hop     chain.IHop

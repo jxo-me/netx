@@ -9,13 +9,8 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	xdtls "github.com/jxo-me/netx/x/internal/util/dtls"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/pion/dtls/v2"
 )
-
-func init() {
-	registry.DialerRegistry().Register("dtls", NewDialer)
-}
 
 type dtlsDialer struct {
 	md      metadata

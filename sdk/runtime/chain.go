@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jxo-me/netx/config"
 	auther "github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
@@ -18,6 +17,7 @@ import (
 	mdx "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	tls_util "github.com/jxo-me/netx/internal/util/tls"
+	"github.com/jxo-me/netx/x/config"
 )
 
 func (a *Application) ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {

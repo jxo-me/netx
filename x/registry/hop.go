@@ -6,28 +6,28 @@ import (
 	"github.com/jxo-me/netx/core/chain"
 )
 
-type hopRegistry struct {
+type HopRegistry struct {
 	registry[chain.IHop]
 }
 
-func (r *hopRegistry) Register(name string, v chain.IHop) error {
+func (r *HopRegistry) Register(name string, v chain.IHop) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *hopRegistry) Get(name string) chain.IHop {
+func (r *HopRegistry) Get(name string) chain.IHop {
 	if name != "" {
 		return &hopWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *hopRegistry) get(name string) chain.IHop {
+func (r *HopRegistry) get(name string) chain.IHop {
 	return r.registry.Get(name)
 }
 
 type hopWrapper struct {
 	name string
-	r    *hopRegistry
+	r    *HopRegistry
 }
 
 func (w *hopWrapper) Nodes() []*chain.Node {

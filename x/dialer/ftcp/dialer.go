@@ -7,13 +7,8 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/registry"
 	"github.com/xtaci/tcpraw"
 )
-
-func init() {
-	registry.DialerRegistry().Register("ftcp", NewDialer)
-}
 
 type ftcpDialer struct {
 	md     metadata
