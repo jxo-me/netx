@@ -5,5 +5,5 @@ import (
 )
 
 type serviceRegistry struct {
-	registry[service.Service]
+	registry[service.IService]
 }

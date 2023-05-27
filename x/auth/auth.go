@@ -69,7 +69,7 @@ func LoggerOption(logger logger.ILogger) Option {
 	}
 }
 
-// authenticator is an Authenticator that authenticates client by key-value pairs.
+// authenticator is an IAuthenticator that authenticates client by key-value pairs.
 type authenticator struct {
 	kvs        map[string]string
 	mu         sync.RWMutex
@@ -77,8 +77,8 @@ type authenticator struct {
 	options    options
 }
 
-// NewAuthenticator creates an Authenticator that authenticates client by pre-defined user mapping.
-func NewAuthenticator(opts ...Option) auth.Authenticator {
+// NewAuthenticator creates an IAuthenticator that authenticates client by pre-defined user mapping.
+func NewAuthenticator(opts ...Option) auth.IAuthenticator {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

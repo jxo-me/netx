@@ -21,7 +21,7 @@ import (
 )
 
 type options struct {
-	admission admission.Admission
+	admission admission.IAdmission
 	recorders []recorder.RecorderObject
 	preUp     []string
 	postUp    []string
@@ -32,7 +32,7 @@ type options struct {
 
 type Option func(opts *options)
 
-func AdmissionOption(admission admission.Admission) Option {
+func AdmissionOption(admission admission.IAdmission) Option {
 	return func(opts *options) {
 		opts.admission = admission
 	}
@@ -77,11 +77,11 @@ func LoggerOption(logger logger.ILogger) Option {
 type defaultService struct {
 	name     string
 	listener listener.IListener
-	handler  handler.Handler
+	handler  handler.IHandler
 	options  options
 }
 
-func NewService(name string, ln listener.IListener, h handler.Handler, opts ...Option) service.Service {
+func NewService(name string, ln listener.IListener, h handler.IHandler, opts ...Option) service.IService {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

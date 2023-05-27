@@ -14,7 +14,7 @@ type TransportOptions struct {
 	Addr     string
 	IfceName string
 	SockOpts *SockOpts
-	Route    Route
+	Route    IRoute
 	Timeout  time.Duration
 }
 
@@ -38,7 +38,7 @@ func SockOptsTransportOption(so *SockOpts) TransportOption {
 	}
 }
 
-func RouteTransportOption(route Route) TransportOption {
+func RouteTransportOption(route IRoute) TransportOption {
 	return func(o *TransportOptions) {
 		o.Route = route
 	}
@@ -51,12 +51,12 @@ func TimeoutTransportOption(timeout time.Duration) TransportOption {
 }
 
 type Transport struct {
-	dialer    dialer.Dialer
-	connector connector.Connector
+	dialer    dialer.IDialer
+	connector connector.IConnector
 	options   TransportOptions
 }
 
-func NewTransport(d dialer.Dialer, c connector.Connector, opts ...TransportOption) *Transport {
+func NewTransport(d dialer.IDialer, c connector.IConnector, opts ...TransportOption) *Transport {
 	tr := &Transport{
 		dialer:    d,
 		connector: c,
@@ -92,14 +92,14 @@ func (tr *Transport) Dial(ctx context.Context, addr string) (net.Conn, error) {
 
 func (tr *Transport) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {
 	var err error
-	if hs, ok := tr.dialer.(dialer.Handshaker); ok {
+	if hs, ok := tr.dialer.(dialer.IHandshaker); ok {
 		conn, err = hs.Handshake(ctx, conn,
 			dialer.AddrHandshakeOption(tr.options.Addr))
 		if err != nil {
 			return nil, err
 		}
 	}
-	if hs, ok := tr.connector.(connector.Handshaker); ok {
+	if hs, ok := tr.connector.(connector.IHandshaker); ok {
 		return hs.Handshake(ctx, conn)
 	}
 	return conn, nil
@@ -119,14 +119,14 @@ func (tr *Transport) Connect(ctx context.Context, conn net.Conn, network, addres
 }
 
 func (tr *Transport) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
-	if binder, ok := tr.connector.(connector.Binder); ok {
+	if binder, ok := tr.connector.(connector.IBinder); ok {
 		return binder.Bind(ctx, conn, network, address, opts...)
 	}
 	return nil, connector.ErrBindUnsupported
 }
 
 func (tr *Transport) Multiplex() bool {
-	if mux, ok := tr.dialer.(dialer.Multiplexer); ok {
+	if mux, ok := tr.dialer.(dialer.IMultiplexer); ok {
 		return mux.Multiplex()
 	}
 	return false

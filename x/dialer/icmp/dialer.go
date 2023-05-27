@@ -29,7 +29,7 @@ type icmpDialer struct {
 	options      dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -124,7 +124,7 @@ func (d *icmpDialer) initSession(ctx context.Context, addr net.Addr, conn net.Pa
 	return &quicSession{session: session}, nil
 }
 
-// Multiplex implements dialer.Multiplexer interface.
+// Multiplex implements dialer.IMultiplexer interface.
 func (d *icmpDialer) Multiplex() bool {
 	return true
 }

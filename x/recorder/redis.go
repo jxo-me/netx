@@ -3,8 +3,8 @@ package recorder
 import (
 	"context"
 
-	"github.com/jxo-me/netx/core/recorder"
 	"github.com/go-redis/redis/v8"
+	"github.com/jxo-me/netx/core/recorder"
 )
 
 type redisRecorderOptions struct {
@@ -38,7 +38,7 @@ type redisSetRecorder struct {
 }
 
 // RedisSetRecorder records data to a redis set.
-func RedisSetRecorder(addr string, opts ...RedisRecorderOption) recorder.Recorder {
+func RedisSetRecorder(addr string, opts ...RedisRecorderOption) recorder.IRecorder {
 	var options redisRecorderOptions
 	for _, opt := range opts {
 		opt(&options)
@@ -72,7 +72,7 @@ type redisListRecorder struct {
 }
 
 // RedisListRecorder records data to a redis list.
-func RedisListRecorder(addr string, opts ...RedisRecorderOption) recorder.Recorder {
+func RedisListRecorder(addr string, opts ...RedisRecorderOption) recorder.IRecorder {
 	var options redisRecorderOptions
 	for _, opt := range opts {
 		opt(&options)
@@ -106,7 +106,7 @@ type redisSortedSetRecorder struct {
 }
 
 // RedisSortedSetRecorder records data to a redis sorted set.
-func RedisSortedSetRecorder(addr string, opts ...RedisRecorderOption) recorder.Recorder {
+func RedisSortedSetRecorder(addr string, opts ...RedisRecorderOption) recorder.IRecorder {
 	var options redisRecorderOptions
 	for _, opt := range opts {
 		opt(&options)

@@ -24,10 +24,10 @@ const (
 )
 
 var (
-	global metrics.Metrics = Noop()
+	global metrics.IMetrics = Noop()
 )
 
-func Init(m metrics.Metrics) {
+func Init(m metrics.IMetrics) {
 	if m != nil {
 		global = m
 	} else {
@@ -39,7 +39,7 @@ func IsEnabled() bool {
 	return global != Noop()
 }
 
-func GetCounter(name metrics.MetricName, labels metrics.Labels) metrics.Counter {
+func GetCounter(name metrics.MetricName, labels metrics.Labels) metrics.ICounter {
 	return global.Counter(name, labels)
 }
 
@@ -47,6 +47,6 @@ func GetGauge(name metrics.MetricName, labels metrics.Labels) metrics.Gauge {
 	return global.Gauge(name, labels)
 }
 
-func GetObserver(name metrics.MetricName, labels metrics.Labels) metrics.Observer {
+func GetObserver(name metrics.MetricName, labels metrics.Labels) metrics.IObserver {
 	return global.Observer(name, labels)
 }

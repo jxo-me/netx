@@ -19,7 +19,7 @@ type obfsTLSDialer struct {
 	logger logger.ILogger
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := &dialer.Options{}
 	for _, opt := range opts {
 		opt(options)
@@ -47,7 +47,7 @@ func (d *obfsTLSDialer) Dial(ctx context.Context, addr string, opts ...dialer.Di
 	return conn, err
 }
 
-// Handshake implements dialer.Handshaker
+// Handshake implements dialer.IHandshaker
 func (d *obfsTLSDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {

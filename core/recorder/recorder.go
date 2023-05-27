@@ -2,12 +2,12 @@ package recorder
 
 import "context"
 
-type Recorder interface {
+type IRecorder interface {
 	Record(ctx context.Context, b []byte) error
 }
 
 type RecorderObject struct {
-	Recorder Recorder
+	Recorder IRecorder
 	Record   string
 }
 

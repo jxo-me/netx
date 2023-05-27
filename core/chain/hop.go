@@ -2,6 +2,11 @@ package chain
 
 import "context"
 
+type IHop interface {
+	Nodes() []*Node
+	Select(ctx context.Context, opts ...SelectOption) *Node
+}
+
 type SelectOptions struct {
 	Addr     string
 	Host     string
@@ -26,9 +31,4 @@ func ProtocolSelectOption(protocol string) SelectOption {
 	return func(o *SelectOptions) {
 		o.Protocol = protocol
 	}
-}
-
-type Hop interface {
-	Nodes() []*Node
-	Select(ctx context.Context, opts ...SelectOption) *Node
 }

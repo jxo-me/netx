@@ -16,7 +16,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func buildService(cfg *config.Config) (services []service.Service) {
+func buildService(cfg *config.Config) (services []service.IService) {
 	if cfg == nil {
 		return
 	}
@@ -185,7 +185,7 @@ func logFromConfig(cfg *config.LogConfig) logger.ILogger {
 	return xlogger.NewLogger(opts...)
 }
 
-func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
+func buildAPIService(cfg *config.APIConfig) (service.IService, error) {
 	auther := parsing.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
 		auther = registry.AutherRegistry().Get(cfg.Auther)
@@ -198,7 +198,7 @@ func buildAPIService(cfg *config.APIConfig) (service.Service, error) {
 	)
 }
 
-func buildMetricsService(cfg *config.MetricsConfig) (service.Service, error) {
+func buildMetricsService(cfg *config.MetricsConfig) (service.IService, error) {
 	return metrics.NewService(
 		cfg.Addr,
 		metrics.PathOption(cfg.Path),

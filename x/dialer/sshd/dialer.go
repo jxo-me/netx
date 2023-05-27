@@ -24,7 +24,7 @@ type sshdDialer struct {
 	options      dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -44,7 +44,7 @@ func (d *sshdDialer) Init(md md.IMetaData) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.Multiplexer interface.
+// Multiplex implements dialer.IMultiplexer interface.
 func (d *sshdDialer) Multiplex() bool {
 	return true
 }

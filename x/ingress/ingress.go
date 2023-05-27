@@ -81,8 +81,8 @@ type ingress struct {
 	mu         sync.RWMutex
 }
 
-// NewIngress creates and initializes a new Ingress.
-func NewIngress(opts ...Option) ingress_pkg.Ingress {
+// NewIngress creates and initializes a new IIngress.
+func NewIngress(opts ...Option) ingress_pkg.IIngress {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

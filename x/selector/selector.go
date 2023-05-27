@@ -21,11 +21,11 @@ const (
 )
 
 type defaultSelector[T any] struct {
-	strategy selector.Strategy[T]
-	filters  []selector.Filter[T]
+	strategy selector.IStrategy[T]
+	filters  []selector.IFilter[T]
 }
 
-func NewSelector[T any](strategy selector.Strategy[T], filters ...selector.Filter[T]) selector.Selector[T] {
+func NewSelector[T any](strategy selector.IStrategy[T], filters ...selector.IFilter[T]) selector.ISelector[T] {
 	return &defaultSelector[T]{
 		filters:  filters,
 		strategy: strategy,

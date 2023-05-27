@@ -14,7 +14,7 @@ type promMetrics struct {
 	histograms map[metrics.MetricName]*prometheus.HistogramVec
 }
 
-func NewMetrics() metrics.Metrics {
+func NewMetrics() metrics.IMetrics {
 	host, _ := os.Hostname()
 	m := &promMetrics{
 		host: host,
@@ -110,7 +110,7 @@ func (m *promMetrics) Gauge(name metrics.MetricName, labels metrics.Labels) metr
 	return v.With(prometheus.Labels(labels))
 }
 
-func (m *promMetrics) Counter(name metrics.MetricName, labels metrics.Labels) metrics.Counter {
+func (m *promMetrics) Counter(name metrics.MetricName, labels metrics.Labels) metrics.ICounter {
 	v, ok := m.counters[name]
 	if !ok {
 		return nil
@@ -122,7 +122,7 @@ func (m *promMetrics) Counter(name metrics.MetricName, labels metrics.Labels) me
 	return v.With(prometheus.Labels(labels))
 }
 
-func (m *promMetrics) Observer(name metrics.MetricName, labels metrics.Labels) metrics.Observer {
+func (m *promMetrics) Observer(name metrics.MetricName, labels metrics.Labels) metrics.IObserver {
 	v, ok := m.histograms[name]
 	if !ok {
 		return nil

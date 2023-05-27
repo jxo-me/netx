@@ -13,7 +13,7 @@ type Relay struct {
 	pc1 net.PacketConn
 	pc2 net.PacketConn
 
-	bypass     bypass.Bypass
+	bypass     bypass.IBypass
 	bufferSize int
 	logger     logger.ILogger
 }
@@ -25,7 +25,7 @@ func NewRelay(pc1, pc2 net.PacketConn) *Relay {
 	}
 }
 
-func (r *Relay) WithBypass(bp bypass.Bypass) *Relay {
+func (r *Relay) WithBypass(bp bypass.IBypass) *Relay {
 	r.bypass = bp
 	return r
 }

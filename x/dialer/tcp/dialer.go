@@ -19,7 +19,7 @@ type tcpDialer struct {
 	logger logger.ILogger
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := &dialer.Options{}
 	for _, opt := range opts {
 		opt(options)

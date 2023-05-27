@@ -28,7 +28,7 @@ func init() {
 }
 
 type tapHandler struct {
-	hop     chain.Hop
+	hop     chain.IHop
 	routes  sync.Map
 	exit    chan struct{}
 	cipher  core.Cipher
@@ -37,7 +37,7 @@ type tapHandler struct {
 	options handler.Options
 }
 
-func NewHandler(opts ...handler.Option) handler.Handler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -71,8 +71,8 @@ func (h *tapHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.Forwarder.
-func (h *tapHandler) Forward(hop chain.Hop) {
+// Forward implements handler.IForwarder.
+func (h *tapHandler) Forward(hop chain.IHop) {
 	h.hop = hop
 }
 

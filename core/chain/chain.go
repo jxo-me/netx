@@ -4,6 +4,6 @@ import (
 	"context"
 )
 
-type Chainer interface {
-	Route(ctx context.Context, network, address string) Route
+type IChainer interface {
+	Route(ctx context.Context, network, address string) IRoute
 }

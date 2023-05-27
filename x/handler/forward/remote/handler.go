@@ -29,13 +29,13 @@ func init() {
 }
 
 type forwardHandler struct {
-	hop     chain.Hop
+	hop     chain.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options
 }
 
-func NewHandler(opts ...handler.Option) handler.Handler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -59,8 +59,8 @@ func (h *forwardHandler) Init(md mdata.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.Forwarder.
-func (h *forwardHandler) Forward(hop chain.Hop) {
+// Forward implements handler.IForwarder.
+func (h *forwardHandler) Forward(hop chain.IHop) {
 	h.hop = hop
 }
 

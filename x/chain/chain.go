@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	_ chain.Chainer = (*chainGroup)(nil)
+	_ chain.IChainer = (*chainGroup)(nil)
 )
 
 type ChainOptions struct {
@@ -38,8 +38,8 @@ type chainNamer interface {
 
 type Chain struct {
 	name     string
-	hops     []chain.Hop
-	marker   selector.Marker
+	hops     []chain.IHop
+	marker   selector.IMarker
 	metadata metadata.IMetaData
 	logger   logger.ILogger
 }
@@ -60,7 +60,7 @@ func NewChain(name string, opts ...ChainOption) *Chain {
 	}
 }
 
-func (c *Chain) AddHop(hop chain.Hop) {
+func (c *Chain) AddHop(hop chain.IHop) {
 	c.hops = append(c.hops, hop)
 }
 
@@ -69,8 +69,8 @@ func (c *Chain) Metadata() metadata.IMetaData {
 	return c.metadata
 }
 
-// Marker implements selector.Markable interface.
-func (c *Chain) Marker() selector.Marker {
+// Marker implements selector.IMarkable interface.
+func (c *Chain) Marker() selector.IMarker {
 	return c.marker
 }
 
@@ -78,7 +78,7 @@ func (c *Chain) Name() string {
 	return c.name
 }
 
-func (c *Chain) Route(ctx context.Context, network, address string) chain.Route {
+func (c *Chain) Route(ctx context.Context, network, address string) chain.IRoute {
 	if c == nil || len(c.hops) == 0 {
 		return nil
 	}
@@ -103,27 +103,27 @@ func (c *Chain) Route(ctx context.Context, network, address string) chain.Route 
 }
 
 type chainGroup struct {
-	chains   []chain.Chainer
-	selector selector.Selector[chain.Chainer]
+	chains   []chain.IChainer
+	selector selector.ISelector[chain.IChainer]
 }
 
-func NewChainGroup(chains ...chain.Chainer) *chainGroup {
+func NewChainGroup(chains ...chain.IChainer) *chainGroup {
 	return &chainGroup{chains: chains}
 }
 
-func (p *chainGroup) WithSelector(s selector.Selector[chain.Chainer]) *chainGroup {
+func (p *chainGroup) WithSelector(s selector.ISelector[chain.IChainer]) *chainGroup {
 	p.selector = s
 	return p
 }
 
-func (p *chainGroup) Route(ctx context.Context, network, address string) chain.Route {
+func (p *chainGroup) Route(ctx context.Context, network, address string) chain.IRoute {
 	if chain := p.next(ctx); chain != nil {
 		return chain.Route(ctx, network, address)
 	}
 	return nil
 }
 
-func (p *chainGroup) next(ctx context.Context) chain.Chainer {
+func (p *chainGroup) next(ctx context.Context) chain.IChainer {
 	if p == nil || len(p.chains) == 0 {
 		return nil
 	}

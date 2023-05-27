@@ -17,16 +17,16 @@ var (
 )
 
 var (
-	DefaultRoute Route = &route{}
+	DefaultRoute IRoute = &route{}
 )
 
-type Route interface {
+type IRoute interface {
 	Dial(ctx context.Context, network, address string, opts ...DialOption) (net.Conn, error)
 	Bind(ctx context.Context, network, address string, opts ...BindOption) (net.Listener, error)
 	Nodes() []*Node
 }
 
-// route is a Route without nodes.
+// route is a IRoute without nodes.
 type route struct{}
 
 func (*route) Dial(ctx context.Context, network, address string, opts ...DialOption) (net.Conn, error) {

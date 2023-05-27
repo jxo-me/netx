@@ -13,10 +13,10 @@ import (
 )
 
 type Options struct {
-	Bypass      bypass.Bypass
+	Bypass      bypass.IBypass
 	Router      *chain.Router
 	Auth        *url.Userinfo
-	Auther      auth.Authenticator
+	Auther      auth.IAuthenticator
 	RateLimiter rate.IRateLimiter
 	TLSConfig   *tls.Config
 	Logger      logger.ILogger
@@ -25,7 +25,7 @@ type Options struct {
 
 type Option func(opts *Options)
 
-func BypassOption(bypass bypass.Bypass) Option {
+func BypassOption(bypass bypass.IBypass) Option {
 	return func(opts *Options) {
 		opts.Bypass = bypass
 	}
@@ -43,7 +43,7 @@ func AuthOption(auth *url.Userinfo) Option {
 	}
 }
 
-func AutherOption(auther auth.Authenticator) Option {
+func AutherOption(auther auth.IAuthenticator) Option {
 	return func(opts *Options) {
 		opts.Auther = auther
 	}

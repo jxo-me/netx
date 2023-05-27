@@ -31,15 +31,15 @@ func init() {
 }
 
 type relayHandler struct {
-	hop     chain.Hop
+	hop     chain.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options
-	ep      service.Service
+	ep      service.IService
 	pool    *ConnectorPool
 }
 
-func NewHandler(opts ...handler.Option) handler.Handler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -122,8 +122,8 @@ func (h *relayHandler) initEntryPoint() (err error) {
 	return
 }
 
-// Forward implements handler.Forwarder.
-func (h *relayHandler) Forward(hop chain.Hop) {
+// Forward implements handler.IForwarder.
+func (h *relayHandler) Forward(hop chain.IHop) {
 	h.hop = hop
 }
 

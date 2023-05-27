@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	"github.com/jxo-me/netx/x/registry"
-	"github.com/gorilla/websocket"
 	"github.com/xtaci/smux"
 )
 
@@ -29,7 +29,7 @@ type mwsDialer struct {
 	options      dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -41,7 +41,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
+func NewTLSDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -61,7 +61,7 @@ func (d *mwsDialer) Init(md md.IMetaData) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.Multiplexer interface.
+// Multiplex implements dialer.IMultiplexer interface.
 func (d *mwsDialer) Multiplex() bool {
 	return true
 }
@@ -93,7 +93,7 @@ func (d *mwsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 	return session.conn, err
 }
 
-// Handshake implements dialer.Handshaker
+// Handshake implements dialer.IHandshaker
 func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {

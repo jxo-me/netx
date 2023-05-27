@@ -14,13 +14,13 @@ import (
 
 type Options struct {
 	Addr           string
-	Auther         auth.Authenticator
+	Auther         auth.IAuthenticator
 	Auth           *url.Userinfo
 	TLSConfig      *tls.Config
-	Admission      admission.Admission
+	Admission      admission.IAdmission
 	TrafficLimiter traffic.ITrafficLimiter
 	ConnLimiter    conn.IConnLimiter
-	Chain          chain.Chainer
+	Chain          chain.IChainer
 	Logger         logger.ILogger
 	Service        string
 	ProxyProtocol  int
@@ -34,7 +34,7 @@ func AddrOption(addr string) Option {
 	}
 }
 
-func AutherOption(auther auth.Authenticator) Option {
+func AutherOption(auther auth.IAuthenticator) Option {
 	return func(opts *Options) {
 		opts.Auther = auther
 	}
@@ -52,7 +52,7 @@ func TLSConfigOption(tlsConfig *tls.Config) Option {
 	}
 }
 
-func AdmissionOption(admission admission.Admission) Option {
+func AdmissionOption(admission admission.IAdmission) Option {
 	return func(opts *Options) {
 		opts.Admission = admission
 	}
@@ -70,7 +70,7 @@ func ConnLimiterOption(limiter conn.IConnLimiter) Option {
 	}
 }
 
-func ChainOption(chain chain.Chainer) Option {
+func ChainOption(chain chain.IChainer) Option {
 	return func(opts *Options) {
 		opts.Chain = chain
 	}

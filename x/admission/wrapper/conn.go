@@ -19,10 +19,10 @@ var (
 
 type serverConn struct {
 	net.Conn
-	admission admission.Admission
+	admission admission.IAdmission
 }
 
-func WrapConn(admission admission.Admission, c net.Conn) net.Conn {
+func WrapConn(admission admission.IAdmission, c net.Conn) net.Conn {
 	if admission == nil {
 		return c
 	}
@@ -59,10 +59,10 @@ func (c *serverConn) Metadata() metadata.IMetaData {
 
 type packetConn struct {
 	net.PacketConn
-	admission admission.Admission
+	admission admission.IAdmission
 }
 
-func WrapPacketConn(admission admission.Admission, pc net.PacketConn) net.PacketConn {
+func WrapPacketConn(admission admission.IAdmission, pc net.PacketConn) net.PacketConn {
 	if admission == nil {
 		return pc
 	}
@@ -97,10 +97,10 @@ func (c *packetConn) Metadata() metadata.IMetaData {
 
 type udpConn struct {
 	net.PacketConn
-	admission admission.Admission
+	admission admission.IAdmission
 }
 
-func WrapUDPConn(admission admission.Admission, pc net.PacketConn) udp.Conn {
+func WrapUDPConn(admission admission.IAdmission, pc net.PacketConn) udp.Conn {
 	return &udpConn{
 		PacketConn: pc,
 		admission:  admission,

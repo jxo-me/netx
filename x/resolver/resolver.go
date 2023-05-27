@@ -17,7 +17,7 @@ import (
 
 type NameServer struct {
 	Addr      string
-	Chain     chain.Chainer
+	Chain     chain.IChainer
 	TTL       time.Duration
 	Timeout   time.Duration
 	ClientIP  net.IP
@@ -58,7 +58,7 @@ type resolver struct {
 	options options
 }
 
-func NewResolver(nameservers []NameServer, opts ...Option) (resolverpkg.Resolver, error) {
+func NewResolver(nameservers []NameServer, opts ...Option) (resolverpkg.IResolver, error) {
 	options := options{}
 	for _, opt := range opts {
 		opt(&options)

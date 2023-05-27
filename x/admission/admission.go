@@ -85,9 +85,9 @@ type admission struct {
 	options     options
 }
 
-// NewAdmission creates and initializes a new Admission using matcher patterns as its match rules.
+// NewAdmission creates and initializes a new IAdmission using matcher patterns as its match rules.
 // The rules will be reversed if the reverse is true.
-func NewAdmission(opts ...Option) admission_pkg.Admission {
+func NewAdmission(opts ...Option) admission_pkg.IAdmission {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

@@ -14,8 +14,8 @@ type pluginResolver struct {
 	options options
 }
 
-// NewPluginResolver creates a plugin Resolver.
-func NewPluginResolver(opts ...Option) (resolver_pkg.Resolver, error) {
+// NewPluginResolver creates a plugin IResolver.
+func NewPluginResolver(opts ...Option) (resolver_pkg.IResolver, error) {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

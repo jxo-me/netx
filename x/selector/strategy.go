@@ -21,7 +21,7 @@ type roundRobinStrategy[T any] struct {
 
 // RoundRobinStrategy is a strategy for node selector.
 // The node will be selected by round-robin algorithm.
-func RoundRobinStrategy[T any]() selector.Strategy[T] {
+func RoundRobinStrategy[T any]() selector.IStrategy[T] {
 	return &roundRobinStrategy[T]{}
 }
 
@@ -41,7 +41,7 @@ type randomStrategy[T any] struct {
 
 // RandomStrategy is a strategy for node selector.
 // The node will be selected randomly.
-func RandomStrategy[T any]() selector.Strategy[T] {
+func RandomStrategy[T any]() selector.IStrategy[T] {
 	return &randomStrategy[T]{
 		rw: newRandomWeighted[T](),
 	}
@@ -75,7 +75,7 @@ type fifoStrategy[T any] struct{}
 // FIFOStrategy is a strategy for node selector.
 // The node will be selected from first to last,
 // and will stick to the selected node until it is failed.
-func FIFOStrategy[T any]() selector.Strategy[T] {
+func FIFOStrategy[T any]() selector.IStrategy[T] {
 	return &fifoStrategy[T]{}
 }
 
@@ -92,7 +92,7 @@ type hashStrategy[T any] struct {
 	mu sync.Mutex
 }
 
-func HashStrategy[T any]() selector.Strategy[T] {
+func HashStrategy[T any]() selector.IStrategy[T] {
 	return &hashStrategy[T]{
 		r: rand.New(rand.NewSource(time.Now().UnixNano())),
 	}

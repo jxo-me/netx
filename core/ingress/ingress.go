@@ -2,6 +2,6 @@ package ingress
 
 import "context"
 
-type Ingress interface {
+type IIngress interface {
 	Get(ctx context.Context, host string) string
 }

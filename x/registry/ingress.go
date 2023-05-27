@@ -7,21 +7,21 @@ import (
 )
 
 type ingressRegistry struct {
-	registry[ingress.Ingress]
+	registry[ingress.IIngress]
 }
 
-func (r *ingressRegistry) Register(name string, v ingress.Ingress) error {
+func (r *ingressRegistry) Register(name string, v ingress.IIngress) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *ingressRegistry) Get(name string) ingress.Ingress {
+func (r *ingressRegistry) Get(name string) ingress.IIngress {
 	if name != "" {
 		return &ingressWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *ingressRegistry) get(name string) ingress.Ingress {
+func (r *ingressRegistry) get(name string) ingress.IIngress {
 	return r.registry.Get(name)
 }
 

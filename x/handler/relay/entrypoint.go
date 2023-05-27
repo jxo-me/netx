@@ -74,7 +74,7 @@ type tcpHandler struct {
 	options handler.Options
 }
 
-func newTCPHandler(session *mux.Session, opts ...handler.Option) handler.Handler {
+func newTCPHandler(session *mux.Session, opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -135,11 +135,11 @@ func (h *tcpHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 
 type tunnelHandler struct {
 	pool    *ConnectorPool
-	ingress ingress.Ingress
+	ingress ingress.IIngress
 	options handler.Options
 }
 
-func newTunnelHandler(pool *ConnectorPool, ingress ingress.Ingress, opts ...handler.Option) handler.Handler {
+func newTunnelHandler(pool *ConnectorPool, ingress ingress.IIngress, opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)

@@ -13,7 +13,7 @@ import (
 
 type serverSelector struct {
 	methods       []uint8
-	Authenticator auth.Authenticator
+	Authenticator auth.IAuthenticator
 	TLSConfig     *tls.Config
 	logger        logger.ILogger
 	noTLS         bool
@@ -33,7 +33,7 @@ func (s *serverSelector) Select(methods ...uint8) (method uint8) {
 		}
 	}
 
-	// when Authenticator is set, auth is mandatory
+	// when IAuthenticator is set, auth is mandatory
 	if s.Authenticator != nil {
 		if method == gosocks5.MethodNoAuth {
 			method = gosocks5.MethodUserPass

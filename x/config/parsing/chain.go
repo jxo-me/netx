@@ -21,7 +21,7 @@ import (
 	"github.com/jxo-me/netx/x/registry"
 )
 
-func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
+func ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -42,7 +42,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 	)
 
 	for _, ch := range cfg.Hops {
-		var hop chain.Hop
+		var hop chain.IHop
 		var err error
 
 		if len(ch.Nodes) > 0 {
@@ -60,7 +60,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 	return c, nil
 }
 
-func ParseHop(cfg *config.HopConfig) (chain.Hop, error) {
+func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -120,7 +120,7 @@ func ParseHop(cfg *config.HopConfig) (chain.Hop, error) {
 		connectorLogger := nodeLogger.WithFields(map[string]any{
 			"kind": "connector",
 		})
-		var cr connector.Connector
+		var cr connector.IConnector
 		if rf := registry.ConnectorRegistry().Get(v.Connector.Type); rf != nil {
 			cr = rf(
 				connector.AuthOption(parseAuth(v.Connector.Auth)),
@@ -163,7 +163,7 @@ func ParseHop(cfg *config.HopConfig) (chain.Hop, error) {
 			"kind": "dialer",
 		})
 
-		var d dialer.Dialer
+		var d dialer.IDialer
 		if rf := registry.DialerRegistry().Get(v.Dialer.Type); rf != nil {
 			d = rf(
 				dialer.AuthOption(parseAuth(v.Dialer.Auth)),

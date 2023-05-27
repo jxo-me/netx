@@ -30,16 +30,16 @@ func init() {
 }
 
 type dnsHandler struct {
-	hop        chain.Hop
+	hop        chain.IHop
 	exchangers map[string]exchanger.Exchanger
 	cache      *resolver_util.Cache
 	router     *chain.Router
-	hostMapper hosts.HostMapper
+	hostMapper hosts.IHostMapper
 	md         metadata
 	options    handler.Options
 }
 
-func NewHandler(opts ...handler.Option) handler.Handler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -108,8 +108,8 @@ func (h *dnsHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.Forwarder.
-func (h *dnsHandler) Forward(hop chain.Hop) {
+// Forward implements handler.IForwarder.
+func (h *dnsHandler) Forward(hop chain.IHop) {
 	h.hop = hop
 }
 

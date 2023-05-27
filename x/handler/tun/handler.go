@@ -26,14 +26,14 @@ func init() {
 }
 
 type tunHandler struct {
-	hop     chain.Hop
+	hop     chain.IHop
 	routes  sync.Map
 	router  *chain.Router
 	md      metadata
 	options handler.Options
 }
 
-func NewHandler(opts ...handler.Option) handler.Handler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -57,8 +57,8 @@ func (h *tunHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.Forwarder.
-func (h *tunHandler) Forward(hop chain.Hop) {
+// Forward implements handler.IForwarder.
+func (h *tunHandler) Forward(hop chain.IHop) {
 	h.hop = hop
 }
 
@@ -128,7 +128,7 @@ var mIPProts = map[waterutil.IPProtocol]string{
 	waterutil.GGP:        "GGP",
 	waterutil.TCP:        "TCP",
 	waterutil.UDP:        "UDP",
-	waterutil.IPv6_Route: "IPv6-Route",
+	waterutil.IPv6_Route: "IPv6-IRoute",
 	waterutil.IPv6_Frag:  "IPv6-Frag",
 	waterutil.IPv6_ICMP:  "IPv6-ICMP",
 }

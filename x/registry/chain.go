@@ -9,21 +9,21 @@ import (
 )
 
 type chainRegistry struct {
-	registry[chain.Chainer]
+	registry[chain.IChainer]
 }
 
-func (r *chainRegistry) Register(name string, v chain.Chainer) error {
+func (r *chainRegistry) Register(name string, v chain.IChainer) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *chainRegistry) Get(name string) chain.Chainer {
+func (r *chainRegistry) Get(name string) chain.IChainer {
 	if name != "" {
 		return &chainWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *chainRegistry) get(name string) chain.Chainer {
+func (r *chainRegistry) get(name string) chain.IChainer {
 	return r.registry.Get(name)
 }
 
@@ -32,12 +32,12 @@ type chainWrapper struct {
 	r    *chainRegistry
 }
 
-func (w *chainWrapper) Marker() selector.Marker {
+func (w *chainWrapper) Marker() selector.IMarker {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil
 	}
-	if mi, ok := v.(selector.Markable); ok {
+	if mi, ok := v.(selector.IMarkable); ok {
 		return mi.Marker()
 	}
 	return nil
@@ -55,7 +55,7 @@ func (w *chainWrapper) Metadata() metadata.IMetaData {
 	return nil
 }
 
-func (w *chainWrapper) Route(ctx context.Context, network, address string) chain.Route {
+func (w *chainWrapper) Route(ctx context.Context, network, address string) chain.IRoute {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil

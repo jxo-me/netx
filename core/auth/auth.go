@@ -2,16 +2,16 @@ package auth
 
 import "context"
 
-// Authenticator is an interface for user authentication.
-type Authenticator interface {
+// IAuthenticator is an interface for user authentication.
+type IAuthenticator interface {
 	Authenticate(ctx context.Context, user, password string) bool
 }
 
 type authenticatorGroup struct {
-	authers []Authenticator
+	authers []IAuthenticator
 }
 
-func AuthenticatorGroup(authers ...Authenticator) Authenticator {
+func AuthenticatorGroup(authers ...IAuthenticator) IAuthenticator {
 	return &authenticatorGroup{
 		authers: authers,
 	}

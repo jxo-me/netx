@@ -27,7 +27,7 @@ type mtlsDialer struct {
 	options      dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -48,7 +48,7 @@ func (d *mtlsDialer) Init(md md.IMetaData) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.Multiplexer interface.
+// Multiplex implements dialer.IMultiplexer interface.
 func (d *mtlsDialer) Multiplex() bool {
 	return true
 }
@@ -80,7 +80,7 @@ func (d *mtlsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 	return session.conn, err
 }
 
-// Handshake implements dialer.Handshaker
+// Handshake implements dialer.IHandshaker
 func (d *mtlsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {

@@ -7,21 +7,21 @@ import (
 )
 
 type hopRegistry struct {
-	registry[chain.Hop]
+	registry[chain.IHop]
 }
 
-func (r *hopRegistry) Register(name string, v chain.Hop) error {
+func (r *hopRegistry) Register(name string, v chain.IHop) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *hopRegistry) Get(name string) chain.Hop {
+func (r *hopRegistry) Get(name string) chain.IHop {
 	if name != "" {
 		return &hopWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *hopRegistry) get(name string) chain.Hop {
+func (r *hopRegistry) get(name string) chain.IHop {
 	return r.registry.Get(name)
 }
 

@@ -7,21 +7,21 @@ import (
 )
 
 type autherRegistry struct {
-	registry[auth.Authenticator]
+	registry[auth.IAuthenticator]
 }
 
-func (r *autherRegistry) Register(name string, v auth.Authenticator) error {
+func (r *autherRegistry) Register(name string, v auth.IAuthenticator) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *autherRegistry) Get(name string) auth.Authenticator {
+func (r *autherRegistry) Get(name string) auth.IAuthenticator {
 	if name != "" {
 		return &autherWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *autherRegistry) get(name string) auth.Authenticator {
+func (r *autherRegistry) get(name string) auth.IAuthenticator {
 	return r.registry.Get(name)
 }
 

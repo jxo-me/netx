@@ -23,7 +23,7 @@ import (
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
-func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
+func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	if cfg.Listener == nil {
 		cfg.Listener = &config.ListenerConfig{
 			Type: "tcp",
@@ -65,7 +65,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 			authers = append(authers, auther)
 		}
 	}
-	var auther auth.Authenticator
+	var auther auth.IAuthenticator
 	if len(authers) > 0 {
 		auther = auth.AuthenticatorGroup(authers...)
 	}
@@ -190,7 +190,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	}
 	router := chain.NewRouter(routerOpts...)
 
-	var h handler.Handler
+	var h handler.IHandler
 	if rf := registry.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
 		h = rf(
 			handler.RouterOption(router),
@@ -206,7 +206,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 		return nil, fmt.Errorf("unregistered handler: %s", cfg.Handler.Type)
 	}
 
-	if forwarder, ok := h.(handler.Forwarder); ok {
+	if forwarder, ok := h.(handler.IForwarder); ok {
 		hop, err := parseForwarder(cfg.Forwarder)
 		if err != nil {
 			return nil, err
@@ -237,7 +237,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 	return s, nil
 }
 
-func parseForwarder(cfg *config.ForwarderConfig) (chain.Hop, error) {
+func parseForwarder(cfg *config.ForwarderConfig) (chain.IHop, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -283,8 +283,8 @@ func parseForwarder(cfg *config.ForwarderConfig) (chain.Hop, error) {
 	return registry.HopRegistry().Get(hc.Name), nil
 }
 
-func bypassList(name string, names ...string) []bypass.Bypass {
-	var bypasses []bypass.Bypass
+func bypassList(name string, names ...string) []bypass.IBypass {
+	var bypasses []bypass.IBypass
 	if bp := registry.BypassRegistry().Get(name); bp != nil {
 		bypasses = append(bypasses, bp)
 	}
@@ -296,8 +296,8 @@ func bypassList(name string, names ...string) []bypass.Bypass {
 	return bypasses
 }
 
-func autherList(name string, names ...string) []auth.Authenticator {
-	var authers []auth.Authenticator
+func autherList(name string, names ...string) []auth.IAuthenticator {
+	var authers []auth.IAuthenticator
 	if auther := registry.AutherRegistry().Get(name); auther != nil {
 		authers = append(authers, auther)
 	}
@@ -309,8 +309,8 @@ func autherList(name string, names ...string) []auth.Authenticator {
 	return authers
 }
 
-func admissionList(name string, names ...string) []admission.Admission {
-	var admissions []admission.Admission
+func admissionList(name string, names ...string) []admission.IAdmission {
+	var admissions []admission.IAdmission
 	if adm := registry.AdmissionRegistry().Get(name); adm != nil {
 		admissions = append(admissions, adm)
 	}
@@ -323,9 +323,9 @@ func admissionList(name string, names ...string) []admission.Admission {
 	return admissions
 }
 
-func chainGroup(name string, group *config.ChainGroupConfig) chain.Chainer {
-	var chains []chain.Chainer
-	var sel selector.Selector[chain.Chainer]
+func chainGroup(name string, group *config.ChainGroupConfig) chain.IChainer {
+	var chains []chain.IChainer
+	var sel selector.ISelector[chain.IChainer]
 
 	if c := registry.ChainRegistry().Get(name); c != nil {
 		chains = append(chains, c)

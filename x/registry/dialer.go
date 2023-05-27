@@ -5,7 +5,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type NewDialer func(opts ...dialer.Option) dialer.Dialer
+type NewDialer func(opts ...dialer.Option) dialer.IDialer
 
 type dialerRegistry struct {
 	registry[NewDialer]

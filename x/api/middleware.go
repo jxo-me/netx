@@ -29,7 +29,7 @@ func mwLogger() gin.HandlerFunc {
 	}
 }
 
-func mwBasicAuth(auther auth.Authenticator) gin.HandlerFunc {
+func mwBasicAuth(auther auth.IAuthenticator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if auther == nil {
 			return

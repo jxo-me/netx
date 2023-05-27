@@ -8,11 +8,11 @@ import (
 	"github.com/jxo-me/netx/core/metadata"
 )
 
-type Handler interface {
+type IHandler interface {
 	Init(metadata.IMetaData) error
 	Handle(context.Context, net.Conn, ...HandleOption) error
 }
 
-type Forwarder interface {
-	Forward(chain.Hop)
+type IForwarder interface {
+	Forward(chain.IHop)
 }

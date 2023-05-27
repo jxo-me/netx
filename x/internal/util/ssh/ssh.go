@@ -22,7 +22,7 @@ var (
 // It authenticates user using a password.
 type PasswordCallbackFunc func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error)
 
-func PasswordCallback(au auth.Authenticator) PasswordCallbackFunc {
+func PasswordCallback(au auth.IAuthenticator) PasswordCallbackFunc {
 	if au == nil {
 		return nil
 	}

@@ -25,25 +25,25 @@ var (
 )
 
 var (
-	listenerReg  reg.Registry[NewListener]         = new(listenerRegistry)
-	handlerReg   reg.Registry[NewHandler]          = new(handlerRegistry)
-	dialerReg    reg.Registry[NewDialer]           = new(dialerRegistry)
-	connectorReg reg.Registry[NewConnector]        = new(connectorRegistry)
-	serviceReg   reg.Registry[service.Service]     = new(serviceRegistry)
-	chainReg     reg.Registry[chain.Chainer]       = new(chainRegistry)
-	hopReg       reg.Registry[chain.Hop]           = new(hopRegistry)
-	autherReg    reg.Registry[auth.Authenticator]  = new(autherRegistry)
-	admissionReg reg.Registry[admission.Admission] = new(admissionRegistry)
-	bypassReg    reg.Registry[bypass.Bypass]       = new(bypassRegistry)
-	resolverReg  reg.Registry[resolver.Resolver]   = new(resolverRegistry)
-	hostsReg     reg.Registry[hosts.HostMapper]    = new(hostsRegistry)
-	recorderReg  reg.Registry[recorder.Recorder]   = new(recorderRegistry)
+	listenerReg  reg.IRegistry[NewListener]          = new(listenerRegistry)
+	handlerReg   reg.IRegistry[NewHandler]           = new(handlerRegistry)
+	dialerReg    reg.IRegistry[NewDialer]            = new(dialerRegistry)
+	connectorReg reg.IRegistry[NewConnector]         = new(connectorRegistry)
+	serviceReg   reg.IRegistry[service.IService]     = new(serviceRegistry)
+	chainReg     reg.IRegistry[chain.IChainer]       = new(chainRegistry)
+	hopReg       reg.IRegistry[chain.IHop]           = new(hopRegistry)
+	autherReg    reg.IRegistry[auth.IAuthenticator]  = new(autherRegistry)
+	admissionReg reg.IRegistry[admission.IAdmission] = new(admissionRegistry)
+	bypassReg    reg.IRegistry[bypass.IBypass]       = new(bypassRegistry)
+	resolverReg  reg.IRegistry[resolver.IResolver]   = new(resolverRegistry)
+	hostsReg     reg.IRegistry[hosts.IHostMapper]    = new(hostsRegistry)
+	recorderReg  reg.IRegistry[recorder.IRecorder]   = new(recorderRegistry)
 
-	trafficLimiterReg reg.Registry[traffic.ITrafficLimiter] = new(trafficLimiterRegistry)
-	connLimiterReg    reg.Registry[conn.IConnLimiter]       = new(connLimiterRegistry)
-	rateLimiterReg    reg.Registry[rate.IRateLimiter]       = new(rateLimiterRegistry)
+	trafficLimiterReg reg.IRegistry[traffic.ITrafficLimiter] = new(trafficLimiterRegistry)
+	connLimiterReg    reg.IRegistry[conn.IConnLimiter]       = new(connLimiterRegistry)
+	rateLimiterReg    reg.IRegistry[rate.IRateLimiter]       = new(rateLimiterRegistry)
 
-	ingressReg reg.Registry[ingress.Ingress] = new(ingressRegistry)
+	ingressReg reg.IRegistry[ingress.IIngress] = new(ingressRegistry)
 )
 
 type registry[T any] struct {
@@ -95,70 +95,70 @@ func (r *registry[T]) GetAll() (m map[string]T) {
 	return
 }
 
-func ListenerRegistry() reg.Registry[NewListener] {
+func ListenerRegistry() reg.IRegistry[NewListener] {
 	return listenerReg
 }
 
-func HandlerRegistry() reg.Registry[NewHandler] {
+func HandlerRegistry() reg.IRegistry[NewHandler] {
 	return handlerReg
 }
 
-func DialerRegistry() reg.Registry[NewDialer] {
+func DialerRegistry() reg.IRegistry[NewDialer] {
 	return dialerReg
 }
 
-func ConnectorRegistry() reg.Registry[NewConnector] {
+func ConnectorRegistry() reg.IRegistry[NewConnector] {
 	return connectorReg
 }
 
-func ServiceRegistry() reg.Registry[service.Service] {
+func ServiceRegistry() reg.IRegistry[service.IService] {
 	return serviceReg
 }
 
-func ChainRegistry() reg.Registry[chain.Chainer] {
+func ChainRegistry() reg.IRegistry[chain.IChainer] {
 	return chainReg
 }
 
-func HopRegistry() reg.Registry[chain.Hop] {
+func HopRegistry() reg.IRegistry[chain.IHop] {
 	return hopReg
 }
 
-func AutherRegistry() reg.Registry[auth.Authenticator] {
+func AutherRegistry() reg.IRegistry[auth.IAuthenticator] {
 	return autherReg
 }
 
-func AdmissionRegistry() reg.Registry[admission.Admission] {
+func AdmissionRegistry() reg.IRegistry[admission.IAdmission] {
 	return admissionReg
 }
 
-func BypassRegistry() reg.Registry[bypass.Bypass] {
+func BypassRegistry() reg.IRegistry[bypass.IBypass] {
 	return bypassReg
 }
 
-func ResolverRegistry() reg.Registry[resolver.Resolver] {
+func ResolverRegistry() reg.IRegistry[resolver.IResolver] {
 	return resolverReg
 }
 
-func HostsRegistry() reg.Registry[hosts.HostMapper] {
+func HostsRegistry() reg.IRegistry[hosts.IHostMapper] {
 	return hostsReg
 }
 
-func RecorderRegistry() reg.Registry[recorder.Recorder] {
+func RecorderRegistry() reg.IRegistry[recorder.IRecorder] {
 	return recorderReg
 }
 
-func TrafficLimiterRegistry() reg.Registry[traffic.ITrafficLimiter] {
+func TrafficLimiterRegistry() reg.IRegistry[traffic.ITrafficLimiter] {
 	return trafficLimiterReg
 }
 
-func ConnLimiterRegistry() reg.Registry[conn.IConnLimiter] {
+func ConnLimiterRegistry() reg.IRegistry[conn.IConnLimiter] {
 	return connLimiterReg
 }
 
-func RateLimiterRegistry() reg.Registry[rate.IRateLimiter] {
+func RateLimiterRegistry() reg.IRegistry[rate.IRateLimiter] {
 	return rateLimiterReg
 }
 
-func IngressRegistry() reg.Registry[ingress.Ingress] {
+func IngressRegistry() reg.IRegistry[ingress.IIngress] {
 	return ingressReg
 }

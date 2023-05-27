@@ -2,15 +2,15 @@ package admission
 
 import "context"
 
-type Admission interface {
+type IAdmission interface {
 	Admit(ctx context.Context, addr string) bool
 }
 
 type admissionGroup struct {
-	admissions []Admission
+	admissions []IAdmission
 }
 
-func AdmissionGroup(admissions ...Admission) Admission {
+func AdmissionGroup(admissions ...IAdmission) IAdmission {
 	return &admissionGroup{
 		admissions: admissions,
 	}

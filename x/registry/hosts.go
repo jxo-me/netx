@@ -8,21 +8,21 @@ import (
 )
 
 type hostsRegistry struct {
-	registry[hosts.HostMapper]
+	registry[hosts.IHostMapper]
 }
 
-func (r *hostsRegistry) Register(name string, v hosts.HostMapper) error {
+func (r *hostsRegistry) Register(name string, v hosts.IHostMapper) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *hostsRegistry) Get(name string) hosts.HostMapper {
+func (r *hostsRegistry) Get(name string) hosts.IHostMapper {
 	if name != "" {
 		return &hostsWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *hostsRegistry) get(name string) hosts.HostMapper {
+func (r *hostsRegistry) get(name string) hosts.IHostMapper {
 	return r.registry.Get(name)
 }
 

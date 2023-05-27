@@ -87,9 +87,9 @@ type bypass struct {
 	mu              sync.RWMutex
 }
 
-// NewBypass creates and initializes a new Bypass.
+// NewBypass creates and initializes a new IBypass.
 // The rules will be reversed if the reverse option is true.
-func NewBypass(opts ...Option) bypass_pkg.Bypass {
+func NewBypass(opts ...Option) bypass_pkg.IBypass {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

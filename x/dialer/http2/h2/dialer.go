@@ -33,7 +33,7 @@ type h2Dialer struct {
 	options     dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -47,7 +47,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
+func NewTLSDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -68,7 +68,7 @@ func (d *h2Dialer) Init(md md.IMetaData) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.Multiplexer interface.
+// Multiplex implements dialer.IMultiplexer interface.
 func (d *h2Dialer) Multiplex() bool {
 	return true
 }

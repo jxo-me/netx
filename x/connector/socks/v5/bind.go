@@ -13,7 +13,7 @@ import (
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
-// Bind implements connector.Binder.
+// Bind implements connector.IBinder.
 func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),

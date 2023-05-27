@@ -14,7 +14,7 @@ type pluginBypass struct {
 }
 
 // NewPluginBypass creates a plugin bypass.
-func NewPluginBypass(opts ...Option) bypass_pkg.Bypass {
+func NewPluginBypass(opts ...Option) bypass_pkg.IBypass {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

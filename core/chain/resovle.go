@@ -10,7 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/resolver"
 )
 
-func Resolve(ctx context.Context, network, addr string, r resolver.Resolver, hosts hosts.HostMapper, log logger.ILogger) (string, error) {
+func Resolve(ctx context.Context, network, addr string, r resolver.IResolver, hosts hosts.IHostMapper, log logger.ILogger) (string, error) {
 	if addr == "" {
 		return addr, nil
 	}

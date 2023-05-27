@@ -9,10 +9,10 @@ import (
 
 type listener struct {
 	net.Listener
-	admission admission.Admission
+	admission admission.IAdmission
 }
 
-func WrapListener(admission admission.Admission, ln net.Listener) net.Listener {
+func WrapListener(admission admission.IAdmission, ln net.Listener) net.Listener {
 	if admission == nil {
 		return ln
 	}

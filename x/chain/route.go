@@ -14,12 +14,12 @@ import (
 )
 
 type RouteOptions struct {
-	Chain chain.Chainer
+	Chain chain.IChainer
 }
 
 type RouteOption func(*RouteOptions)
 
-func ChainRouteOption(c chain.Chainer) RouteOption {
+func ChainRouteOption(c chain.IChainer) RouteOption {
 	return func(o *RouteOptions) {
 		o.Chain = c
 	}
@@ -112,8 +112,8 @@ func (r *route) connect(ctx context.Context, logger logger.ILogger) (conn net.Co
 
 	defer func() {
 		if r.options.Chain != nil {
-			var marker selector.Marker
-			if m, ok := r.options.Chain.(selector.Markable); ok && m != nil {
+			var marker selector.IMarker
+			if m, ok := r.options.Chain.(selector.IMarkable); ok && m != nil {
 				marker = m.Marker()
 			}
 			var name string

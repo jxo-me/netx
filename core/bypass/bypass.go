@@ -2,17 +2,17 @@ package bypass
 
 import "context"
 
-// Bypass is a filter of address (IP or domain).
-type Bypass interface {
+// IBypass is a filter of address (IP or domain).
+type IBypass interface {
 	// Contains reports whether the bypass includes addr.
 	Contains(ctx context.Context, addr string) bool
 }
 
 type bypassGroup struct {
-	bypasses []Bypass
+	bypasses []IBypass
 }
 
-func BypassGroup(bypasses ...Bypass) Bypass {
+func BypassGroup(bypasses ...IBypass) IBypass {
 	return &bypassGroup{
 		bypasses: bypasses,
 	}

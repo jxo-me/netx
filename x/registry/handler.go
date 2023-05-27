@@ -5,7 +5,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type NewHandler func(opts ...handler.Option) handler.Handler
+type NewHandler func(opts ...handler.Option) handler.IHandler
 
 type handlerRegistry struct {
 	registry[NewHandler]

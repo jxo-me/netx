@@ -5,7 +5,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type NewConnector func(opts ...connector.Option) connector.Connector
+type NewConnector func(opts ...connector.Option) connector.IConnector
 
 type connectorRegistry struct {
 	registry[NewConnector]

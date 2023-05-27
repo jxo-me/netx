@@ -86,7 +86,7 @@ type hostMapper struct {
 	options    options
 }
 
-func NewHostMapper(opts ...Option) hosts.HostMapper {
+func NewHostMapper(opts ...Option) hosts.IHostMapper {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

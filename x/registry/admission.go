@@ -7,21 +7,21 @@ import (
 )
 
 type admissionRegistry struct {
-	registry[admission.Admission]
+	registry[admission.IAdmission]
 }
 
-func (r *admissionRegistry) Register(name string, v admission.Admission) error {
+func (r *admissionRegistry) Register(name string, v admission.IAdmission) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *admissionRegistry) Get(name string) admission.Admission {
+func (r *admissionRegistry) Get(name string) admission.IAdmission {
 	if name != "" {
 		return &admissionWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *admissionRegistry) get(name string) admission.Admission {
+func (r *admissionRegistry) get(name string) admission.IAdmission {
 	return r.registry.Get(name)
 }
 

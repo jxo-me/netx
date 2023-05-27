@@ -20,13 +20,13 @@ func init() {
 }
 
 type autoHandler struct {
-	httpHandler   handler.Handler
-	socks4Handler handler.Handler
-	socks5Handler handler.Handler
+	httpHandler   handler.IHandler
+	socks4Handler handler.IHandler
+	socks5Handler handler.IHandler
 	options       handler.Options
 }
 
-func NewHandler(opts ...handler.Option) handler.Handler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)

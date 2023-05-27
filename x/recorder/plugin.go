@@ -35,7 +35,7 @@ type pluginRecorder struct {
 }
 
 // NewPluginRecorder creates a plugin recorder.
-func NewPluginRecorder(opts ...PluginOption) recorder.Recorder {
+func NewPluginRecorder(opts ...PluginOption) recorder.IRecorder {
 	var options pluginOptions
 	for _, opt := range opts {
 		opt(&options)

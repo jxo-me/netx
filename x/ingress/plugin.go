@@ -14,7 +14,7 @@ type pluginIngress struct {
 }
 
 // NewPluginIngress creates a plugin ingress.
-func NewPluginIngress(opts ...Option) ingress_pkg.Ingress {
+func NewPluginIngress(opts ...Option) ingress_pkg.IIngress {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

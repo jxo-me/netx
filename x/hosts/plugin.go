@@ -14,8 +14,8 @@ type pluginHostMapper struct {
 	options options
 }
 
-// NewPluginHostMapper creates a plugin HostMapper.
-func NewPluginHostMapper(opts ...Option) hosts.HostMapper {
+// NewPluginHostMapper creates a plugin IHostMapper.
+func NewPluginHostMapper(opts ...Option) hosts.IHostMapper {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

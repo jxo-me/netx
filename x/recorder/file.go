@@ -25,7 +25,7 @@ type fileRecorder struct {
 }
 
 // FileRecorder records data to file.
-func FileRecorder(filename string, opts ...FileRecorderOption) recorder.Recorder {
+func FileRecorder(filename string, opts ...FileRecorderOption) recorder.IRecorder {
 	var options fileRecorderOptions
 	for _, opt := range opts {
 		opt(&options)

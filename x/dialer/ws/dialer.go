@@ -6,11 +6,11 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	"github.com/jxo-me/netx/x/registry"
-	"github.com/gorilla/websocket"
 )
 
 func init() {
@@ -24,7 +24,7 @@ type wsDialer struct {
 	options    dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -35,7 +35,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
+func NewTLSDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -64,7 +64,7 @@ func (d *wsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOpt
 	return conn, err
 }
 
-// Handshake implements dialer.Handshaker
+// Handshake implements dialer.IHandshaker
 func (d *wsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {

@@ -4,7 +4,7 @@ import (
 	"net"
 )
 
-type Service interface {
+type IService interface {
 	Serve() error
 	Addr() net.Addr
 	Close() error

@@ -22,7 +22,7 @@ type tlsDialer struct {
 	options dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -51,7 +51,7 @@ func (d *tlsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 	return conn, err
 }
 
-// Handshake implements dialer.Handshaker
+// Handshake implements dialer.IHandshaker
 func (d *tlsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	if d.md.handshakeTimeout > 0 {
 		conn.SetDeadline(time.Now().Add(d.md.handshakeTimeout))

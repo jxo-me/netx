@@ -29,7 +29,7 @@ type metricService struct {
 	ln net.Listener
 }
 
-func NewService(addr string, opts ...Option) (service.Service, error) {
+func NewService(addr string, opts ...Option) (service.IService, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err

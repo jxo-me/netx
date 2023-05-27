@@ -13,7 +13,7 @@ import (
 type options struct {
 	accessLog  bool
 	pathPrefix string
-	auther     auth.Authenticator
+	auther     auth.IAuthenticator
 }
 
 type Option func(*options)
@@ -30,7 +30,7 @@ func AccessLogOption(enable bool) Option {
 	}
 }
 
-func AutherOption(auther auth.Authenticator) Option {
+func AutherOption(auther auth.IAuthenticator) Option {
 	return func(o *options) {
 		o.auther = auther
 	}
@@ -41,7 +41,7 @@ type server struct {
 	ln net.Listener
 }
 
-func NewService(addr string, opts ...Option) (service.Service, error) {
+func NewService(addr string, opts ...Option) (service.IService, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err

@@ -7,16 +7,16 @@ var (
 	nopCounter  = &noopCounter{}
 	nopObserver = &noopObserver{}
 
-	noop metrics.Metrics = &noopMetrics{}
+	noop metrics.IMetrics = &noopMetrics{}
 )
 
 type noopMetrics struct{}
 
-func Noop() metrics.Metrics {
+func Noop() metrics.IMetrics {
 	return noop
 }
 
-func (m *noopMetrics) Counter(name metrics.MetricName, labels metrics.Labels) metrics.Counter {
+func (m *noopMetrics) Counter(name metrics.MetricName, labels metrics.Labels) metrics.ICounter {
 	return nopCounter
 }
 
@@ -24,7 +24,7 @@ func (m *noopMetrics) Gauge(name metrics.MetricName, labels metrics.Labels) metr
 	return nopGauge
 }
 
-func (m *noopMetrics) Observer(name metrics.MetricName, labels metrics.Labels) metrics.Observer {
+func (m *noopMetrics) Observer(name metrics.MetricName, labels metrics.Labels) metrics.IObserver {
 	return nopObserver
 }
 

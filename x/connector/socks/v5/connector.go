@@ -27,7 +27,7 @@ type socks5Connector struct {
 	options  connector.Options
 }
 
-func NewConnector(opts ...connector.Option) connector.Connector {
+func NewConnector(opts ...connector.Option) connector.IConnector {
 	options := connector.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -70,7 +70,7 @@ func (c *socks5Connector) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Handshake implements connector.Handshaker.
+// Handshake implements connector.IHandshaker.
 func (c *socks5Connector) Handshake(ctx context.Context, conn net.Conn) (net.Conn, error) {
 	log := c.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),

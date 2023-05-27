@@ -51,7 +51,7 @@ const (
 	mdKeyIgnoreChain   = "ignoreChain"
 )
 
-func ParseAuther(cfg *config.AutherConfig) auth.Authenticator {
+func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
 	if cfg == nil {
 		return nil
 	}
@@ -107,7 +107,7 @@ func ParseAuther(cfg *config.AutherConfig) auth.Authenticator {
 	return auth_impl.NewAuthenticator(opts...)
 }
 
-func ParseAutherFromAuth(au *config.AuthConfig) auth.Authenticator {
+func ParseAutherFromAuth(au *config.AuthConfig) auth.IAuthenticator {
 	if au == nil || au.Username == "" {
 		return nil
 	}
@@ -134,37 +134,37 @@ func parseAuth(cfg *config.AuthConfig) *url.Userinfo {
 	return url.UserPassword(cfg.Username, cfg.Password)
 }
 
-func parseChainSelector(cfg *config.SelectorConfig) selector.Selector[chain.Chainer] {
+func parseChainSelector(cfg *config.SelectorConfig) selector.ISelector[chain.IChainer] {
 	if cfg == nil {
 		return nil
 	}
 
-	var strategy selector.Strategy[chain.Chainer]
+	var strategy selector.IStrategy[chain.IChainer]
 	switch cfg.Strategy {
 	case "round", "rr":
-		strategy = xs.RoundRobinStrategy[chain.Chainer]()
+		strategy = xs.RoundRobinStrategy[chain.IChainer]()
 	case "random", "rand":
-		strategy = xs.RandomStrategy[chain.Chainer]()
+		strategy = xs.RandomStrategy[chain.IChainer]()
 	case "fifo", "ha":
-		strategy = xs.FIFOStrategy[chain.Chainer]()
+		strategy = xs.FIFOStrategy[chain.IChainer]()
 	case "hash":
-		strategy = xs.HashStrategy[chain.Chainer]()
+		strategy = xs.HashStrategy[chain.IChainer]()
 	default:
-		strategy = xs.RoundRobinStrategy[chain.Chainer]()
+		strategy = xs.RoundRobinStrategy[chain.IChainer]()
 	}
 	return xs.NewSelector(
 		strategy,
-		xs.FailFilter[chain.Chainer](cfg.MaxFails, cfg.FailTimeout),
-		xs.BackupFilter[chain.Chainer](),
+		xs.FailFilter[chain.IChainer](cfg.MaxFails, cfg.FailTimeout),
+		xs.BackupFilter[chain.IChainer](),
 	)
 }
 
-func parseNodeSelector(cfg *config.SelectorConfig) selector.Selector[*chain.Node] {
+func parseNodeSelector(cfg *config.SelectorConfig) selector.ISelector[*chain.Node] {
 	if cfg == nil {
 		return nil
 	}
 
-	var strategy selector.Strategy[*chain.Node]
+	var strategy selector.IStrategy[*chain.Node]
 	switch cfg.Strategy {
 	case "round", "rr":
 		strategy = xs.RoundRobinStrategy[*chain.Node]()
@@ -185,7 +185,7 @@ func parseNodeSelector(cfg *config.SelectorConfig) selector.Selector[*chain.Node
 	)
 }
 
-func ParseAdmission(cfg *config.AdmissionConfig) admission.Admission {
+func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 	if cfg == nil {
 		return nil
 	}
@@ -234,7 +234,7 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.Admission {
 	return admission_impl.NewAdmission(opts...)
 }
 
-func ParseBypass(cfg *config.BypassConfig) bypass.Bypass {
+func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
 	if cfg == nil {
 		return nil
 	}
@@ -283,7 +283,7 @@ func ParseBypass(cfg *config.BypassConfig) bypass.Bypass {
 	return bypass_impl.NewBypass(opts...)
 }
 
-func ParseResolver(cfg *config.ResolverConfig) (resolver.Resolver, error) {
+func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -327,7 +327,7 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.Resolver, error) {
 	)
 }
 
-func ParseHosts(cfg *config.HostsConfig) hosts.HostMapper {
+func ParseHosts(cfg *config.HostsConfig) hosts.IHostMapper {
 	if cfg == nil {
 		return nil
 	}
@@ -399,7 +399,7 @@ func ParseHosts(cfg *config.HostsConfig) hosts.HostMapper {
 	return xhosts.NewHostMapper(opts...)
 }
 
-func ParseIngress(cfg *config.IngressConfig) ingress.Ingress {
+func ParseIngress(cfg *config.IngressConfig) ingress.IIngress {
 	if cfg == nil {
 		return nil
 	}
@@ -467,7 +467,7 @@ func ParseIngress(cfg *config.IngressConfig) ingress.Ingress {
 	return xingress.NewIngress(opts...)
 }
 
-func ParseRecorder(cfg *config.RecorderConfig) (r recorder.Recorder) {
+func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	if cfg == nil {
 		return nil
 	}
@@ -520,7 +520,7 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.Recorder) {
 	return
 }
 
-func defaultNodeSelector() selector.Selector[*chain.Node] {
+func defaultNodeSelector() selector.ISelector[*chain.Node] {
 	return xs.NewSelector(
 		xs.RoundRobinStrategy[*chain.Node](),
 		xs.FailFilter[*chain.Node](xs.DefaultMaxFails, xs.DefaultFailTimeout),
@@ -528,11 +528,11 @@ func defaultNodeSelector() selector.Selector[*chain.Node] {
 	)
 }
 
-func defaultChainSelector() selector.Selector[chain.Chainer] {
+func defaultChainSelector() selector.ISelector[chain.IChainer] {
 	return xs.NewSelector(
-		xs.RoundRobinStrategy[chain.Chainer](),
-		xs.FailFilter[chain.Chainer](xs.DefaultMaxFails, xs.DefaultFailTimeout),
-		xs.BackupFilter[chain.Chainer](),
+		xs.RoundRobinStrategy[chain.IChainer](),
+		xs.FailFilter[chain.IChainer](xs.DefaultMaxFails, xs.DefaultFailTimeout),
+		xs.BackupFilter[chain.IChainer](),
 	)
 }
 

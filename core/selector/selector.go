@@ -6,23 +6,23 @@ import (
 	"time"
 )
 
-type Selector[T any] interface {
+type ISelector[T any] interface {
 	Select(context.Context, ...T) T
 }
 
-type Strategy[T any] interface {
+type IStrategy[T any] interface {
 	Apply(context.Context, ...T) T
 }
 
-type Filter[T any] interface {
+type IFilter[T any] interface {
 	Filter(context.Context, ...T) []T
 }
 
-type Markable interface {
-	Marker() Marker
+type IMarkable interface {
+	Marker() IMarker
 }
 
-type Marker interface {
+type IMarker interface {
 	Time() time.Time
 	Count() int64
 	Mark()
@@ -34,7 +34,7 @@ type failMarker struct {
 	failCount int64
 }
 
-func NewFailMarker() Marker {
+func NewFailMarker() IMarker {
 	return &failMarker{}
 }
 

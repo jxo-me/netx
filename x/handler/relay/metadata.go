@@ -20,7 +20,7 @@ type metadata struct {
 	noDelay       bool
 	hash          string
 	entryPoint    string
-	ingress       ingress.Ingress
+	ingress       ingress.IIngress
 	directTunnel  bool
 }
 

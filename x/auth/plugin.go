@@ -13,8 +13,8 @@ type pluginAuthenticator struct {
 	options options
 }
 
-// NewPluginAuthenticator creates an Authenticator that authenticates client by plugin.
-func NewPluginAuthenticator(opts ...Option) auth.Authenticator {
+// NewPluginAuthenticator creates an IAuthenticator that authenticates client by plugin.
+func NewPluginAuthenticator(opts ...Option) auth.IAuthenticator {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

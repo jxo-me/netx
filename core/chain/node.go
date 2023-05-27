@@ -21,15 +21,15 @@ type TLSNodeSettings struct {
 
 type NodeOptions struct {
 	Transport  *Transport
-	Bypass     bypass.Bypass
-	Resolver   resolver.Resolver
-	HostMapper hosts.HostMapper
+	Bypass     bypass.IBypass
+	Resolver   resolver.IResolver
+	HostMapper hosts.IHostMapper
 	Metadata   metadata.IMetaData
 	Host       string
 	Protocol   string
 	HTTP       *HTTPNodeSettings
 	TLS        *TLSNodeSettings
-	Auther     auth.Authenticator
+	Auther     auth.IAuthenticator
 }
 
 type NodeOption func(*NodeOptions)
@@ -40,19 +40,19 @@ func TransportNodeOption(tr *Transport) NodeOption {
 	}
 }
 
-func BypassNodeOption(bp bypass.Bypass) NodeOption {
+func BypassNodeOption(bp bypass.IBypass) NodeOption {
 	return func(o *NodeOptions) {
 		o.Bypass = bp
 	}
 }
 
-func ResoloverNodeOption(resolver resolver.Resolver) NodeOption {
+func ResoloverNodeOption(resolver resolver.IResolver) NodeOption {
 	return func(o *NodeOptions) {
 		o.Resolver = resolver
 	}
 }
 
-func HostMapperNodeOption(m hosts.HostMapper) NodeOption {
+func HostMapperNodeOption(m hosts.IHostMapper) NodeOption {
 	return func(o *NodeOptions) {
 		o.HostMapper = m
 	}
@@ -88,7 +88,7 @@ func TLSNodeOption(tlsSettings *TLSNodeSettings) NodeOption {
 	}
 }
 
-func AutherNodeOption(auther auth.Authenticator) NodeOption {
+func AutherNodeOption(auther auth.IAuthenticator) NodeOption {
 	return func(o *NodeOptions) {
 		o.Auther = auther
 	}
@@ -97,7 +97,7 @@ func AutherNodeOption(auther auth.Authenticator) NodeOption {
 type Node struct {
 	Name    string
 	Addr    string
-	marker  selector.Marker
+	marker  selector.IMarker
 	options NodeOptions
 }
 
@@ -126,8 +126,8 @@ func (node *Node) Metadata() metadata.IMetaData {
 	return node.options.Metadata
 }
 
-// Marker implements selector.Markable interface.
-func (node *Node) Marker() selector.Marker {
+// Marker implements selector.IMarkable interface.
+func (node *Node) Marker() selector.IMarker {
 	return node.marker
 }
 

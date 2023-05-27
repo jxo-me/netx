@@ -1,6 +1,6 @@
 package registry
 
-type Registry[T any] interface {
+type IRegistry[T any] interface {
 	Register(name string, v T) error
 	Unregister(name string)
 	IsRegistered(name string) bool

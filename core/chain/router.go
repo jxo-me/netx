@@ -22,9 +22,9 @@ type RouterOptions struct {
 	Timeout    time.Duration
 	IfceName   string
 	SockOpts   *SockOpts
-	Chain      Chainer
-	Resolver   resolver.Resolver
-	HostMapper hosts.HostMapper
+	Chain      IChainer
+	Resolver   resolver.IResolver
+	HostMapper hosts.IHostMapper
 	Recorders  []recorder.RecorderObject
 	Logger     logger.ILogger
 }
@@ -55,19 +55,19 @@ func RetriesRouterOption(retries int) RouterOption {
 	}
 }
 
-func ChainRouterOption(chain Chainer) RouterOption {
+func ChainRouterOption(chain IChainer) RouterOption {
 	return func(o *RouterOptions) {
 		o.Chain = chain
 	}
 }
 
-func ResolverRouterOption(resolver resolver.Resolver) RouterOption {
+func ResolverRouterOption(resolver resolver.IResolver) RouterOption {
 	return func(o *RouterOptions) {
 		o.Resolver = resolver
 	}
 }
 
-func HostMapperRouterOption(m hosts.HostMapper) RouterOption {
+func HostMapperRouterOption(m hosts.IHostMapper) RouterOption {
 	return func(o *RouterOptions) {
 		o.HostMapper = m
 	}
@@ -155,7 +155,7 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 	r.options.Logger.Debugf("dial %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
-		var route Route
+		var route IRoute
 		if r.options.Chain != nil {
 			route = r.options.Chain.Route(ctx, network, address)
 		}
@@ -201,7 +201,7 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...Bind
 	r.options.Logger.Debugf("bind on %s/%s", address, network)
 
 	for i := 0; i < count; i++ {
-		var route Route
+		var route IRoute
 		if r.options.Chain != nil {
 			route = r.options.Chain.Route(ctx, network, address)
 			if route == nil || len(route.Nodes()) == 0 {
@@ -232,7 +232,7 @@ func (r *Router) Bind(ctx context.Context, network, address string, opts ...Bind
 	return
 }
 
-func routePath(route Route) (path []*Node) {
+func routePath(route IRoute) (path []*Node) {
 	if route == nil {
 		return
 	}

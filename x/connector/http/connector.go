@@ -27,7 +27,7 @@ type httpConnector struct {
 	options connector.Options
 }
 
-func NewConnector(opts ...connector.Option) connector.Connector {
+func NewConnector(opts ...connector.Option) connector.IConnector {
 	options := connector.Options{}
 	for _, opt := range opts {
 		opt(&options)

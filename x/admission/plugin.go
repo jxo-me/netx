@@ -14,7 +14,7 @@ type pluginAdmission struct {
 }
 
 // NewPluginAdmission creates a plugin admission.
-func NewPluginAdmission(opts ...Option) admission_pkg.Admission {
+func NewPluginAdmission(opts ...Option) admission_pkg.IAdmission {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

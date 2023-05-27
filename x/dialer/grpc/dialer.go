@@ -27,7 +27,7 @@ type grpcDialer struct {
 	options     dialer.Options
 }
 
-func NewDialer(opts ...dialer.Option) dialer.Dialer {
+func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	options := dialer.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -43,7 +43,7 @@ func (d *grpcDialer) Init(md md.IMetaData) (err error) {
 	return d.parseMetadata(md)
 }
 
-// Multiplex implements dialer.Multiplexer interface.
+// Multiplex implements dialer.IMultiplexer interface.
 func (d *grpcDialer) Multiplex() bool {
 	return true
 }

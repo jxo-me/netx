@@ -133,12 +133,12 @@ func (a *Application) parseAuth(cfg *config.AuthConfig) *url.Userinfo {
 	return url.UserPassword(cfg.Username, cfg.Password)
 }
 
-func (a *Application) parseChainSelector(cfg *config.SelectorConfig) selector.Selector[chain.IChainer] {
+func (a *Application) parseChainSelector(cfg *config.SelectorConfig) selector.ISelector[chain.IChainer] {
 	if cfg == nil {
 		return nil
 	}
 
-	var strategy selector.Strategy[chain.IChainer]
+	var strategy selector.IStrategy[chain.IChainer]
 	switch cfg.Strategy {
 	case "round", "rr":
 		strategy = xs.RoundRobinStrategy[chain.IChainer]()
@@ -158,12 +158,12 @@ func (a *Application) parseChainSelector(cfg *config.SelectorConfig) selector.Se
 	)
 }
 
-func (a *Application) parseNodeSelector(cfg *config.SelectorConfig) selector.Selector[*chain.Node] {
+func (a *Application) parseNodeSelector(cfg *config.SelectorConfig) selector.ISelector[*chain.Node] {
 	if cfg == nil {
 		return nil
 	}
 
-	var strategy selector.Strategy[*chain.Node]
+	var strategy selector.IStrategy[*chain.Node]
 	switch cfg.Strategy {
 	case "round", "rr":
 		strategy = xs.RoundRobinStrategy[*chain.Node]()
@@ -519,7 +519,7 @@ func (a *Application) ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRec
 	return
 }
 
-func (a *Application) defaultNodeSelector() selector.Selector[*chain.Node] {
+func (a *Application) defaultNodeSelector() selector.ISelector[*chain.Node] {
 	return xs.NewSelector(
 		xs.RoundRobinStrategy[*chain.Node](),
 		xs.FailFilter[*chain.Node](xs.DefaultMaxFails, xs.DefaultFailTimeout),
@@ -527,7 +527,7 @@ func (a *Application) defaultNodeSelector() selector.Selector[*chain.Node] {
 	)
 }
 
-func (a *Application) defaultChainSelector() selector.Selector[chain.IChainer] {
+func (a *Application) defaultChainSelector() selector.ISelector[chain.IChainer] {
 	return xs.NewSelector(
 		xs.RoundRobinStrategy[chain.IChainer](),
 		xs.FailFilter[chain.IChainer](xs.DefaultMaxFails, xs.DefaultFailTimeout),

@@ -324,7 +324,7 @@ func (a *Application) admissionList(name string, names ...string) []admission.IA
 
 func (a *Application) chainGroup(name string, group *config.ChainGroupConfig) chain.IChainer {
 	var chains []chain.IChainer
-	var sel selector.Selector[chain.IChainer]
+	var sel selector.ISelector[chain.IChainer]
 
 	if c := a.ChainRegistry().Get(name); c != nil {
 		chains = append(chains, c)

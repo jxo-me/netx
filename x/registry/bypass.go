@@ -7,21 +7,21 @@ import (
 )
 
 type bypassRegistry struct {
-	registry[bypass.Bypass]
+	registry[bypass.IBypass]
 }
 
-func (r *bypassRegistry) Register(name string, v bypass.Bypass) error {
+func (r *bypassRegistry) Register(name string, v bypass.IBypass) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *bypassRegistry) Get(name string) bypass.Bypass {
+func (r *bypassRegistry) Get(name string) bypass.IBypass {
 	if name != "" {
 		return &bypassWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *bypassRegistry) get(name string) bypass.Bypass {
+func (r *bypassRegistry) get(name string) bypass.IBypass {
 	return r.registry.Get(name)
 }
 

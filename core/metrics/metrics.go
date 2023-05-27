@@ -11,17 +11,17 @@ type Gauge interface {
 	Set(float64)
 }
 
-type Counter interface {
+type ICounter interface {
 	Inc()
 	Add(float64)
 }
 
-type Observer interface {
+type IObserver interface {
 	Observe(float64)
 }
 
-type Metrics interface {
-	Counter(name MetricName, labels Labels) Counter
+type IMetrics interface {
+	Counter(name MetricName, labels Labels) ICounter
 	Gauge(name MetricName, labels Labels) Gauge
-	Observer(name MetricName, labels Labels) Observer
+	Observer(name MetricName, labels Labels) IObserver
 }

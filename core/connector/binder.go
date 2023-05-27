@@ -10,6 +10,6 @@ var (
 	ErrBindUnsupported = errors.New("bind unsupported")
 )
 
-type Binder interface {
+type IBinder interface {
 	Bind(ctx context.Context, conn net.Conn, network, address string, opts ...BindOption) (net.Listener, error)
 }

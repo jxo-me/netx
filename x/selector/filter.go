@@ -16,7 +16,7 @@ type failFilter[T any] struct {
 
 // FailFilter filters the dead objects.
 // An object is marked as dead if its failed count is greater than MaxFails.
-func FailFilter[T any](maxFails int, timeout time.Duration) selector.Filter[T] {
+func FailFilter[T any](maxFails int, timeout time.Duration) selector.IFilter[T] {
 	return &failFilter[T]{
 		maxFails:    maxFails,
 		failTimeout: timeout,
@@ -49,7 +49,7 @@ func (f *failFilter[T]) Filter(ctx context.Context, vs ...T) []T {
 			failTimeout = DefaultFailTimeout
 		}
 
-		if mi, _ := any(v).(selector.Markable); mi != nil {
+		if mi, _ := any(v).(selector.IMarkable); mi != nil {
 			if marker := mi.Marker(); marker != nil {
 				if marker.Count() < int64(maxFails) ||
 					time.Since(marker.Time()) >= failTimeout {
@@ -67,7 +67,7 @@ type backupFilter[T any] struct{}
 
 // BackupFilter filters the backup objects.
 // An object is marked as backup if its metadata has backup flag.
-func BackupFilter[T any]() selector.Filter[T] {
+func BackupFilter[T any]() selector.IFilter[T] {
 	return &backupFilter[T]{}
 }
 

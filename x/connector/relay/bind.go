@@ -14,7 +14,7 @@ import (
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
 )
 
-// Bind implements connector.Binder.
+// Bind implements connector.IBinder.
 func (c *relayConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	if !c.md.tunnelID.IsZero() {
 		return c.bindTunnel(ctx, conn, network, c.options.Logger)

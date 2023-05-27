@@ -12,20 +12,20 @@ import (
 )
 
 type HopOptions struct {
-	bypass   bypass.Bypass
-	selector selector.Selector[*chain.Node]
+	bypass   bypass.IBypass
+	selector selector.ISelector[*chain.Node]
 	logger   logger.ILogger
 }
 
 type HopOption func(*HopOptions)
 
-func BypassHopOption(bp bypass.Bypass) HopOption {
+func BypassHopOption(bp bypass.IBypass) HopOption {
 	return func(o *HopOptions) {
 		o.bypass = bp
 	}
 }
 
-func SelectorHopOption(s selector.Selector[*chain.Node]) HopOption {
+func SelectorHopOption(s selector.ISelector[*chain.Node]) HopOption {
 	return func(o *HopOptions) {
 		o.selector = s
 	}
@@ -42,7 +42,7 @@ type chainHop struct {
 	options HopOptions
 }
 
-func NewChainHop(nodes []*chain.Node, opts ...HopOption) chain.Hop {
+func NewChainHop(nodes []*chain.Node, opts ...HopOption) chain.IHop {
 	var options HopOptions
 	for _, opt := range opts {
 		if opt != nil {
