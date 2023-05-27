@@ -15,7 +15,6 @@ replace (
 require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/core v0.0.0-00010101000000-000000000000
-	github.com/jxo-me/netx/sdk v0.0.0-00010101000000-000000000000
 	github.com/jxo-me/netx/x v0.0.0-00010101000000-000000000000
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/jxo-me/netx/x/app"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,10 +8,10 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/api"
+	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
 	xlogger "github.com/jxo-me/netx/x/logger"
-	metrics "github.com/jxo-me/netx/x/metrics/service"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
