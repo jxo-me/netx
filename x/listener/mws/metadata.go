@@ -32,7 +32,7 @@ type metadata struct {
 	muxMaxStreamBuffer   int
 }
 
-func (l *mwsListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *mwsListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		path    = "path"
 		backlog = "backlog"

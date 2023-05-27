@@ -44,7 +44,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *tunHandler) Init(md md.Metadata) (err error) {
+func (h *tunHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -67,7 +67,7 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 
 	log := h.options.Logger
 
-	v, _ := conn.(md.Metadatable)
+	v, _ := conn.(md.IMetaDatable)
 	if v == nil {
 		err := errors.New("tun: wrong connection type")
 		log.Error(err)

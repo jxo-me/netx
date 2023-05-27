@@ -21,7 +21,7 @@ type metadata struct {
 	host          string
 }
 
-func (d *phtDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *phtDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		authorizePath = "authorizePath"
 		pushPath      = "pushPath"

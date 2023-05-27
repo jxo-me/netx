@@ -38,7 +38,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *http2Connector) Init(md md.Metadata) (err error) {
+func (c *http2Connector) Init(md md.IMetaData) (err error) {
 	return c.parseMetadata(md)
 }
 
@@ -51,7 +51,7 @@ func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, ad
 	})
 	log.Debugf("connect %s/%s", address, network)
 
-	v, _ := conn.(md.Metadatable)
+	v, _ := conn.(md.IMetaDatable)
 	if v == nil {
 		err := errors.New("http2: wrong connection type")
 		log.Error(err)

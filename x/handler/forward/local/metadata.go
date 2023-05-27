@@ -13,7 +13,7 @@ type metadata struct {
 	sniffingTimeout time.Duration
 }
 
-func (h *forwardHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *forwardHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readTimeout = "readTimeout"
 		sniffing    = "sniffing"

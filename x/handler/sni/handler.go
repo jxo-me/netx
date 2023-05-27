@@ -49,7 +49,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	return h
 }
 
-func (h *sniHandler) Init(md md.Metadata) (err error) {
+func (h *sniHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -96,7 +96,7 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	return h.handleHTTP(ctx, rw, conn.RemoteAddr(), log)
 }
 
-func (h *sniHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.Logger) error {
+func (h *sniHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.ILogger) error {
 	req, err := http.ReadRequest(bufio.NewReader(rw))
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func (h *sniHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net
 	return nil
 }
 
-func (h *sniHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.Logger) error {
+func (h *sniHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.ILogger) error {
 	buf := new(bytes.Buffer)
 	host, err := h.decodeHost(io.TeeReader(rw, buf))
 	if err != nil {

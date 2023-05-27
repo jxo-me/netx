@@ -18,7 +18,7 @@ type metadata struct {
 	udpBufferSize  int
 }
 
-func (c *socks5Connector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *socks5Connector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		connectTimeout = "timeout"
 		noTLS          = "notls"

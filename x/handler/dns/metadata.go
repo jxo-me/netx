@@ -24,7 +24,7 @@ type metadata struct {
 	async      bool
 }
 
-func (h *dnsHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *dnsHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readTimeout = "readTimeout"
 		ttl         = "ttl"

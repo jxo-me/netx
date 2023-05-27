@@ -11,9 +11,9 @@ var (
 	ErrClosed = errors.New("accpet on closed listener")
 )
 
-// Listener is a server listener, just like a net.Listener.
-type Listener interface {
-	Init(metadata.Metadata) error
+// IListener is a server listener, just like a net.Listener.
+type IListener interface {
+	Init(metadata.IMetaData) error
 	Accept() (net.Conn, error)
 	Addr() net.Addr
 	Close() error

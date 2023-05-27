@@ -18,6 +18,6 @@ type metadata struct {
 	dialTimeout time.Duration
 }
 
-func (d *udpDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *udpDialer) parseMetadata(md md.IMetaData) (err error) {
 	return
 }

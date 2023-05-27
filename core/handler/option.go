@@ -17,9 +17,9 @@ type Options struct {
 	Router      *chain.Router
 	Auth        *url.Userinfo
 	Auther      auth.Authenticator
-	RateLimiter rate.RateLimiter
+	RateLimiter rate.IRateLimiter
 	TLSConfig   *tls.Config
-	Logger      logger.Logger
+	Logger      logger.ILogger
 	Service     string
 }
 
@@ -49,7 +49,7 @@ func AutherOption(auther auth.Authenticator) Option {
 	}
 }
 
-func RateLimiterOption(limiter rate.RateLimiter) Option {
+func RateLimiterOption(limiter rate.IRateLimiter) Option {
 	return func(opts *Options) {
 		opts.RateLimiter = limiter
 	}
@@ -61,7 +61,7 @@ func TLSConfigOption(tlsConfig *tls.Config) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *Options) {
 		opts.Logger = logger
 	}
@@ -74,12 +74,12 @@ func ServiceOption(service string) Option {
 }
 
 type HandleOptions struct {
-	Metadata metadata.Metadata
+	Metadata metadata.IMetaData
 }
 
 type HandleOption func(opts *HandleOptions)
 
-func MetadataHandleOption(md metadata.Metadata) HandleOption {
+func MetadataHandleOption(md metadata.IMetaData) HandleOption {
 	return func(opts *HandleOptions) {
 		opts.Metadata = md
 	}

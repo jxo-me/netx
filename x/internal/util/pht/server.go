@@ -38,7 +38,7 @@ type serverOptions struct {
 	tlsConfig      *tls.Config
 	readBufferSize int
 	readTimeout    time.Duration
-	logger         logger.Logger
+	logger         logger.ILogger
 }
 
 type ServerOption func(opts *serverOptions)
@@ -81,7 +81,7 @@ func ReadTimeoutServerOption(timeout time.Duration) ServerOption {
 	}
 }
 
-func LoggerServerOption(logger logger.Logger) ServerOption {
+func LoggerServerOption(logger logger.ILogger) ServerOption {
 	return func(opts *serverOptions) {
 		opts.logger = logger
 	}

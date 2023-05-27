@@ -12,7 +12,7 @@ type metadata struct {
 	disable4a      bool
 }
 
-func (c *socks4Connector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *socks4Connector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		connectTimeout = "timeout"
 		disable4a      = "disable4a"

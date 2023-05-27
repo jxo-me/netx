@@ -20,12 +20,12 @@ func init() {
 
 type udpListener struct {
 	ln      net.Listener
-	logger  logger.Logger
+	logger  logger.ILogger
 	md      metadata
 	options listener.Options
 }
 
-func NewListener(opts ...listener.Option) listener.Listener {
+func NewListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -36,7 +36,7 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *udpListener) Init(md md.Metadata) (err error) {
+func (l *udpListener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

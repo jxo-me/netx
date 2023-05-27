@@ -21,7 +21,7 @@ type metadata struct {
 	backlog        int
 }
 
-func (l *rudpListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *rudpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		ttl            = "ttl"
 		readBufferSize = "readBufferSize"

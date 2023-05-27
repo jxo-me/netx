@@ -25,7 +25,7 @@ type clientConn struct {
 	mu         sync.Mutex
 	localAddr  net.Addr
 	remoteAddr net.Addr
-	logger     logger.Logger
+	logger     logger.ILogger
 }
 
 func (c *clientConn) Read(b []byte) (n int, err error) {

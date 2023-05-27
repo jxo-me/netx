@@ -6,6 +6,6 @@ import (
 
 type metadata struct{}
 
-func (d *ftcpDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *ftcpDialer) parseMetadata(md md.IMetaData) (err error) {
 	return
 }

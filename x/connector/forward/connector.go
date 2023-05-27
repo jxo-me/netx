@@ -28,7 +28,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *forwardConnector) Init(md md.Metadata) (err error) {
+func (c *forwardConnector) Init(md md.IMetaData) (err error) {
 	return nil
 }
 

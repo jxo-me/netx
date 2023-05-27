@@ -22,7 +22,7 @@ type metadata struct {
 	backlog int
 }
 
-func (l *mtlsListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *mtlsListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		backlog = "backlog"
 

@@ -9,7 +9,7 @@ import (
 
 // Connector is responsible for connecting to the destination address.
 type Connector interface {
-	Init(metadata.Metadata) error
+	Init(metadata.IMetaData) error
 	Connect(ctx context.Context, conn net.Conn, network, address string, opts ...ConnectOption) (net.Conn, error)
 }
 

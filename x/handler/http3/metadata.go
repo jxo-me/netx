@@ -14,7 +14,7 @@ type metadata struct {
 	hash            string
 }
 
-func (h *http3Handler) parseMetadata(md mdata.Metadata) error {
+func (h *http3Handler) parseMetadata(md mdata.IMetaData) error {
 	const (
 		header          = "header"
 		probeResistKey  = "probeResistance"

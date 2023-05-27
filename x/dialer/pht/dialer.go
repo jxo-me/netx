@@ -51,7 +51,7 @@ func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *phtDialer) Init(md md.Metadata) (err error) {
+func (d *phtDialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

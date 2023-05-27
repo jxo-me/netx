@@ -39,9 +39,9 @@ var (
 	hostsReg     reg.Registry[hosts.HostMapper]    = new(hostsRegistry)
 	recorderReg  reg.Registry[recorder.Recorder]   = new(recorderRegistry)
 
-	trafficLimiterReg reg.Registry[traffic.TrafficLimiter] = new(trafficLimiterRegistry)
-	connLimiterReg    reg.Registry[conn.ConnLimiter]       = new(connLimiterRegistry)
-	rateLimiterReg    reg.Registry[rate.RateLimiter]       = new(rateLimiterRegistry)
+	trafficLimiterReg reg.Registry[traffic.ITrafficLimiter] = new(trafficLimiterRegistry)
+	connLimiterReg    reg.Registry[conn.IConnLimiter]       = new(connLimiterRegistry)
+	rateLimiterReg    reg.Registry[rate.IRateLimiter]       = new(rateLimiterRegistry)
 
 	ingressReg reg.Registry[ingress.Ingress] = new(ingressRegistry)
 )
@@ -147,15 +147,15 @@ func RecorderRegistry() reg.Registry[recorder.Recorder] {
 	return recorderReg
 }
 
-func TrafficLimiterRegistry() reg.Registry[traffic.TrafficLimiter] {
+func TrafficLimiterRegistry() reg.Registry[traffic.ITrafficLimiter] {
 	return trafficLimiterReg
 }
 
-func ConnLimiterRegistry() reg.Registry[conn.ConnLimiter] {
+func ConnLimiterRegistry() reg.Registry[conn.IConnLimiter] {
 	return connLimiterReg
 }
 
-func RateLimiterRegistry() reg.Registry[rate.RateLimiter] {
+func RateLimiterRegistry() reg.Registry[rate.IRateLimiter] {
 	return rateLimiterReg
 }
 

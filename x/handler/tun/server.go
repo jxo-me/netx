@@ -16,7 +16,7 @@ import (
 	"golang.org/x/net/ipv6"
 )
 
-func (h *tunHandler) handleServer(ctx context.Context, conn net.Conn, config *tun_util.Config, log logger.Logger) error {
+func (h *tunHandler) handleServer(ctx context.Context, conn net.Conn, config *tun_util.Config, log logger.ILogger) error {
 	for {
 		err := func() error {
 			pc, err := net.ListenPacket(conn.LocalAddr().Network(), conn.LocalAddr().String())
@@ -36,7 +36,7 @@ func (h *tunHandler) handleServer(ctx context.Context, conn net.Conn, config *tu
 	}
 }
 
-func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, conn net.PacketConn, config *tun_util.Config, log logger.Logger) error {
+func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, conn net.PacketConn, config *tun_util.Config, log logger.ILogger) error {
 	errc := make(chan error, 1)
 
 	go func() {
@@ -224,7 +224,7 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 	return err
 }
 
-func (h *tunHandler) updateRoute(ip net.IP, addr net.Addr, log logger.Logger) {
+func (h *tunHandler) updateRoute(ip net.IP, addr net.Addr, log logger.ILogger) {
 	rkey := ipToTunRouteKey(ip)
 	if actual, loaded := h.routes.LoadOrStore(rkey, addr); loaded {
 		if actual.(net.Addr).String() != addr.String() {

@@ -19,7 +19,7 @@ type metadata struct {
 	backlog        int
 }
 
-func (l *sshListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *sshListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		authorizedKeys = "authorizedKeys"
 		privateKeyFile = "privateKeyFile"

@@ -26,7 +26,7 @@ type RouterOptions struct {
 	Resolver   resolver.Resolver
 	HostMapper hosts.HostMapper
 	Recorders  []recorder.RecorderObject
-	Logger     logger.Logger
+	Logger     logger.ILogger
 }
 
 type RouterOption func(*RouterOptions)
@@ -79,7 +79,7 @@ func RecordersRouterOption(recorders ...recorder.RecorderObject) RouterOption {
 	}
 }
 
-func LoggerRouterOption(logger logger.Logger) RouterOption {
+func LoggerRouterOption(logger logger.ILogger) RouterOption {
 	return func(o *RouterOptions) {
 		o.Logger = logger
 	}

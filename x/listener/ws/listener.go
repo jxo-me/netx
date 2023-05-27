@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
@@ -18,7 +19,6 @@ import (
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 	"github.com/jxo-me/netx/x/registry"
-	"github.com/gorilla/websocket"
 )
 
 func init() {
@@ -33,12 +33,12 @@ type wsListener struct {
 	tlsEnabled bool
 	cqueue     chan net.Conn
 	errChan    chan error
-	logger     logger.Logger
+	logger     logger.ILogger
 	md         metadata
 	options    listener.Options
 }
 
-func NewListener(opts ...listener.Option) listener.Listener {
+func NewListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -49,7 +49,7 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func NewTLSListener(opts ...listener.Option) listener.Listener {
+func NewTLSListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -61,7 +61,7 @@ func NewTLSListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *wsListener) Init(md md.Metadata) (err error) {
+func (l *wsListener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

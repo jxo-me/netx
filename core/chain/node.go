@@ -24,7 +24,7 @@ type NodeOptions struct {
 	Bypass     bypass.Bypass
 	Resolver   resolver.Resolver
 	HostMapper hosts.HostMapper
-	Metadata   metadata.Metadata
+	Metadata   metadata.IMetaData
 	Host       string
 	Protocol   string
 	HTTP       *HTTPNodeSettings
@@ -70,7 +70,7 @@ func ProtocolNodeOption(protocol string) NodeOption {
 	}
 }
 
-func MetadataNodeOption(md metadata.Metadata) NodeOption {
+func MetadataNodeOption(md metadata.IMetaData) NodeOption {
 	return func(o *NodeOptions) {
 		o.Metadata = md
 	}
@@ -121,8 +121,8 @@ func (node *Node) Options() *NodeOptions {
 	return &node.options
 }
 
-// Metadata implements metadadta.Metadatable interface.
-func (node *Node) Metadata() metadata.Metadata {
+// Metadata implements metadadta.IMetaDatable interface.
+func (node *Node) Metadata() metadata.IMetaData {
 	return node.options.Metadata
 }
 

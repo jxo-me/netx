@@ -11,7 +11,7 @@ type connPool struct {
 	m      sync.Map
 	ttl    time.Duration
 	closed chan struct{}
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 func newConnPool(ttl time.Duration) *connPool {
@@ -23,7 +23,7 @@ func newConnPool(ttl time.Duration) *connPool {
 	return p
 }
 
-func (p *connPool) WithLogger(logger logger.Logger) *connPool {
+func (p *connPool) WithLogger(logger logger.ILogger) *connPool {
 	p.logger = logger
 	return p
 }

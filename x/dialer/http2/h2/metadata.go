@@ -13,7 +13,7 @@ type metadata struct {
 	header http.Header
 }
 
-func (d *h2Dialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *h2Dialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		host   = "host"
 		path   = "path"

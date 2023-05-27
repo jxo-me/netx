@@ -45,7 +45,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *forwardHandler) Init(md md.Metadata) (err error) {
+func (h *forwardHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -82,7 +82,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	}
 }
 
-func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_util.DirectForwardConn, log logger.Logger) error {
+func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_util.DirectForwardConn, log logger.ILogger) error {
 	targetAddr := conn.DstAddr()
 
 	log = log.WithFields(map[string]any{
@@ -113,7 +113,7 @@ func (h *forwardHandler) handleDirectForward(ctx context.Context, conn *sshd_uti
 	return nil
 }
 
-func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_util.RemoteForwardConn, log logger.Logger) error {
+func (h *forwardHandler) handleRemoteForward(ctx context.Context, conn *sshd_util.RemoteForwardConn, log logger.ILogger) error {
 	req := conn.Request()
 
 	t := tcpipForward{}

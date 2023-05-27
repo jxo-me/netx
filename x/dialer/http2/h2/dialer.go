@@ -28,7 +28,7 @@ type h2Dialer struct {
 	clients     map[string]*http.Client
 	clientMutex sync.Mutex
 	h2c         bool
-	logger      logger.Logger
+	logger      logger.ILogger
 	md          metadata
 	options     dialer.Options
 }
@@ -60,7 +60,7 @@ func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *h2Dialer) Init(md md.Metadata) (err error) {
+func (d *h2Dialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

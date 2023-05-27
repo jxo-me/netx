@@ -16,7 +16,7 @@ type bindListener struct {
 	network string
 	addr    net.Addr
 	session *mux.Session
-	logger  logger.Logger
+	logger  logger.ILogger
 }
 
 func (p *bindListener) Accept() (net.Conn, error) {
@@ -66,7 +66,7 @@ func (p *bindListener) getPeerConn(conn net.Conn) (net.Conn, error) {
 		return nil, err
 	}
 
-	var md mdata.Metadata
+	var md mdata.IMetaData
 	if host != "" {
 		md = mdx.NewMetadata(map[string]any{"host": host})
 	}

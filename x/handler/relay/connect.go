@@ -14,7 +14,7 @@ import (
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
 )
 
-func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "connect",
@@ -96,7 +96,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	return nil
 }
 
-func (h *relayHandler) handleConnectTunnel(ctx context.Context, conn net.Conn, network, address string, tunnelID relay.TunnelID, log logger.Logger) error {
+func (h *relayHandler) handleConnectTunnel(ctx context.Context, conn net.Conn, network, address string, tunnelID relay.TunnelID, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"dst":    fmt.Sprintf("%s/%s", address, network),
 		"cmd":    "connect",

@@ -33,7 +33,7 @@ type options struct {
 	redisLoader loader.Loader
 	httpLoader  loader.Loader
 	period      time.Duration
-	logger      logger.Logger
+	logger      logger.ILogger
 }
 
 type Option func(opts *options)
@@ -68,7 +68,7 @@ func HTTPLoaderOption(httpLoader loader.Loader) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *options) {
 		opts.logger = logger
 	}
@@ -91,7 +91,7 @@ type trafficLimiter struct {
 	options        options
 }
 
-func NewTrafficLimiter(opts ...Option) limiter.TrafficLimiter {
+func NewTrafficLimiter(opts ...Option) limiter.ITrafficLimiter {
 	var options options
 	for _, opt := range opts {
 		opt(&options)
@@ -119,19 +119,19 @@ func NewTrafficLimiter(opts ...Option) limiter.TrafficLimiter {
 
 // In obtains a traffic input limiter based on key.
 // The key should be client connection address.
-func (l *trafficLimiter) In(key string) limiter.Limiter {
-	var lims []limiter.Limiter
+func (l *trafficLimiter) In(key string) limiter.ILimiter {
+	var lims []limiter.ILimiter
 
 	// service level limiter
 	if lim, ok := l.inLimits.Get(GlobalLimitKey); ok && lim != nil {
-		lims = append(lims, lim.(limiter.Limiter))
+		lims = append(lims, lim.(limiter.ILimiter))
 	}
 
 	// connection level limiter
 	if lim, ok := l.connInLimits.Get(key); ok {
 		if lim != nil {
 			// cached connection level limiter
-			lims = append(lims, lim.(limiter.Limiter))
+			lims = append(lims, lim.(limiter.ILimiter))
 			// reset expiration
 			l.connInLimits.Set(key, lim, defaultExpiration)
 		}
@@ -151,7 +151,7 @@ func (l *trafficLimiter) In(key string) limiter.Limiter {
 	if lim, ok := l.inLimits.Get(host); ok {
 		// cached IP limiter
 		if lim != nil {
-			lims = append(lims, lim.(limiter.Limiter))
+			lims = append(lims, lim.(limiter.ILimiter))
 		}
 	} else {
 		l.mu.RLock()
@@ -169,7 +169,7 @@ func (l *trafficLimiter) In(key string) limiter.Limiter {
 		}
 	}
 
-	var lim limiter.Limiter
+	var lim limiter.ILimiter
 	if len(lims) > 0 {
 		lim = newLimiterGroup(lims...)
 	}
@@ -183,19 +183,19 @@ func (l *trafficLimiter) In(key string) limiter.Limiter {
 
 // Out obtains a traffic output limiter based on key.
 // The key should be client connection address.
-func (l *trafficLimiter) Out(key string) limiter.Limiter {
-	var lims []limiter.Limiter
+func (l *trafficLimiter) Out(key string) limiter.ILimiter {
+	var lims []limiter.ILimiter
 
 	// service level limiter
 	if lim, ok := l.outLimits.Get(GlobalLimitKey); ok && lim != nil {
-		lims = append(lims, lim.(limiter.Limiter))
+		lims = append(lims, lim.(limiter.ILimiter))
 	}
 
 	// connection level limiter
 	if lim, ok := l.connOutLimits.Get(key); ok {
 		if lim != nil {
 			// cached connection level limiter
-			lims = append(lims, lim.(limiter.Limiter))
+			lims = append(lims, lim.(limiter.ILimiter))
 			// reset expiration
 			l.connOutLimits.Set(key, lim, defaultExpiration)
 		}
@@ -215,7 +215,7 @@ func (l *trafficLimiter) Out(key string) limiter.Limiter {
 	if lim, ok := l.outLimits.Get(host); ok {
 		if lim != nil {
 			// cached IP level limiter
-			lims = append(lims, lim.(limiter.Limiter))
+			lims = append(lims, lim.(limiter.ILimiter))
 		}
 	} else {
 		l.mu.RLock()
@@ -233,7 +233,7 @@ func (l *trafficLimiter) Out(key string) limiter.Limiter {
 		}
 	}
 
-	var lim limiter.Limiter
+	var lim limiter.ILimiter
 	if len(lims) > 0 {
 		lim = newLimiterGroup(lims...)
 	}
@@ -276,7 +276,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 	{
 		value := values[GlobalLimitKey]
 		if v, _ := l.inLimits.Get(GlobalLimitKey); v != nil {
-			lim := v.(limiter.Limiter)
+			lim := v.(limiter.ILimiter)
 			if value.in <= 0 {
 				l.inLimits.Delete(GlobalLimitKey)
 			} else {
@@ -289,7 +289,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 		}
 
 		if v, _ := l.outLimits.Get(GlobalLimitKey); v != nil {
-			lim := v.(limiter.Limiter)
+			lim := v.(limiter.ILimiter)
 			if value.out <= 0 {
 				l.outLimits.Delete(GlobalLimitKey)
 			} else {
@@ -319,7 +319,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 			if in != value.in {
 				for _, item := range l.connInLimits.Items() {
 					if v := item.Object; v != nil {
-						v.(limiter.Limiter).Set(in)
+						v.(limiter.ILimiter).Set(in)
 					}
 				}
 			}
@@ -331,7 +331,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 			if out != value.out {
 				for _, item := range l.connOutLimits.Items() {
 					if v := item.Object; v != nil {
-						v.(limiter.Limiter).Set(out)
+						v.(limiter.ILimiter).Set(out)
 					}
 				}
 			}
@@ -359,7 +359,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 			}
 
 			if v, _ := l.inLimits.Get(key); v != nil {
-				lim := v.(limiter.Limiter)
+				lim := v.(limiter.ILimiter)
 				if value.in <= 0 {
 					l.inLimits.Delete(key)
 				} else {
@@ -373,7 +373,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 			}
 
 			if v, _ := l.outLimits.Get(key); v != nil {
-				lim := v.(limiter.Limiter)
+				lim := v.(limiter.ILimiter)
 				if value.out <= 0 {
 					l.outLimits.Delete(key)
 				} else {
@@ -396,7 +396,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 						l.inLimits.Delete(k)
 						continue
 					}
-					lim := v.Object.(limiter.Limiter)
+					lim := v.Object.(limiter.ILimiter)
 					if lim.Limit() != in {
 						lim.Set(in)
 					}
@@ -413,7 +413,7 @@ func (l *trafficLimiter) reload(ctx context.Context) error {
 						l.outLimits.Delete(k)
 						continue
 					}
-					lim := v.Object.(limiter.Limiter)
+					lim := v.Object.(limiter.ILimiter)
 					if lim.Limit() != out {
 						lim.Set(out)
 					}

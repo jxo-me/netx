@@ -30,7 +30,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *sshdConnector) Init(md md.Metadata) (err error) {
+func (c *sshdConnector) Init(md md.IMetaData) (err error) {
 	return nil
 }
 

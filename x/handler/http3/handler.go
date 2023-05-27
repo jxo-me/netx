@@ -39,7 +39,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *http3Handler) Init(md md.Metadata) error {
+func (h *http3Handler) Init(md md.IMetaData) error {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (h *http3Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 		return nil
 	}
 
-	v, ok := conn.(md.Metadatable)
+	v, ok := conn.(md.IMetaDatable)
 	if !ok || v == nil {
 		err := errors.New("wrong connection type")
 		log.Error(err)
@@ -90,7 +90,7 @@ func (h *http3Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 	)
 }
 
-func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.Logger) error {
+func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.ILogger) error {
 	addr := req.Host
 	if _, port, _ := net.SplitHostPort(addr); port == "" {
 		addr = net.JoinHostPort(addr, "80")

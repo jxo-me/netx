@@ -11,7 +11,7 @@ type metadata struct {
 	handshakeTimeout time.Duration
 }
 
-func (d *tlsDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *tlsDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		handshakeTimeout = "handshakeTimeout"
 	)

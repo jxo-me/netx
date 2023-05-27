@@ -46,7 +46,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *forwardHandler) Init(md mdata.Metadata) (err error) {
+func (h *forwardHandler) Init(md mdata.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -107,7 +107,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 		return nil
 	}
 
-	if md, ok := conn.(mdata.Metadatable); ok {
+	if md, ok := conn.(mdata.IMetaDatable); ok {
 		if v := mdutil.GetString(md.Metadata(), "host"); v != "" {
 			host = v
 		}
@@ -163,7 +163,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	return nil
 }
 
-func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log logger.Logger) (err error) {
+func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log logger.ILogger) (err error) {
 	br := bufio.NewReader(rw)
 	var connPool sync.Map
 

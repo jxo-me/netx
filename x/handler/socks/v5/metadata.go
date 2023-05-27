@@ -18,7 +18,7 @@ type metadata struct {
 	hash              string
 }
 
-func (h *socks5Handler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *socks5Handler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readTimeout       = "readTimeout"
 		noTLS             = "notls"

@@ -7,6 +7,6 @@ import (
 type metadata struct {
 }
 
-func (l *obfsListener) parseMetadata(md md.Metadata) (err error) {
+func (l *obfsListener) parseMetadata(md md.IMetaData) (err error) {
 	return
 }

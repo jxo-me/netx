@@ -22,7 +22,7 @@ type metadata struct {
 	ttl            time.Duration
 }
 
-func (l *udpListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *udpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readBufferSize = "readBufferSize"
 		readQueueSize  = "readQueueSize"

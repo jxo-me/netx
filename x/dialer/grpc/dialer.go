@@ -39,7 +39,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *grpcDialer) Init(md md.Metadata) (err error) {
+func (d *grpcDialer) Init(md md.IMetaData) (err error) {
 	return d.parseMetadata(md)
 }
 

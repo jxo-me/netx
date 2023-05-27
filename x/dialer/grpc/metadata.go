@@ -18,7 +18,7 @@ type metadata struct {
 	minConnectTimeout            time.Duration
 }
 
-func (d *grpcDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *grpcDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	d.md.insecure = mdutil.GetBool(md, "grpc.insecure", "grpcInsecure", "insecure")
 	d.md.host = mdutil.GetString(md, "grpc.authority", "grpc.host", "host")
 	d.md.path = mdutil.GetString(md, "grpc.path", "path")

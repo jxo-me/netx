@@ -21,7 +21,7 @@ type metadata struct {
 	backlog       int
 }
 
-func (l *phtListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *phtListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		authorizePath = "authorizePath"
 		pushPath      = "pushPath"

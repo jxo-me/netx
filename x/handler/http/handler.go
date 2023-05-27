@@ -47,7 +47,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *httpHandler) Init(md md.Metadata) error {
+func (h *httpHandler) Init(md md.IMetaData) error {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 	return h.handleRequest(ctx, conn, req, log)
 }
 
-func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request, log logger.Logger) error {
+func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request, log logger.ILogger) error {
 	if !req.URL.IsAbs() && govalidator.IsDNSName(req.Host) {
 		req.URL.Scheme = "http"
 	}
@@ -245,7 +245,7 @@ func (h *httpHandler) decodeServerName(s string) (string, error) {
 	return string(v), nil
 }
 
-func (h *httpHandler) basicProxyAuth(proxyAuth string, log logger.Logger) (username, password string, ok bool) {
+func (h *httpHandler) basicProxyAuth(proxyAuth string, log logger.ILogger) (username, password string, ok bool) {
 	if proxyAuth == "" {
 		return
 	}
@@ -266,7 +266,7 @@ func (h *httpHandler) basicProxyAuth(proxyAuth string, log logger.Logger) (usern
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *httpHandler) authenticate(ctx context.Context, conn net.Conn, req *http.Request, resp *http.Response, log logger.Logger) (ok bool) {
+func (h *httpHandler) authenticate(ctx context.Context, conn net.Conn, req *http.Request, resp *http.Response, log logger.ILogger) (ok bool) {
 	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"), log)
 	if h.options.Auther == nil || h.options.Auther.Authenticate(ctx, u, p) {
 		return true

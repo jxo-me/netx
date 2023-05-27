@@ -51,7 +51,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *relayHandler) Init(md md.Metadata) (err error) {
+func (h *relayHandler) Init(md md.IMetaData) (err error) {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}

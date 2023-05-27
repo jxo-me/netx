@@ -16,17 +16,17 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.0
-	github.com/jxo-me/netx/gosocks4 v0.0.1
-	github.com/jxo-me/netx/gosocks5 v0.3.0
-	github.com/jxo-me/netx/relay v0.4.0
-	github.com/jxo-me/netx/tls-dissector v0.0.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/jxo-me/netx/core v0.0.0-00010101000000-000000000000
+	github.com/jxo-me/netx/gosocks4 v0.0.1
+	github.com/jxo-me/netx/gosocks5 v0.3.0
 	github.com/jxo-me/netx/plugin v0.0.0-00010101000000-000000000000
+	github.com/jxo-me/netx/relay v0.4.0
+	github.com/jxo-me/netx/tls-dissector v0.0.1
 	github.com/miekg/dns v1.1.54
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pion/dtls/v2 v2.2.7
@@ -48,7 +48,7 @@ require (
 	golang.org/x/net v0.10.0
 	golang.org/x/sys v0.8.0
 	golang.org/x/time v0.3.0
-	golang.zx2c4.com/wireguard v0.0.0-20230325221338-052af4a8072b
+	golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1

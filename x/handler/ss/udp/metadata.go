@@ -14,7 +14,7 @@ type metadata struct {
 	bufferSize  int
 }
 
-func (h *ssuHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *ssuHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		key         = "key"
 		readTimeout = "readTimeout"

@@ -33,7 +33,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *relayConnector) Init(md md.Metadata) (err error) {
+func (c *relayConnector) Init(md md.IMetaData) (err error) {
 	return c.parseMetadata(md)
 }
 

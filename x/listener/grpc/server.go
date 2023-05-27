@@ -15,7 +15,7 @@ type server struct {
 	cqueue    chan net.Conn
 	localAddr net.Addr
 	pb.UnimplementedGostTunelServer
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 func (s *server) Tunnel(srv pb.GostTunel_TunnelServer) error {

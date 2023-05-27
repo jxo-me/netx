@@ -32,13 +32,13 @@ type h2Listener struct {
 	addr    net.Addr
 	cqueue  chan net.Conn
 	errChan chan error
-	logger  logger.Logger
+	logger  logger.ILogger
 	md      metadata
 	h2c     bool
 	options listener.Options
 }
 
-func NewListener(opts ...listener.Option) listener.Listener {
+func NewListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -50,7 +50,7 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func NewTLSListener(opts ...listener.Option) listener.Listener {
+func NewTLSListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -61,7 +61,7 @@ func NewTLSListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *h2Listener) Init(md md.Metadata) (err error) {
+func (l *h2Listener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

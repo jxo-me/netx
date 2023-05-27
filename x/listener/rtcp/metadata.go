@@ -6,6 +6,6 @@ import (
 
 type metadata struct{}
 
-func (l *rtcpListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *rtcpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	return
 }

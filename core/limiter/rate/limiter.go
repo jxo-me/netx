@@ -1,10 +1,10 @@
 package rate
 
-type Limiter interface {
+type ILimiter interface {
 	Allow(n int) bool
 	Limit() float64
 }
 
-type RateLimiter interface {
-	Limiter(key string) Limiter
+type IRateLimiter interface {
+	Limiter(key string) ILimiter
 }

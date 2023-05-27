@@ -9,7 +9,7 @@ import (
 
 // Dialer Transporter is responsible for dialing to the proxy server.
 type Dialer interface {
-	Init(metadata.Metadata) error
+	Init(metadata.IMetaData) error
 	Dial(ctx context.Context, addr string, opts ...DialOption) (net.Conn, error)
 }
 

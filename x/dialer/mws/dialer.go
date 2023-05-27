@@ -53,7 +53,7 @@ func NewTLSDialer(opts ...dialer.Option) dialer.Dialer {
 		options:    options,
 	}
 }
-func (d *mwsDialer) Init(md md.Metadata) (err error) {
+func (d *mwsDialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

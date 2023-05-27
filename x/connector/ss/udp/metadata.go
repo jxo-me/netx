@@ -14,7 +14,7 @@ type metadata struct {
 	bufferSize     int
 }
 
-func (c *ssuConnector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *ssuConnector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		key            = "key"
 		connectTimeout = "timeout"

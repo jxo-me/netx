@@ -66,8 +66,8 @@ func (c *serverConn) SyscallConn() (rc syscall.RawConn, err error) {
 	return
 }
 
-func (c *serverConn) Metadata() metadata.Metadata {
-	if md, ok := c.Conn.(metadata.Metadatable); ok {
+func (c *serverConn) Metadata() metadata.IMetaData {
+	if md, ok := c.Conn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil
@@ -112,8 +112,8 @@ func (c *packetConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	return
 }
 
-func (c *packetConn) Metadata() metadata.Metadata {
-	if md, ok := c.PacketConn.(metadata.Metadatable); ok {
+func (c *packetConn) Metadata() metadata.IMetaData {
+	if md, ok := c.PacketConn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil
@@ -287,8 +287,8 @@ func (c *udpConn) SetDSCP(n int) error {
 	return nil
 }
 
-func (c *udpConn) Metadata() metadata.Metadata {
-	if md, ok := c.PacketConn.(metadata.Metadatable); ok {
+func (c *udpConn) Metadata() metadata.IMetaData {
+	if md, ok := c.PacketConn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil

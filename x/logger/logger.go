@@ -40,7 +40,7 @@ type logrusLogger struct {
 	logger *logrus.Entry
 }
 
-func NewLogger(opts ...LoggerOption) logger.Logger {
+func NewLogger(opts ...LoggerOption) logger.ILogger {
 	var options LoggerOptions
 	for _, opt := range opts {
 		opt(&options)
@@ -83,7 +83,7 @@ func NewLogger(opts ...LoggerOption) logger.Logger {
 }
 
 // WithFields adds new fields to log.
-func (l *logrusLogger) WithFields(fields map[string]any) logger.Logger {
+func (l *logrusLogger) WithFields(fields map[string]any) logger.ILogger {
 	return &logrusLogger{
 		logger: l.logger.WithFields(logrus.Fields(fields)),
 	}

@@ -12,7 +12,7 @@ type llimiter struct {
 	current int64
 }
 
-func NewLimiter(n int) limiter.Limiter {
+func NewLimiter(n int) limiter.ILimiter {
 	return &llimiter{limit: n}
 }
 
@@ -31,10 +31,10 @@ func (l *llimiter) Allow(n int) bool {
 }
 
 type limiterGroup struct {
-	limiters []limiter.Limiter
+	limiters []limiter.ILimiter
 }
 
-func newLimiterGroup(limiters ...limiter.Limiter) *limiterGroup {
+func newLimiterGroup(limiters ...limiter.ILimiter) *limiterGroup {
 	sort.Slice(limiters, func(i, j int) bool {
 		return limiters[i].Limit() < limiters[j].Limit()
 	})

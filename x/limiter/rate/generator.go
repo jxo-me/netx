@@ -6,7 +6,7 @@ import (
 )
 
 type RateLimitGenerator interface {
-	Limiter() limiter.Limiter
+	Limiter() limiter.ILimiter
 }
 
 type rateLimitGenerator struct {
@@ -19,7 +19,7 @@ func NewRateLimitGenerator(r float64) RateLimitGenerator {
 	}
 }
 
-func (p *rateLimitGenerator) Limiter() limiter.Limiter {
+func (p *rateLimitGenerator) Limiter() limiter.ILimiter {
 	if p == nil || p.r <= 0 {
 		return nil
 	}
@@ -27,7 +27,7 @@ func (p *rateLimitGenerator) Limiter() limiter.Limiter {
 }
 
 type rateLimitSingleGenerator struct {
-	limiter rate.Limiter
+	limiter rate.ILimiter
 }
 
 func NewRateLimitSingleGenerator(r float64) RateLimitGenerator {
@@ -39,6 +39,6 @@ func NewRateLimitSingleGenerator(r float64) RateLimitGenerator {
 	return p
 }
 
-func (p *rateLimitSingleGenerator) Limiter() limiter.Limiter {
+func (p *rateLimitSingleGenerator) Limiter() limiter.ILimiter {
 	return p.limiter
 }

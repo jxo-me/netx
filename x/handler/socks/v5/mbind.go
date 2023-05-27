@@ -12,7 +12,7 @@ import (
 	"github.com/jxo-me/netx/x/internal/util/mux"
 )
 
-func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "mbind",
@@ -30,7 +30,7 @@ func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, networ
 	return h.muxBindLocal(ctx, conn, network, address, log)
 }
 
-func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		log.Error(err)
@@ -68,7 +68,7 @@ func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network
 	return h.serveMuxBind(ctx, conn, ln, log)
 }
 
-func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) error {
+func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.ILogger) error {
 	// Upgrade connection to multiplex stream.
 	session, err := mux.ClientSession(conn)
 	if err != nil {

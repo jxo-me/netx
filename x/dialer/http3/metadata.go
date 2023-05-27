@@ -27,7 +27,7 @@ type metadata struct {
 	maxStreams       int
 }
 
-func (d *http3Dialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *http3Dialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		authorizePath = "authorizePath"
 		pushPath      = "pushPath"

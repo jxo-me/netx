@@ -16,7 +16,7 @@ func init() {
 
 type obfsHTTPDialer struct {
 	md     metadata
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
@@ -30,7 +30,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *obfsHTTPDialer) Init(md md.Metadata) (err error) {
+func (d *obfsHTTPDialer) Init(md md.IMetaData) (err error) {
 	return d.parseMetadata(md)
 }
 

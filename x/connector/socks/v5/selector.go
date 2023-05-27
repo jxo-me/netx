@@ -14,7 +14,7 @@ type clientSelector struct {
 	methods   []uint8
 	User      *url.Userinfo
 	TLSConfig *tls.Config
-	logger    logger.Logger
+	logger    logger.ILogger
 }
 
 func (s *clientSelector) Methods() []uint8 {

@@ -16,7 +16,7 @@ type metadata struct {
 	cipherKey []byte
 }
 
-func (d *quicDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *quicDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		keepAlive        = "keepAlive"
 		keepAlivePeriod  = "ttl"

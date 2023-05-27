@@ -24,13 +24,13 @@ type http3Listener struct {
 	addr    net.Addr
 	cqueue  chan net.Conn
 	errChan chan error
-	logger  logger.Logger
+	logger  logger.ILogger
 	md      metadata
 	options listener.Options
 	mu      sync.Mutex
 }
 
-func NewListener(opts ...listener.Option) listener.Listener {
+func NewListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -41,7 +41,7 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *http3Listener) Init(md md.Metadata) (err error) {
+func (l *http3Listener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

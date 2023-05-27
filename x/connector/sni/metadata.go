@@ -12,7 +12,7 @@ type metadata struct {
 	connectTimeout time.Duration
 }
 
-func (c *sniConnector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *sniConnector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		host           = "host"
 		connectTimeout = "timeout"

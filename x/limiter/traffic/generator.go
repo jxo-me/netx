@@ -16,14 +16,14 @@ func newLimitGenerator(in, out int) *limitGenerator {
 	}
 }
 
-func (p *limitGenerator) In() limiter.Limiter {
+func (p *limitGenerator) In() limiter.ILimiter {
 	if p == nil || p.in <= 0 {
 		return nil
 	}
 	return NewLimiter(p.in)
 }
 
-func (p *limitGenerator) Out() limiter.Limiter {
+func (p *limitGenerator) Out() limiter.ILimiter {
 	if p == nil || p.out <= 0 {
 		return nil
 	}

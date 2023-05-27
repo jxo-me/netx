@@ -14,7 +14,7 @@ type metadata struct {
 	backlog int
 }
 
-func (l *h2Listener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *h2Listener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		path    = "path"
 		backlog = "backlog"

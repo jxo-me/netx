@@ -16,10 +16,10 @@ var (
 // serverConn is a server side Conn with metrics supported.
 type serverConn struct {
 	net.Conn
-	limiter limiter.Limiter
+	limiter limiter.ILimiter
 }
 
-func WrapConn(limiter limiter.Limiter, c net.Conn) net.Conn {
+func WrapConn(limiter limiter.ILimiter, c net.Conn) net.Conn {
 	if limiter == nil {
 		return c
 	}
@@ -43,8 +43,8 @@ func (c *serverConn) Close() error {
 	return c.Conn.Close()
 }
 
-func (c *serverConn) Metadata() metadata.Metadata {
-	if md, ok := c.Conn.(metadata.Metadatable); ok {
+func (c *serverConn) Metadata() metadata.IMetaData {
+	if md, ok := c.Conn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil

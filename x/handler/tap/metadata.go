@@ -10,7 +10,7 @@ type metadata struct {
 	bufferSize int
 }
 
-func (h *tapHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *tapHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		key        = "key"
 		bufferSize = "bufferSize"

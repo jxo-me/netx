@@ -18,7 +18,7 @@ type metadata struct {
 	passphrase      string
 }
 
-func (h *tunHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *tunHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		bufferSize      = "bufferSize"
 		keepAlive       = "keepAlive"

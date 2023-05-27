@@ -39,7 +39,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *ssuHandler) Init(md md.Metadata) (err error) {
+func (h *ssuHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -120,7 +120,7 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	return nil
 }
 
-func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.Logger) (err error) {
+func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.ILogger) (err error) {
 	bufSize := h.md.bufferSize
 	errc := make(chan error, 2)
 

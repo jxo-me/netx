@@ -40,7 +40,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *ssHandler) Init(md md.Metadata) (err error) {
+func (h *ssHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}

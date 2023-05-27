@@ -22,7 +22,7 @@ type metadata struct {
 	backlog   int
 }
 
-func (l *quicListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *quicListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		keepAlive        = "keepAlive"
 		keepAlivePeriod  = "ttl"

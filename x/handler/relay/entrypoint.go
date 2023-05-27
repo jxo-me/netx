@@ -33,7 +33,7 @@ type tcpListener struct {
 	options listener.Options
 }
 
-func newTCPListener(ln net.Listener, opts ...listener.Option) listener.Listener {
+func newTCPListener(ln net.Listener, opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -44,7 +44,7 @@ func newTCPListener(ln net.Listener, opts ...listener.Option) listener.Listener 
 	}
 }
 
-func (l *tcpListener) Init(md md.Metadata) (err error) {
+func (l *tcpListener) Init(md md.IMetaData) (err error) {
 	// l.logger.Debugf("pp: %d", l.options.ProxyProtocol)
 	ln := l.ln
 	ln = proxyproto.WrapListener(l.options.ProxyProtocol, ln, 10*time.Second)
@@ -86,7 +86,7 @@ func newTCPHandler(session *mux.Session, opts ...handler.Option) handler.Handler
 	}
 }
 
-func (h *tcpHandler) Init(md md.Metadata) (err error) {
+func (h *tcpHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
@@ -152,7 +152,7 @@ func newTunnelHandler(pool *ConnectorPool, ingress ingress.Ingress, opts ...hand
 	}
 }
 
-func (h *tunnelHandler) Init(md md.Metadata) (err error) {
+func (h *tunnelHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
@@ -229,7 +229,7 @@ func (h *tunnelHandler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 	return nil
 }
 
-func (h *tunnelHandler) handleHTTP(ctx context.Context, raddr net.Addr, rw io.ReadWriter, log logger.Logger) (err error) {
+func (h *tunnelHandler) handleHTTP(ctx context.Context, raddr net.Addr, rw io.ReadWriter, log logger.ILogger) (err error) {
 	br := bufio.NewReader(rw)
 	var connPool sync.Map
 

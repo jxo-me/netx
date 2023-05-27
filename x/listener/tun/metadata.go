@@ -19,7 +19,7 @@ type metadata struct {
 	readBufferSize int
 }
 
-func (l *tunListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		name    = "name"
 		netKey  = "net"

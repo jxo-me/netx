@@ -11,7 +11,7 @@ import (
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
-func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"cmd": "udp-tun",
 	})

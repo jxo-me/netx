@@ -119,7 +119,7 @@ func ParseService(cfg *config.ServiceConfig) (service.Service, error) {
 		)
 	}
 
-	var ln listener.Listener
+	var ln listener.IListener
 	if rf := registry.ListenerRegistry().Get(cfg.Listener.Type); rf != nil {
 		ln = rf(listenOpts...)
 	} else {

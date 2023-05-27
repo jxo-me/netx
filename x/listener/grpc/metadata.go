@@ -23,7 +23,7 @@ type metadata struct {
 	keepaliveMaxConnectionIdle   time.Duration
 }
 
-func (l *grpcListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *grpcListener) parseMetadata(md mdata.IMetaData) (err error) {
 	l.md.backlog = mdutil.GetInt(md, "grpc.backlog", "backlog")
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog

@@ -15,7 +15,7 @@ type serverSelector struct {
 	methods       []uint8
 	Authenticator auth.Authenticator
 	TLSConfig     *tls.Config
-	logger        logger.Logger
+	logger        logger.ILogger
 	noTLS         bool
 }
 

@@ -22,7 +22,7 @@ func init() {
 type http2Dialer struct {
 	clients     map[string]*http.Client
 	clientMutex sync.Mutex
-	logger      logger.Logger
+	logger      logger.ILogger
 	md          metadata
 	options     dialer.Options
 }
@@ -40,7 +40,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *http2Dialer) Init(md md.Metadata) (err error) {
+func (d *http2Dialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

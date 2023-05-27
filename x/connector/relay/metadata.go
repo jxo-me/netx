@@ -15,7 +15,7 @@ type metadata struct {
 	tunnelID       relay.TunnelID
 }
 
-func (c *relayConnector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *relayConnector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		connectTimeout = "connectTimeout"
 		noDelay        = "nodelay"

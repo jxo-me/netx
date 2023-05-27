@@ -24,7 +24,7 @@ type metadata struct {
 	directTunnel  bool
 }
 
-func (h *relayHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *relayHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readTimeout   = "readTimeout"
 		enableBind    = "bind"

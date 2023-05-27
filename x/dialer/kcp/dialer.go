@@ -24,7 +24,7 @@ func init() {
 type kcpDialer struct {
 	sessions     map[string]*muxSession
 	sessionMutex sync.Mutex
-	logger       logger.Logger
+	logger       logger.ILogger
 	md           metadata
 	options      dialer.Options
 }
@@ -42,7 +42,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *kcpDialer) Init(md md.Metadata) (err error) {
+func (d *kcpDialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

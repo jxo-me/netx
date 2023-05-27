@@ -20,10 +20,10 @@ type Session struct {
 	client *ssh.Client
 	closed chan struct{}
 	dead   chan struct{}
-	log    logger.Logger
+	log    logger.ILogger
 }
 
-func NewSession(c net.Conn, client *ssh.Client, log logger.Logger) *Session {
+func NewSession(c net.Conn, client *ssh.Client, log logger.ILogger) *Session {
 	return &Session{
 		Conn:   c,
 		client: client,

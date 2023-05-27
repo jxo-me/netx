@@ -43,7 +43,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *socks4Handler) Init(md md.Metadata) (err error) {
+func (h *socks4Handler) Init(md md.IMetaData) (err error) {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 	}
 }
 
-func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.Logger) error {
+func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.ILogger) error {
 	addr := req.Addr.String()
 
 	log = log.WithFields(map[string]any{

@@ -27,7 +27,7 @@ type options struct {
 	redisLoader loader.Loader
 	httpLoader  loader.Loader
 	period      time.Duration
-	logger      logger.Logger
+	logger      logger.ILogger
 }
 
 type Option func(opts *options)
@@ -62,7 +62,7 @@ func HTTPLoaderOption(httpLoader loader.Loader) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *options) {
 		opts.logger = logger
 	}
@@ -71,13 +71,13 @@ func LoggerOption(logger logger.Logger) Option {
 type rateLimiter struct {
 	ipLimits   map[string]RateLimitGenerator
 	cidrLimits cidranger.Ranger
-	limits     map[string]limiter.Limiter
+	limits     map[string]limiter.ILimiter
 	mu         sync.Mutex
 	cancelFunc context.CancelFunc
 	options    options
 }
 
-func NewRateLimiter(opts ...Option) limiter.RateLimiter {
+func NewRateLimiter(opts ...Option) limiter.IRateLimiter {
 	var options options
 	for _, opt := range opts {
 		opt(&options)
@@ -87,7 +87,7 @@ func NewRateLimiter(opts ...Option) limiter.RateLimiter {
 	lim := &rateLimiter{
 		ipLimits:   make(map[string]RateLimitGenerator),
 		cidrLimits: cidranger.NewPCTrieRanger(),
-		limits:     make(map[string]limiter.Limiter),
+		limits:     make(map[string]limiter.ILimiter),
 		options:    options,
 		cancelFunc: cancel,
 	}
@@ -101,7 +101,7 @@ func NewRateLimiter(opts ...Option) limiter.RateLimiter {
 	return lim
 }
 
-func (l *rateLimiter) Limiter(key string) limiter.Limiter {
+func (l *rateLimiter) Limiter(key string) limiter.ILimiter {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -109,7 +109,7 @@ func (l *rateLimiter) Limiter(key string) limiter.Limiter {
 		return lim
 	}
 
-	var lims []limiter.Limiter
+	var lims []limiter.ILimiter
 
 	if ip := net.ParseIP(key); ip != nil {
 		found := false
@@ -144,7 +144,7 @@ func (l *rateLimiter) Limiter(key string) limiter.Limiter {
 		}
 	}
 
-	var lim limiter.Limiter
+	var lim limiter.ILimiter
 	if len(lims) > 0 {
 		lim = newLimiterGroup(lims...)
 	}
@@ -218,7 +218,7 @@ func (l *rateLimiter) reload(ctx context.Context) error {
 
 	l.ipLimits = ipLimits
 	l.cidrLimits = cidrLimits
-	l.limits = make(map[string]limiter.Limiter)
+	l.limits = make(map[string]limiter.ILimiter)
 
 	return nil
 }

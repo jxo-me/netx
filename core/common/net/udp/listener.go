@@ -15,7 +15,7 @@ type ListenConfig struct {
 	ReadBufferSize int
 	TTL            time.Duration
 	KeepAlive      bool
-	Logger         logger.Logger
+	Logger         logger.ILogger
 }
 type listener struct {
 	conn     net.PacketConn

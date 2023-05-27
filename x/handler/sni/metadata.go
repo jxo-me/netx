@@ -12,7 +12,7 @@ type metadata struct {
 	hash        string
 }
 
-func (h *sniHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *sniHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readTimeout = "readTimeout"
 		hash        = "hash"

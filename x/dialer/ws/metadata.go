@@ -27,7 +27,7 @@ type metadata struct {
 	keepaliveInterval time.Duration
 }
 
-func (d *wsDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *wsDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		host = "host"
 		path = "path"

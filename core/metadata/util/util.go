@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/metadata"
 )
 
-func GetBool(md metadata.Metadata, keys ...string) (v bool) {
+func GetBool(md metadata.IMetaData, keys ...string) (v bool) {
 	if md == nil {
 		return
 	}
@@ -31,7 +31,7 @@ func GetBool(md metadata.Metadata, keys ...string) (v bool) {
 	return
 }
 
-func GetInt(md metadata.Metadata, keys ...string) (v int) {
+func GetInt(md metadata.IMetaData, keys ...string) (v int) {
 	if md == nil {
 		return
 	}
@@ -56,7 +56,7 @@ func GetInt(md metadata.Metadata, keys ...string) (v int) {
 	return
 }
 
-func GetFloat(md metadata.Metadata, keys ...string) (v float64) {
+func GetFloat(md metadata.IMetaData, keys ...string) (v float64) {
 	if md == nil {
 		return
 	}
@@ -79,7 +79,7 @@ func GetFloat(md metadata.Metadata, keys ...string) (v float64) {
 	return
 }
 
-func GetDuration(md metadata.Metadata, keys ...string) (v time.Duration) {
+func GetDuration(md metadata.IMetaData, keys ...string) (v time.Duration) {
 	if md == nil {
 		return
 	}
@@ -104,7 +104,7 @@ func GetDuration(md metadata.Metadata, keys ...string) (v time.Duration) {
 	return
 }
 
-func GetString(md metadata.Metadata, keys ...string) (v string) {
+func GetString(md metadata.IMetaData, keys ...string) (v string) {
 	if md == nil {
 		return
 	}
@@ -138,7 +138,7 @@ func GetString(md metadata.Metadata, keys ...string) (v string) {
 	return
 }
 
-func GetStrings(md metadata.Metadata, keys ...string) (ss []string) {
+func GetStrings(md metadata.IMetaData, keys ...string) (ss []string) {
 	if md == nil {
 		return
 	}
@@ -163,7 +163,7 @@ func GetStrings(md metadata.Metadata, keys ...string) (ss []string) {
 	return
 }
 
-func GetStringMap(md metadata.Metadata, keys ...string) (m map[string]any) {
+func GetStringMap(md metadata.IMetaData, keys ...string) (m map[string]any) {
 	if md == nil {
 		return
 	}
@@ -187,7 +187,7 @@ func GetStringMap(md metadata.Metadata, keys ...string) (m map[string]any) {
 	return
 }
 
-func GetStringMapString(md metadata.Metadata, keys ...string) (m map[string]string) {
+func GetStringMapString(md metadata.IMetaData, keys ...string) (m map[string]string) {
 	if md == nil {
 		return
 	}

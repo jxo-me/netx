@@ -8,13 +8,13 @@ var (
 	nop = &nopLogger{}
 )
 
-func Nop() logger.Logger {
+func Nop() logger.ILogger {
 	return nop
 }
 
 type nopLogger struct{}
 
-func (l *nopLogger) WithFields(fields map[string]any) logger.Logger {
+func (l *nopLogger) WithFields(fields map[string]any) logger.ILogger {
 	return l
 }
 

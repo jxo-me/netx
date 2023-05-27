@@ -31,7 +31,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.Chainer, error) {
 		"chain": cfg.Name,
 	})
 
-	var md metadata.Metadata
+	var md metadata.IMetaData
 	if cfg.Metadata != nil {
 		md = mdx.NewMetadata(cfg.Metadata)
 	}
@@ -112,7 +112,7 @@ func ParseHop(cfg *config.HopConfig) (chain.Hop, error) {
 			return nil, err
 		}
 
-		var nm metadata.Metadata
+		var nm metadata.IMetaData
 		if v.Metadata != nil {
 			nm = mdx.NewMetadata(v.Metadata)
 		}

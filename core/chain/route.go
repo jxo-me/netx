@@ -96,7 +96,7 @@ type DialOptions struct {
 	Timeout   time.Duration
 	Interface string
 	SockOpts  *SockOpts
-	Logger    logger.Logger
+	Logger    logger.ILogger
 }
 
 type DialOption func(opts *DialOptions)
@@ -119,7 +119,7 @@ func SockOptsDialOption(so *SockOpts) DialOption {
 	}
 }
 
-func LoggerDialOption(logger logger.Logger) DialOption {
+func LoggerDialOption(logger logger.ILogger) DialOption {
 	return func(opts *DialOptions) {
 		opts.Logger = logger
 	}
@@ -131,7 +131,7 @@ type BindOptions struct {
 	UDPDataQueueSize  int
 	UDPDataBufferSize int
 	UDPConnTTL        time.Duration
-	Logger            logger.Logger
+	Logger            logger.ILogger
 }
 
 type BindOption func(opts *BindOptions)
@@ -166,7 +166,7 @@ func UDPConnTTLBindOption(ttl time.Duration) BindOption {
 	}
 }
 
-func LoggerBindOption(logger logger.Logger) BindOption {
+func LoggerBindOption(logger logger.ILogger) BindOption {
 	return func(opts *BindOptions) {
 		opts.Logger = logger
 	}

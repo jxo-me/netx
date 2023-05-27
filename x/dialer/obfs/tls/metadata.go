@@ -9,7 +9,7 @@ type metadata struct {
 	host string
 }
 
-func (d *obfsTLSDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *obfsTLSDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		host = "host"
 	)

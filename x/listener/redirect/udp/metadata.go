@@ -17,7 +17,7 @@ type metadata struct {
 	readBufferSize int
 }
 
-func (l *redirectListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *redirectListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		ttl            = "ttl"
 		readBufferSize = "readBufferSize"

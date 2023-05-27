@@ -26,7 +26,7 @@ type metadata struct {
 	header http.Header
 }
 
-func (l *wsListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *wsListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		path    = "path"
 		backlog = "backlog"

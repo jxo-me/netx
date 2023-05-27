@@ -12,7 +12,7 @@ type metadata struct {
 	hash        string
 }
 
-func (h *socks4Handler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *socks4Handler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		readTimeout = "readTimeout"
 		hash        = "hash"

@@ -25,12 +25,12 @@ type phtListener struct {
 	addr       net.Addr
 	tlsEnabled bool
 	server     *pht_util.Server
-	logger     logger.Logger
+	logger     logger.ILogger
 	md         metadata
 	options    listener.Options
 }
 
-func NewListener(opts ...listener.Option) listener.Listener {
+func NewListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -41,7 +41,7 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func NewTLSListener(opts ...listener.Option) listener.Listener {
+func NewTLSListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -53,7 +53,7 @@ func NewTLSListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *phtListener) Init(md md.Metadata) (err error) {
+func (l *phtListener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

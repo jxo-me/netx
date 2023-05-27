@@ -54,15 +54,15 @@ func (c *conn) Close() (err error) {
 
 type metadataConn struct {
 	net.Conn
-	md mdata.Metadata
+	md mdata.IMetaData
 }
 
-// Metadata implements metadata.Metadatable interface.
-func (c *metadataConn) Metadata() mdata.Metadata {
+// Metadata implements metadata.IMetaDatable interface.
+func (c *metadataConn) Metadata() mdata.IMetaData {
 	return c.md
 }
 
-func withMetadata(md mdata.Metadata, c net.Conn) net.Conn {
+func withMetadata(md mdata.IMetaData, c net.Conn) net.Conn {
 	return &metadataConn{
 		Conn: c,
 		md:   md,

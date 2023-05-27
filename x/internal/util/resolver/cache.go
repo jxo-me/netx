@@ -32,14 +32,14 @@ type cacheItem struct {
 
 type Cache struct {
 	m      sync.Map
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 func NewCache() *Cache {
 	return &Cache{}
 }
 
-func (c *Cache) WithLogger(logger logger.Logger) *Cache {
+func (c *Cache) WithLogger(logger logger.ILogger) *Cache {
 	c.logger = logger
 	return c
 }

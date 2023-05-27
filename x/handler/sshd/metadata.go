@@ -7,6 +7,6 @@ import (
 type metadata struct {
 }
 
-func (h *forwardHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *forwardHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	return
 }

@@ -6,6 +6,6 @@ import (
 
 type metadata struct{}
 
-func (h *redirectHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *redirectHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	return
 }

@@ -17,7 +17,7 @@ type metadata struct {
 	backlog int
 }
 
-func (l *kcpListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *kcpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		backlog    = "backlog"
 		config     = "config"

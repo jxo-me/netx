@@ -13,7 +13,7 @@ type metadata struct {
 	header         http.Header
 }
 
-func (c *httpConnector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *httpConnector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		connectTimeout = "timeout"
 		header         = "header"

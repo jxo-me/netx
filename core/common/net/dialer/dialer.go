@@ -25,7 +25,7 @@ type NetDialer struct {
 	Mark      int
 	Timeout   time.Duration
 	DialFunc  func(ctx context.Context, network, addr string) (net.Conn, error)
-	Logger    logger.Logger
+	Logger    logger.ILogger
 }
 
 func (d *NetDialer) Dial(ctx context.Context, network, addr string) (conn net.Conn, err error) {
@@ -82,7 +82,7 @@ func (d *NetDialer) Dial(ctx context.Context, network, addr string) (conn net.Co
 	return
 }
 
-func (d *NetDialer) dialOnce(ctx context.Context, network, addr, ifceName string, ifAddr net.Addr, deadline time.Time, log logger.Logger) (net.Conn, error) {
+func (d *NetDialer) dialOnce(ctx context.Context, network, addr, ifceName string, ifAddr net.Addr, deadline time.Time, log logger.ILogger) (net.Conn, error) {
 	if ifceName != "" {
 		log.Debugf("interface: %s %v/%s", ifceName, ifAddr, network)
 	}

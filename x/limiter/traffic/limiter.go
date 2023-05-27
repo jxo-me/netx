@@ -14,7 +14,7 @@ type llimiter struct {
 	limiter *rate.Limiter
 }
 
-func NewLimiter(r int) limiter.Limiter {
+func NewLimiter(r int) limiter.ILimiter {
 	return &llimiter{
 		limiter: rate.NewLimiter(rate.Limit(r), r),
 	}
@@ -42,10 +42,10 @@ func (l *llimiter) String() string {
 }
 
 type limiterGroup struct {
-	limiters []limiter.Limiter
+	limiters []limiter.ILimiter
 }
 
-func newLimiterGroup(limiters ...limiter.Limiter) *limiterGroup {
+func newLimiterGroup(limiters ...limiter.ILimiter) *limiterGroup {
 	sort.Slice(limiters, func(i, j int) bool {
 		return limiters[i].Limit() < limiters[j].Limit()
 	})

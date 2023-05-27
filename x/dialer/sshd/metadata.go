@@ -18,7 +18,7 @@ type metadata struct {
 	keepaliveRetries  int
 }
 
-func (d *sshdDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *sshdDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		handshakeTimeout = "handshakeTimeout"
 		privateKeyFile   = "privateKeyFile"

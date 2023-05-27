@@ -39,7 +39,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *http3Dialer) Init(md md.Metadata) (err error) {
+func (d *http3Dialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

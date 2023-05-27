@@ -11,7 +11,7 @@ import (
 
 // a dummy HTTP3 server conn used by HTTP3 handler
 type conn struct {
-	md     mdata.Metadata
+	md     mdata.IMetaData
 	r      *http.Request
 	w      http.ResponseWriter
 	laddr  net.Addr
@@ -60,7 +60,7 @@ func (c *conn) Done() <-chan struct{} {
 	return c.closed
 }
 
-// Metadata implements metadata.Metadatable interface.
-func (c *conn) Metadata() mdata.Metadata {
+// Metadata implements metadata.IMetaDatable interface.
+func (c *conn) Metadata() mdata.IMetaData {
 	return c.md
 }

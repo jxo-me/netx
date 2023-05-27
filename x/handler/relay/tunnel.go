@@ -176,7 +176,7 @@ func parseTunnelID(s string) (tid relay.TunnelID) {
 	return relay.NewTunnelID(uuid[:])
 }
 
-func getTunnelConn(network string, pool *ConnectorPool, tid relay.TunnelID, retry int, log logger.Logger) (conn net.Conn, cid relay.ConnectorID, err error) {
+func getTunnelConn(network string, pool *ConnectorPool, tid relay.TunnelID, retry int, log logger.ILogger) (conn net.Conn, cid relay.ConnectorID, err error) {
 	if retry <= 0 {
 		retry = 1
 	}

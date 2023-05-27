@@ -41,7 +41,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *socks5Handler) Init(md md.Metadata) (err error) {
+func (h *socks5Handler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}

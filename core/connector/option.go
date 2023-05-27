@@ -12,7 +12,7 @@ import (
 type Options struct {
 	Auth      *url.Userinfo
 	TLSConfig *tls.Config
-	Logger    logger.Logger
+	Logger    logger.ILogger
 }
 
 type Option func(opts *Options)
@@ -29,7 +29,7 @@ func TLSConfigOption(tlsConfig *tls.Config) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *Options) {
 		opts.Logger = logger
 	}

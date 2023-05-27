@@ -17,7 +17,7 @@ type metadata struct {
 	flightInterval time.Duration
 }
 
-func (d *dtlsDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *dtlsDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	d.md.mtu = mdutil.GetInt(md, "dtls.mtu", "mtu")
 	d.md.bufferSize = mdutil.GetInt(md, "dtls.bufferSize", "bufferSize")
 	if d.md.bufferSize <= 0 {

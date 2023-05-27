@@ -14,19 +14,19 @@ var (
 )
 
 type ChainOptions struct {
-	Metadata metadata.Metadata
-	Logger   logger.Logger
+	Metadata metadata.IMetaData
+	Logger   logger.ILogger
 }
 
 type ChainOption func(*ChainOptions)
 
-func MetadataChainOption(md metadata.Metadata) ChainOption {
+func MetadataChainOption(md metadata.IMetaData) ChainOption {
 	return func(opts *ChainOptions) {
 		opts.Metadata = md
 	}
 }
 
-func LoggerChainOption(logger logger.Logger) ChainOption {
+func LoggerChainOption(logger logger.ILogger) ChainOption {
 	return func(opts *ChainOptions) {
 		opts.Logger = logger
 	}
@@ -40,8 +40,8 @@ type Chain struct {
 	name     string
 	hops     []chain.Hop
 	marker   selector.Marker
-	metadata metadata.Metadata
-	logger   logger.Logger
+	metadata metadata.IMetaData
+	logger   logger.ILogger
 }
 
 func NewChain(name string, opts ...ChainOption) *Chain {
@@ -64,8 +64,8 @@ func (c *Chain) AddHop(hop chain.Hop) {
 	c.hops = append(c.hops, hop)
 }
 
-// Metadata implements metadata.Metadatable interface.
-func (c *Chain) Metadata() metadata.Metadata {
+// Metadata implements metadata.IMetaDatable interface.
+func (c *Chain) Metadata() metadata.IMetaData {
 	return c.metadata
 }
 

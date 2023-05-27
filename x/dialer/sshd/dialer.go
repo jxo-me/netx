@@ -36,7 +36,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *sshdDialer) Init(md md.Metadata) (err error) {
+func (d *sshdDialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

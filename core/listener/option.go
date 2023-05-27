@@ -18,10 +18,10 @@ type Options struct {
 	Auth           *url.Userinfo
 	TLSConfig      *tls.Config
 	Admission      admission.Admission
-	TrafficLimiter traffic.TrafficLimiter
-	ConnLimiter    conn.ConnLimiter
+	TrafficLimiter traffic.ITrafficLimiter
+	ConnLimiter    conn.IConnLimiter
 	Chain          chain.Chainer
-	Logger         logger.Logger
+	Logger         logger.ILogger
 	Service        string
 	ProxyProtocol  int
 }
@@ -58,13 +58,13 @@ func AdmissionOption(admission admission.Admission) Option {
 	}
 }
 
-func TrafficLimiterOption(limiter traffic.TrafficLimiter) Option {
+func TrafficLimiterOption(limiter traffic.ITrafficLimiter) Option {
 	return func(opts *Options) {
 		opts.TrafficLimiter = limiter
 	}
 }
 
-func ConnLimiterOption(limiter conn.ConnLimiter) Option {
+func ConnLimiterOption(limiter conn.IConnLimiter) Option {
 	return func(opts *Options) {
 		opts.ConnLimiter = limiter
 	}
@@ -76,7 +76,7 @@ func ChainOption(chain chain.Chainer) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *Options) {
 		opts.Logger = logger
 	}

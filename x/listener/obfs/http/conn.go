@@ -23,7 +23,7 @@ type obfsHTTPConn struct {
 	handshaked     bool
 	handshakeMutex sync.Mutex
 	header         http.Header
-	logger         logger.Logger
+	logger         logger.ILogger
 }
 
 func (c *obfsHTTPConn) Handshake() (err error) {

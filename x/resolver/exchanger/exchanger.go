@@ -21,7 +21,7 @@ type Options struct {
 	router    *chain.Router
 	tlsConfig *tls.Config
 	timeout   time.Duration
-	logger    logger.Logger
+	logger    logger.ILogger
 }
 
 // Option allows a common way to set Exchanger options.
@@ -42,7 +42,7 @@ func TLSConfigOption(cfg *tls.Config) Option {
 }
 
 // LoggerOption sets the logger for Exchanger.
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *Options) {
 		opts.logger = logger
 	}

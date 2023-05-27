@@ -55,7 +55,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	return h
 }
 
-func (h *autoHandler) Init(md md.Metadata) error {
+func (h *autoHandler) Init(md md.IMetaData) error {
 	if h.httpHandler != nil {
 		if err := h.httpHandler.Init(md); err != nil {
 			return err

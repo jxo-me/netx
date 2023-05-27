@@ -13,7 +13,7 @@ type metadata struct {
 	backlog int
 }
 
-func (l *http2Listener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *http2Listener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		backlog = "backlog"
 	)

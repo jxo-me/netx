@@ -17,7 +17,7 @@ func init() {
 
 type ftcpDialer struct {
 	md     metadata
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 func NewDialer(opts ...dialer.Option) dialer.Dialer {
@@ -31,7 +31,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *ftcpDialer) Init(md md.Metadata) (err error) {
+func (d *ftcpDialer) Init(md md.IMetaData) (err error) {
 	return d.parseMetadata(md)
 }
 

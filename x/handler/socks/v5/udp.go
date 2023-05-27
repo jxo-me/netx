@@ -15,7 +15,7 @@ import (
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
-func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger.Logger) error {
+func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"cmd": "udp",
 	})

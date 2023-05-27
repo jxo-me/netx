@@ -12,7 +12,7 @@ import (
 
 type pluginOptions struct {
 	client *grpc.ClientConn
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 type PluginOption func(opts *pluginOptions)
@@ -23,7 +23,7 @@ func PluginConnOption(c *grpc.ClientConn) PluginOption {
 	}
 }
 
-func LoggerOption(logger logger.Logger) PluginOption {
+func LoggerOption(logger logger.ILogger) PluginOption {
 	return func(opts *pluginOptions) {
 		opts.logger = logger
 	}

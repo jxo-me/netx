@@ -1,10 +1,10 @@
 package conn
 
-type Limiter interface {
+type ILimiter interface {
 	Allow(n int) bool
 	Limit() int
 }
 
-type ConnLimiter interface {
-	Limiter(key string) Limiter
+type IConnLimiter interface {
+	Limiter(key string) ILimiter
 }

@@ -13,7 +13,7 @@ type metadata struct {
 	noDelay        bool
 }
 
-func (c *ssConnector) parseMetadata(md mdata.Metadata) (err error) {
+func (c *ssConnector) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		key            = "key"
 		connectTimeout = "timeout"

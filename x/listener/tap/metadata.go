@@ -17,7 +17,7 @@ type metadata struct {
 	config *tap_util.Config
 }
 
-func (l *tapListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *tapListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		name    = "name"
 		netKey  = "net"

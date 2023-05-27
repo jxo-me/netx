@@ -7,6 +7,6 @@ import (
 type metadata struct {
 }
 
-func (l *tlsListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *tlsListener) parseMetadata(md mdata.IMetaData) (err error) {
 	return
 }

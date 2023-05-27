@@ -14,7 +14,7 @@ import (
 type HopOptions struct {
 	bypass   bypass.Bypass
 	selector selector.Selector[*chain.Node]
-	logger   logger.Logger
+	logger   logger.ILogger
 }
 
 type HopOption func(*HopOptions)
@@ -31,7 +31,7 @@ func SelectorHopOption(s selector.Selector[*chain.Node]) HopOption {
 	}
 }
 
-func LoggerHopOption(logger logger.Logger) HopOption {
+func LoggerHopOption(logger logger.ILogger) HopOption {
 	return func(opts *HopOptions) {
 		opts.logger = logger
 	}

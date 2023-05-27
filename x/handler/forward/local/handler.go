@@ -46,7 +46,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *forwardHandler) Init(md md.Metadata) (err error) {
+func (h *forwardHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -167,7 +167,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	return nil
 }
 
-func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log logger.Logger) (err error) {
+func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log logger.ILogger) (err error) {
 	br := bufio.NewReader(rw)
 	var connPool sync.Map
 

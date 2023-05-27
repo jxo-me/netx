@@ -536,7 +536,7 @@ func defaultChainSelector() selector.Selector[chain.Chainer] {
 	)
 }
 
-func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.TrafficLimiter) {
+func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.ITrafficLimiter) {
 	if cfg == nil {
 		return nil
 	}
@@ -582,7 +582,7 @@ func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.TrafficLimiter)
 	return xtraffic.NewTrafficLimiter(opts...)
 }
 
-func ParseConnLimiter(cfg *config.LimiterConfig) (lim conn.ConnLimiter) {
+func ParseConnLimiter(cfg *config.LimiterConfig) (lim conn.IConnLimiter) {
 	if cfg == nil {
 		return nil
 	}
@@ -628,7 +628,7 @@ func ParseConnLimiter(cfg *config.LimiterConfig) (lim conn.ConnLimiter) {
 	return xconn.NewConnLimiter(opts...)
 }
 
-func ParseRateLimiter(cfg *config.LimiterConfig) (lim rate.RateLimiter) {
+func ParseRateLimiter(cfg *config.LimiterConfig) (lim rate.IRateLimiter) {
 	if cfg == nil {
 		return nil
 	}

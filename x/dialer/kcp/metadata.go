@@ -14,7 +14,7 @@ type metadata struct {
 	config           *kcp_util.Config
 }
 
-func (d *kcpDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *kcpDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		config           = "config"
 		configFile       = "c"

@@ -12,7 +12,7 @@ type metadata struct {
 	header http.Header
 }
 
-func (d *obfsHTTPDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *obfsHTTPDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		header = "header"
 		host   = "host"

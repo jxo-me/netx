@@ -12,7 +12,7 @@ import (
 type tcpListener struct {
 	addr   net.Addr
 	conn   net.Conn
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 func (p *tcpListener) Accept() (net.Conn, error) {
@@ -50,7 +50,7 @@ func (p *tcpListener) Close() error {
 type tcpMuxListener struct {
 	addr    net.Addr
 	session *mux.Session
-	logger  logger.Logger
+	logger  logger.ILogger
 }
 
 func (p *tcpMuxListener) Accept() (net.Conn, error) {

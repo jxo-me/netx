@@ -12,7 +12,7 @@ import (
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
 )
 
-func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "connect",

@@ -1,10 +1,10 @@
 package metadata
 
-type Metadatable interface {
-	Metadata() Metadata
+type IMetaDatable interface {
+	Metadata() IMetaData
 }
 
-type Metadata interface {
+type IMetaData interface {
 	IsExists(key string) bool
 	Set(key string, value any)
 	Get(key string) any

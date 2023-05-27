@@ -21,7 +21,7 @@ type Client struct {
 	PushPath      string
 	PullPath      string
 	TLSEnabled    bool
-	Logger        logger.Logger
+	Logger        logger.ILogger
 }
 
 func (c *Client) Dial(ctx context.Context, addr string) (net.Conn, error) {

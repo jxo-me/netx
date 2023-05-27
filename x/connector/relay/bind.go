@@ -43,7 +43,7 @@ func (c *relayConnector) Bind(ctx context.Context, conn net.Conn, network, addre
 	}
 }
 
-func (c *relayConnector) bindTunnel(ctx context.Context, conn net.Conn, network string, log logger.Logger) (net.Listener, error) {
+func (c *relayConnector) bindTunnel(ctx context.Context, conn net.Conn, network string, log logger.ILogger) (net.Listener, error) {
 	addr, cid, err := c.initTunnel(conn, network)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (c *relayConnector) initTunnel(conn net.Conn, network string) (addr net.Add
 	return
 }
 
-func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) (net.Listener, error) {
+func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) (net.Listener, error) {
 	laddr, err := c.bind(conn, relay.CmdBind, network, address)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, ad
 	}, nil
 }
 
-func (c *relayConnector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions, log logger.Logger) (net.Listener, error) {
+func (c *relayConnector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions, log logger.ILogger) (net.Listener, error) {
 	laddr, err := c.bind(conn, relay.FUDP|relay.CmdBind, network, address)
 	if err != nil {
 		return nil, err

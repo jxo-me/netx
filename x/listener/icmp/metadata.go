@@ -19,7 +19,7 @@ type metadata struct {
 	backlog int
 }
 
-func (l *icmpListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *icmpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		keepAlive        = "keepAlive"
 		keepAlivePeriod  = "ttl"

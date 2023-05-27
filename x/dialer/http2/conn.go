@@ -13,7 +13,7 @@ type conn struct {
 	localAddr  net.Addr
 	remoteAddr net.Addr
 	onClose    func()
-	md         mdata.Metadata
+	md         mdata.IMetaData
 }
 
 func (c *conn) Close() error {
@@ -51,7 +51,7 @@ func (c *conn) SetWriteDeadline(t time.Time) error {
 	return &net.OpError{Op: "set", Net: "nop", Source: nil, Addr: nil, Err: errors.New("deadline not supported")}
 }
 
-// Metadata implements metadata.Metadatable interface.
-func (c *conn) Metadata() mdata.Metadata {
+// Metadata implements metadata.IMetaDatable interface.
+func (c *conn) Metadata() mdata.IMetaData {
 	return c.md
 }

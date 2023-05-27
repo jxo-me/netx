@@ -7,21 +7,21 @@ import (
 )
 
 type trafficLimiterRegistry struct {
-	registry[traffic.TrafficLimiter]
+	registry[traffic.ITrafficLimiter]
 }
 
-func (r *trafficLimiterRegistry) Register(name string, v traffic.TrafficLimiter) error {
+func (r *trafficLimiterRegistry) Register(name string, v traffic.ITrafficLimiter) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *trafficLimiterRegistry) Get(name string) traffic.TrafficLimiter {
+func (r *trafficLimiterRegistry) Get(name string) traffic.ITrafficLimiter {
 	if name != "" {
 		return &trafficLimiterWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *trafficLimiterRegistry) get(name string) traffic.TrafficLimiter {
+func (r *trafficLimiterRegistry) get(name string) traffic.ITrafficLimiter {
 	return r.registry.Get(name)
 }
 
@@ -30,7 +30,7 @@ type trafficLimiterWrapper struct {
 	r    *trafficLimiterRegistry
 }
 
-func (w *trafficLimiterWrapper) In(key string) traffic.Limiter {
+func (w *trafficLimiterWrapper) In(key string) traffic.ILimiter {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil
@@ -38,7 +38,7 @@ func (w *trafficLimiterWrapper) In(key string) traffic.Limiter {
 	return v.In(key)
 }
 
-func (w *trafficLimiterWrapper) Out(key string) traffic.Limiter {
+func (w *trafficLimiterWrapper) Out(key string) traffic.ILimiter {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil
@@ -47,21 +47,21 @@ func (w *trafficLimiterWrapper) Out(key string) traffic.Limiter {
 }
 
 type connLimiterRegistry struct {
-	registry[conn.ConnLimiter]
+	registry[conn.IConnLimiter]
 }
 
-func (r *connLimiterRegistry) Register(name string, v conn.ConnLimiter) error {
+func (r *connLimiterRegistry) Register(name string, v conn.IConnLimiter) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *connLimiterRegistry) Get(name string) conn.ConnLimiter {
+func (r *connLimiterRegistry) Get(name string) conn.IConnLimiter {
 	if name != "" {
 		return &connLimiterWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *connLimiterRegistry) get(name string) conn.ConnLimiter {
+func (r *connLimiterRegistry) get(name string) conn.IConnLimiter {
 	return r.registry.Get(name)
 }
 
@@ -70,7 +70,7 @@ type connLimiterWrapper struct {
 	r    *connLimiterRegistry
 }
 
-func (w *connLimiterWrapper) Limiter(key string) conn.Limiter {
+func (w *connLimiterWrapper) Limiter(key string) conn.ILimiter {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil
@@ -79,21 +79,21 @@ func (w *connLimiterWrapper) Limiter(key string) conn.Limiter {
 }
 
 type rateLimiterRegistry struct {
-	registry[rate.RateLimiter]
+	registry[rate.IRateLimiter]
 }
 
-func (r *rateLimiterRegistry) Register(name string, v rate.RateLimiter) error {
+func (r *rateLimiterRegistry) Register(name string, v rate.IRateLimiter) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *rateLimiterRegistry) Get(name string) rate.RateLimiter {
+func (r *rateLimiterRegistry) Get(name string) rate.IRateLimiter {
 	if name != "" {
 		return &rateLimiterWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *rateLimiterRegistry) get(name string) rate.RateLimiter {
+func (r *rateLimiterRegistry) get(name string) rate.IRateLimiter {
 	return r.registry.Get(name)
 }
 
@@ -102,7 +102,7 @@ type rateLimiterWrapper struct {
 	r    *rateLimiterRegistry
 }
 
-func (w *rateLimiterWrapper) Limiter(key string) rate.Limiter {
+func (w *rateLimiterWrapper) Limiter(key string) rate.ILimiter {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil

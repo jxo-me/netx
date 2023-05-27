@@ -19,7 +19,7 @@ type metadata struct {
 	backlog        int
 }
 
-func (l *dnsListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *dnsListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		backlog        = "backlog"
 		mode           = "mode"

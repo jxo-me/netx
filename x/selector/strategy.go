@@ -58,7 +58,7 @@ func (s *randomStrategy[T]) Apply(ctx context.Context, vs ...T) (v T) {
 	s.rw.Reset()
 	for i := range vs {
 		weight := 0
-		if md, _ := any(vs[i]).(metadata.Metadatable); md != nil {
+		if md, _ := any(vs[i]).(metadata.IMetaDatable); md != nil {
 			weight = mdutil.GetInt(md.Metadata(), labelWeight)
 		}
 		if weight <= 0 {

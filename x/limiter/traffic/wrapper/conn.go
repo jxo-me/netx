@@ -24,14 +24,14 @@ var (
 type serverConn struct {
 	net.Conn
 	rbuf       bytes.Buffer
-	limiter    limiter.TrafficLimiter
-	limiterIn  limiter.Limiter
+	limiter    limiter.ITrafficLimiter
+	limiterIn  limiter.ILimiter
 	expIn      int64
-	limiterOut limiter.Limiter
+	limiterOut limiter.ILimiter
 	expOut     int64
 }
 
-func WrapConn(limiter limiter.TrafficLimiter, c net.Conn) net.Conn {
+func WrapConn(limiter limiter.ITrafficLimiter, c net.Conn) net.Conn {
 	if limiter == nil {
 		return c
 	}
@@ -41,7 +41,7 @@ func WrapConn(limiter limiter.TrafficLimiter, c net.Conn) net.Conn {
 	}
 }
 
-func (c *serverConn) getInLimiter(addr net.Addr) limiter.Limiter {
+func (c *serverConn) getInLimiter(addr net.Addr) limiter.ILimiter {
 	now := time.Now().UnixNano()
 	// cache the limiter for 1s
 	if c.limiter != nil && time.Duration(now-c.expIn) > time.Second {
@@ -51,7 +51,7 @@ func (c *serverConn) getInLimiter(addr net.Addr) limiter.Limiter {
 	return c.limiterIn
 }
 
-func (c *serverConn) getOutLimiter(addr net.Addr) limiter.Limiter {
+func (c *serverConn) getOutLimiter(addr net.Addr) limiter.ILimiter {
 	now := time.Now().UnixNano()
 	// cache the limiter for 1s
 	if c.limiter != nil && time.Duration(now-c.expOut) > time.Second {
@@ -119,8 +119,8 @@ func (c *serverConn) SyscallConn() (rc syscall.RawConn, err error) {
 	return
 }
 
-func (c *serverConn) Metadata() metadata.Metadata {
-	if md, ok := c.Conn.(metadata.Metadatable); ok {
+func (c *serverConn) Metadata() metadata.IMetaData {
+	if md, ok := c.Conn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil
@@ -128,12 +128,12 @@ func (c *serverConn) Metadata() metadata.Metadata {
 
 type packetConn struct {
 	net.PacketConn
-	limiter   limiter.TrafficLimiter
+	limiter   limiter.ITrafficLimiter
 	inLimits  *cache.Cache
 	outLimits *cache.Cache
 }
 
-func WrapPacketConn(lim limiter.TrafficLimiter, pc net.PacketConn) net.PacketConn {
+func WrapPacketConn(lim limiter.ITrafficLimiter, pc net.PacketConn) net.PacketConn {
 	if lim == nil {
 		return pc
 	}
@@ -145,16 +145,16 @@ func WrapPacketConn(lim limiter.TrafficLimiter, pc net.PacketConn) net.PacketCon
 	}
 }
 
-func (c *packetConn) getInLimiter(addr net.Addr) limiter.Limiter {
+func (c *packetConn) getInLimiter(addr net.Addr) limiter.ILimiter {
 	if c.limiter == nil {
 		return nil
 	}
 
-	lim, ok := func() (lim limiter.Limiter, ok bool) {
+	lim, ok := func() (lim limiter.ILimiter, ok bool) {
 		v, ok := c.inLimits.Get(addr.String())
 		if ok {
 			if v != nil {
-				lim = v.(limiter.Limiter)
+				lim = v.(limiter.ILimiter)
 			}
 		}
 		return
@@ -169,16 +169,16 @@ func (c *packetConn) getInLimiter(addr net.Addr) limiter.Limiter {
 	return lim
 }
 
-func (c *packetConn) getOutLimiter(addr net.Addr) limiter.Limiter {
+func (c *packetConn) getOutLimiter(addr net.Addr) limiter.ILimiter {
 	if c.limiter == nil {
 		return nil
 	}
 
-	lim, ok := func() (lim limiter.Limiter, ok bool) {
+	lim, ok := func() (lim limiter.ILimiter, ok bool) {
 		v, ok := c.outLimits.Get(addr.String())
 		if ok {
 			if v != nil {
-				lim = v.(limiter.Limiter)
+				lim = v.(limiter.ILimiter)
 			}
 		}
 		return
@@ -225,8 +225,8 @@ func (c *packetConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	return c.PacketConn.WriteTo(p, addr)
 }
 
-func (c *packetConn) Metadata() metadata.Metadata {
-	if md, ok := c.PacketConn.(metadata.Metadatable); ok {
+func (c *packetConn) Metadata() metadata.IMetaData {
+	if md, ok := c.PacketConn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil
@@ -234,12 +234,12 @@ func (c *packetConn) Metadata() metadata.Metadata {
 
 type udpConn struct {
 	net.PacketConn
-	limiter   limiter.TrafficLimiter
+	limiter   limiter.ITrafficLimiter
 	inLimits  *cache.Cache
 	outLimits *cache.Cache
 }
 
-func WrapUDPConn(limiter limiter.TrafficLimiter, pc net.PacketConn) udp.Conn {
+func WrapUDPConn(limiter limiter.ITrafficLimiter, pc net.PacketConn) udp.Conn {
 	return &udpConn{
 		PacketConn: pc,
 		limiter:    limiter,
@@ -248,16 +248,16 @@ func WrapUDPConn(limiter limiter.TrafficLimiter, pc net.PacketConn) udp.Conn {
 	}
 }
 
-func (c *udpConn) getInLimiter(addr net.Addr) limiter.Limiter {
+func (c *udpConn) getInLimiter(addr net.Addr) limiter.ILimiter {
 	if c.limiter == nil {
 		return nil
 	}
 
-	lim, ok := func() (lim limiter.Limiter, ok bool) {
+	lim, ok := func() (lim limiter.ILimiter, ok bool) {
 		v, ok := c.inLimits.Get(addr.String())
 		if ok {
 			if v != nil {
-				lim = v.(limiter.Limiter)
+				lim = v.(limiter.ILimiter)
 			}
 		}
 		return
@@ -272,16 +272,16 @@ func (c *udpConn) getInLimiter(addr net.Addr) limiter.Limiter {
 	return lim
 }
 
-func (c *udpConn) getOutLimiter(addr net.Addr) limiter.Limiter {
+func (c *udpConn) getOutLimiter(addr net.Addr) limiter.ILimiter {
 	if c.limiter == nil {
 		return nil
 	}
 
-	lim, ok := func() (lim limiter.Limiter, ok bool) {
+	lim, ok := func() (lim limiter.ILimiter, ok bool) {
 		v, ok := c.outLimits.Get(addr.String())
 		if ok {
 			if v != nil {
-				lim = v.(limiter.Limiter)
+				lim = v.(limiter.ILimiter)
 			}
 		}
 		return
@@ -450,8 +450,8 @@ func (c *udpConn) SetDSCP(n int) error {
 	return nil
 }
 
-func (c *udpConn) Metadata() metadata.Metadata {
-	if md, ok := c.PacketConn.(metadata.Metadatable); ok {
+func (c *udpConn) Metadata() metadata.IMetaData {
+	if md, ok := c.PacketConn.(metadata.IMetaDatable); ok {
 		return md.Metadata()
 	}
 	return nil

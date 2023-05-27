@@ -47,7 +47,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *redirectHandler) Init(md md.Metadata) (err error) {
+func (h *redirectHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -144,7 +144,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 	return nil
 }
 
-func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.Logger) error {
+func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.ILogger) error {
 	req, err := http.ReadRequest(bufio.NewReader(rw))
 	if err != nil {
 		return err
@@ -209,7 +209,7 @@ func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, radd
 	return nil
 }
 
-func (h *redirectHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, raddr, dstAddr net.Addr, log logger.Logger) error {
+func (h *redirectHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, raddr, dstAddr net.Addr, log logger.ILogger) error {
 	buf := new(bytes.Buffer)
 	host, err := h.getServerName(ctx, io.TeeReader(rw, buf))
 	if err != nil {

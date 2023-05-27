@@ -24,12 +24,12 @@ type rtcpListener struct {
 	laddr   net.Addr
 	ln      net.Listener
 	router  *chain.Router
-	logger  logger.Logger
+	logger  logger.ILogger
 	closed  chan struct{}
 	options listener.Options
 }
 
-func NewListener(opts ...listener.Option) listener.Listener {
+func NewListener(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -41,7 +41,7 @@ func NewListener(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *rtcpListener) Init(md md.Metadata) (err error) {
+func (l *rtcpListener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

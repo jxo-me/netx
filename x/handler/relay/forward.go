@@ -12,7 +12,7 @@ import (
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 )
 
-func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.Logger) error {
+func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.ILogger) error {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,

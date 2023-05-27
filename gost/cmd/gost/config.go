@@ -143,7 +143,7 @@ func buildService(cfg *config.Config) (services []service.Service) {
 	return
 }
 
-func logFromConfig(cfg *config.LogConfig) logger.Logger {
+func logFromConfig(cfg *config.LogConfig) logger.ILogger {
 	if cfg == nil {
 		cfg = &config.LogConfig{}
 	}

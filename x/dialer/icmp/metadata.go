@@ -13,7 +13,7 @@ type metadata struct {
 	handshakeTimeout time.Duration
 }
 
-func (d *icmpDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *icmpDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		keepAlive        = "keepAlive"
 		keepAlivePeriod  = "ttl"

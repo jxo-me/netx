@@ -8,10 +8,10 @@ import (
 
 type listener struct {
 	net.Listener
-	limiter limiter.TrafficLimiter
+	limiter limiter.ITrafficLimiter
 }
 
-func WrapListener(limiter limiter.TrafficLimiter, ln net.Listener) net.Listener {
+func WrapListener(limiter limiter.ITrafficLimiter, ln net.Listener) net.Listener {
 	if limiter == nil {
 		return ln
 	}

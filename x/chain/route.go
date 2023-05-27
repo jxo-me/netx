@@ -106,7 +106,7 @@ func (r *route) Bind(ctx context.Context, network, address string, opts ...chain
 	return ln, nil
 }
 
-func (r *route) connect(ctx context.Context, logger logger.Logger) (conn net.Conn, err error) {
+func (r *route) connect(ctx context.Context, logger logger.ILogger) (conn net.Conn, err error) {
 	network := "ip"
 	node := r.nodes[0]
 

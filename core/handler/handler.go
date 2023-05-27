@@ -9,7 +9,7 @@ import (
 )
 
 type Handler interface {
-	Init(metadata.Metadata) error
+	Init(metadata.IMetaData) error
 	Handle(context.Context, net.Conn, ...HandleOption) error
 }
 

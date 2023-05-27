@@ -8,7 +8,7 @@ import (
 
 type mapMetadata map[string]any
 
-func NewMetadata(m map[string]any) metadata.Metadata {
+func NewMetadata(m map[string]any) metadata.IMetaData {
 	md := make(map[string]any)
 	for k, v := range m {
 		md[strings.ToLower(k)] = v

@@ -43,13 +43,13 @@ func (w *chainWrapper) Marker() selector.Marker {
 	return nil
 }
 
-func (w *chainWrapper) Metadata() metadata.Metadata {
+func (w *chainWrapper) Metadata() metadata.IMetaData {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil
 	}
 
-	if mi, ok := v.(metadata.Metadatable); ok {
+	if mi, ok := v.(metadata.IMetaDatable); ok {
 		return mi.Metadata()
 	}
 	return nil

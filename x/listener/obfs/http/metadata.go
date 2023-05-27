@@ -11,7 +11,7 @@ type metadata struct {
 	header http.Header
 }
 
-func (l *obfsListener) parseMetadata(md mdata.Metadata) (err error) {
+func (l *obfsListener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		header = "header"
 	)

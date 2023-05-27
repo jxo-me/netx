@@ -13,7 +13,7 @@ type metadata struct {
 	hash        string
 }
 
-func (h *ssHandler) parseMetadata(md mdata.Metadata) (err error) {
+func (h *ssHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		key         = "key"
 		readTimeout = "readTimeout"

@@ -21,7 +21,7 @@ func init() {
 type quicDialer struct {
 	sessions     map[string]*quicSession
 	sessionMutex sync.Mutex
-	logger       logger.Logger
+	logger       logger.ILogger
 	md           metadata
 	options      dialer.Options
 }
@@ -39,7 +39,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 }
 
-func (d *quicDialer) Init(md md.Metadata) (err error) {
+func (d *quicDialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
 	}

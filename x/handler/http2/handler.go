@@ -50,7 +50,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *http2Handler) Init(md md.Metadata) error {
+func (h *http2Handler) Init(md md.IMetaData) error {
 	if err := h.parseMetadata(md); err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 		return nil
 	}
 
-	v, ok := conn.(md.Metadatable)
+	v, ok := conn.(md.IMetaDatable)
 	if !ok || v == nil {
 		err := errors.New("wrong connection type")
 		log.Error(err)
@@ -99,7 +99,7 @@ func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 // NOTE: there is an issue (golang/go#43989) will cause the client hangs
 // when server returns an non-200 status code,
 // May be fixed in go1.18.
-func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.Logger) error {
+func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.ILogger) error {
 	// Try to get the actual host.
 	// Compatible with GOST 2.x.
 	if v := req.Header.Get("Gost-Target"); v != "" {
@@ -252,7 +252,7 @@ func (h *http2Handler) basicProxyAuth(proxyAuth string) (username, password stri
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *http2Handler) authenticate(ctx context.Context, w http.ResponseWriter, r *http.Request, resp *http.Response, log logger.Logger) (ok bool) {
+func (h *http2Handler) authenticate(ctx context.Context, w http.ResponseWriter, r *http.Request, resp *http.Response, log logger.ILogger) (ok bool) {
 	u, p, _ := h.basicProxyAuth(r.Header.Get("Proxy-Authorization"))
 	if h.options.Auther == nil || h.options.Auther.Authenticate(ctx, u, p) {
 		return true

@@ -11,7 +11,7 @@ import (
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 )
 
-func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
@@ -30,7 +30,7 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, 
 	return h.bindLocal(ctx, conn, network, address, log)
 }
 
-func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		log.Error(err)
@@ -68,7 +68,7 @@ func (h *socks5Handler) bindLocal(ctx context.Context, conn net.Conn, network, a
 	return nil
 }
 
-func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.Logger) {
+func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Listener, log logger.ILogger) {
 	var rc net.Conn
 	accept := func() <-chan error {
 		errc := make(chan error, 1)

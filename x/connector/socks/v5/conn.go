@@ -29,7 +29,7 @@ type udpRelayConn struct {
 	tcpConn    net.Conn
 	taddr      net.Addr
 	bufferSize int
-	logger     logger.Logger
+	logger     logger.ILogger
 }
 
 func (c *udpRelayConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {

@@ -27,7 +27,7 @@ type options struct {
 	postUp    []string
 	preDown   []string
 	postDown  []string
-	logger    logger.Logger
+	logger    logger.ILogger
 }
 
 type Option func(opts *options)
@@ -68,7 +68,7 @@ func PostDownOption(cmds []string) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *options) {
 		opts.logger = logger
 	}
@@ -76,12 +76,12 @@ func LoggerOption(logger logger.Logger) Option {
 
 type defaultService struct {
 	name     string
-	listener listener.Listener
+	listener listener.IListener
 	handler  handler.Handler
 	options  options
 }
 
-func NewService(name string, ln listener.Listener, h handler.Handler, opts ...Option) service.Service {
+func NewService(name string, ln listener.IListener, h handler.Handler, opts ...Option) service.Service {
 	var options options
 	for _, opt := range opts {
 		opt(&options)

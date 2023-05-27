@@ -32,7 +32,7 @@ func (f *failFilter[T]) Filter(ctx context.Context, vs ...T) []T {
 	for _, v := range vs {
 		maxFails := f.maxFails
 		failTimeout := f.failTimeout
-		if mi, _ := any(v).(metadata.Metadatable); mi != nil {
+		if mi, _ := any(v).(metadata.IMetaDatable); mi != nil {
 			if md := mi.Metadata(); md != nil {
 				if md.IsExists(labelMaxFails) {
 					maxFails = mdutil.GetInt(md, labelMaxFails)
@@ -79,7 +79,7 @@ func (f *backupFilter[T]) Filter(ctx context.Context, vs ...T) []T {
 
 	var l, backups []T
 	for _, v := range vs {
-		if mi, _ := any(v).(metadata.Metadatable); mi != nil {
+		if mi, _ := any(v).(metadata.IMetaDatable); mi != nil {
 			if mdutil.GetBool(mi.Metadata(), labelBackup) {
 				backups = append(backups, v)
 				continue

@@ -18,7 +18,7 @@ type metadata struct {
 	muxMaxStreamBuffer   int
 }
 
-func (d *mtlsDialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *mtlsDialer) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
 		handshakeTimeout = "handshakeTimeout"
 

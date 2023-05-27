@@ -6,6 +6,6 @@ import (
 
 type metadata struct{}
 
-func (d *http2Dialer) parseMetadata(md mdata.Metadata) (err error) {
+func (d *http2Dialer) parseMetadata(md mdata.IMetaData) (err error) {
 	return
 }

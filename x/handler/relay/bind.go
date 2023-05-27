@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"dst": fmt.Sprintf("%s/%s", address, network),
 		"cmd": "bind",
@@ -45,7 +45,7 @@ func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, a
 	}
 }
 
-func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
@@ -124,7 +124,7 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 	return srv.Serve()
 }
 
-func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) error {
+func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,
@@ -181,7 +181,7 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	return nil
 }
 
-func (h *relayHandler) handleBindTunnel(ctx context.Context, conn net.Conn, network string, tunnelID relay.TunnelID, log logger.Logger) (err error) {
+func (h *relayHandler) handleBindTunnel(ctx context.Context, conn net.Conn, network string, tunnelID relay.TunnelID, log logger.ILogger) (err error) {
 	resp := relay.Response{
 		Version: relay.Version1,
 		Status:  relay.StatusOK,

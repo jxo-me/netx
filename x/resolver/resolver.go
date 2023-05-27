@@ -29,7 +29,7 @@ type NameServer struct {
 type options struct {
 	domain string
 	client *grpc.ClientConn
-	logger logger.Logger
+	logger logger.ILogger
 }
 
 type Option func(opts *options)
@@ -46,7 +46,7 @@ func PluginConnOption(c *grpc.ClientConn) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *options) {
 		opts.logger = logger
 	}

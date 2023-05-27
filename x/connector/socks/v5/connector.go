@@ -38,7 +38,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *socks5Connector) Init(md md.Metadata) (err error) {
+func (c *socks5Connector) Init(md md.IMetaData) (err error) {
 	if err = c.parseMetadata(md); err != nil {
 		return
 	}
@@ -154,7 +154,7 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 	return conn, nil
 }
 
-func (c *socks5Connector) connectUDP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger, opts *connector.ConnectOptions) (net.Conn, error) {
+func (c *socks5Connector) connectUDP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger, opts *connector.ConnectOptions) (net.Conn, error) {
 	addr, err := net.ResolveUDPAddr(network, address)
 	if err != nil {
 		log.Error(err)
@@ -186,7 +186,7 @@ func (c *socks5Connector) connectUDP(ctx context.Context, conn net.Conn, network
 	return socks.UDPTunClientConn(conn, addr), nil
 }
 
-func (c *socks5Connector) relayUDP(ctx context.Context, conn net.Conn, addr net.Addr, log logger.Logger, opts *connector.ConnectOptions) (net.Conn, error) {
+func (c *socks5Connector) relayUDP(ctx context.Context, conn net.Conn, addr net.Addr, log logger.ILogger, opts *connector.ConnectOptions) (net.Conn, error) {
 	req := gosocks5.NewRequest(gosocks5.CmdUdp, nil)
 	log.Trace(req)
 	if err := req.Write(conn); err != nil {

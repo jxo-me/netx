@@ -125,7 +125,7 @@ type bindConn struct {
 	net.Conn
 	localAddr  net.Addr
 	remoteAddr net.Addr
-	md         mdata.Metadata
+	md         mdata.IMetaData
 }
 
 func (c *bindConn) LocalAddr() net.Addr {
@@ -136,8 +136,8 @@ func (c *bindConn) RemoteAddr() net.Addr {
 	return c.remoteAddr
 }
 
-// Metadata implements metadata.Metadatable interface.
-func (c *bindConn) Metadata() mdata.Metadata {
+// Metadata implements metadata.IMetaDatable interface.
+func (c *bindConn) Metadata() mdata.IMetaData {
 	return c.md
 }
 
@@ -145,7 +145,7 @@ type bindUDPConn struct {
 	net.Conn
 	localAddr  net.Addr
 	remoteAddr net.Addr
-	md         mdata.Metadata
+	md         mdata.IMetaData
 }
 
 func (c *bindUDPConn) Read(b []byte) (n int, err error) {
@@ -205,7 +205,7 @@ func (c *bindUDPConn) RemoteAddr() net.Addr {
 	return c.remoteAddr
 }
 
-// Metadata implements metadata.Metadatable interface.
-func (c *bindUDPConn) Metadata() mdata.Metadata {
+// Metadata implements metadata.IMetaDatable interface.
+func (c *bindUDPConn) Metadata() mdata.IMetaData {
 	return c.md
 }

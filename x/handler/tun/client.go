@@ -24,7 +24,7 @@ var (
 	magicHeader = []byte("GOST")
 )
 
-func (h *tunHandler) handleClient(ctx context.Context, conn net.Conn, raddr string, config *tun_util.Config, log logger.Logger) error {
+func (h *tunHandler) handleClient(ctx context.Context, conn net.Conn, raddr string, config *tun_util.Config, log logger.ILogger) error {
 	var ips []net.IP
 	for _, net := range config.Net {
 		ips = append(ips, net.IP)
@@ -94,7 +94,7 @@ func (h *tunHandler) keepAlive(ctx context.Context, conn net.Conn, ips []net.IP)
 	}
 }
 
-func (h *tunHandler) transportClient(tun io.ReadWriter, conn net.Conn, log logger.Logger) error {
+func (h *tunHandler) transportClient(tun io.ReadWriter, conn net.Conn, log logger.ILogger) error {
 	errc := make(chan error, 1)
 
 	go func() {

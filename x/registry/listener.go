@@ -5,7 +5,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type NewListener func(opts ...listener.Option) listener.Listener
+type NewListener func(opts ...listener.Option) listener.IListener
 
 type listenerRegistry struct {
 	registry[NewListener]

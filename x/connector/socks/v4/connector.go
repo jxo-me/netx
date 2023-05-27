@@ -35,7 +35,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *socks4Connector) Init(md md.Metadata) (err error) {
+func (c *socks4Connector) Init(md md.IMetaData) (err error) {
 	return c.parseMetadata(md)
 }
 

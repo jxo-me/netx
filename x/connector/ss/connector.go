@@ -36,7 +36,7 @@ func NewConnector(opts ...connector.Option) connector.Connector {
 	}
 }
 
-func (c *ssConnector) Init(md md.Metadata) (err error) {
+func (c *ssConnector) Init(md md.IMetaData) (err error) {
 	if err = c.parseMetadata(md); err != nil {
 		return
 	}

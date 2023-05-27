@@ -49,7 +49,7 @@ func NewHandler(opts ...handler.Option) handler.Handler {
 	}
 }
 
-func (h *tapHandler) Init(md md.Metadata) (err error) {
+func (h *tapHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
 	}
@@ -81,7 +81,7 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	defer conn.Close()
 
 	log := h.options.Logger
-	v, _ := conn.(md.Metadatable)
+	v, _ := conn.(md.IMetaDatable)
 	if v == nil {
 		err := errors.New("tap: wrong connection type")
 		log.Error(err)
@@ -126,7 +126,7 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	return nil
 }
 
-func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tap_util.Config, log logger.Logger) {
+func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Addr, config *tap_util.Config, log logger.ILogger) {
 	var tempDelay time.Duration
 	for {
 		err := func() error {
@@ -186,7 +186,7 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 
 }
 
-func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr, config *tap_util.Config, log logger.Logger) error {
+func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr, config *tap_util.Config, log logger.ILogger) error {
 	errc := make(chan error, 1)
 
 	go func() {

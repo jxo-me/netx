@@ -20,7 +20,7 @@ type metadata struct {
 	authBasicRealm  string
 }
 
-func (h *httpHandler) parseMetadata(md mdata.Metadata) error {
+func (h *httpHandler) parseMetadata(md mdata.IMetaData) error {
 	const (
 		header          = "header"
 		probeResistKey  = "probeResistance"

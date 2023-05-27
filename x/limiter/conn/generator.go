@@ -5,7 +5,7 @@ import (
 )
 
 type ConnLimitGenerator interface {
-	Limiter() limiter.Limiter
+	Limiter() limiter.ILimiter
 }
 
 type connLimitGenerator struct {
@@ -18,7 +18,7 @@ func NewConnLimitGenerator(n int) ConnLimitGenerator {
 	}
 }
 
-func (p *connLimitGenerator) Limiter() limiter.Limiter {
+func (p *connLimitGenerator) Limiter() limiter.ILimiter {
 	if p == nil || p.n <= 0 {
 		return nil
 	}
@@ -26,7 +26,7 @@ func (p *connLimitGenerator) Limiter() limiter.Limiter {
 }
 
 type connLimitSingleGenerator struct {
-	limiter limiter.Limiter
+	limiter limiter.ILimiter
 }
 
 func NewConnLimitSingleGenerator(n int) ConnLimitGenerator {
@@ -37,6 +37,6 @@ func NewConnLimitSingleGenerator(n int) ConnLimitGenerator {
 	return p
 }
 
-func (p *connLimitSingleGenerator) Limiter() limiter.Limiter {
+func (p *connLimitSingleGenerator) Limiter() limiter.ILimiter {
 	return p.limiter
 }

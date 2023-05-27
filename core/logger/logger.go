@@ -8,7 +8,7 @@ const (
 	JSONFormat LogFormat = "json"
 )
 
-// LogLevel is Logger Level type
+// LogLevel is ILogger Level type
 type LogLevel string
 
 const (
@@ -26,8 +26,8 @@ const (
 	FatalLevel LogLevel = "fatal"
 )
 
-type Logger interface {
-	WithFields(map[string]any) Logger
+type ILogger interface {
+	WithFields(map[string]any) ILogger
 	Trace(args ...any)
 	Tracef(format string, args ...any)
 	Debug(args ...any)
@@ -45,13 +45,13 @@ type Logger interface {
 }
 
 var (
-	defaultLogger Logger
+	defaultLogger ILogger
 )
 
-func Default() Logger {
+func Default() ILogger {
 	return defaultLogger
 }
 
-func SetDefault(logger Logger) {
+func SetDefault(logger ILogger) {
 	defaultLogger = logger
 }

@@ -43,7 +43,7 @@ func (c *socks5Connector) Bind(ctx context.Context, conn net.Conn, network, addr
 	}
 }
 
-func (c *socks5Connector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) (net.Listener, error) {
+func (c *socks5Connector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) (net.Listener, error) {
 	laddr, err := c.bind(conn, gosocks5.CmdBind, network, address, log)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (c *socks5Connector) bindTCP(ctx context.Context, conn net.Conn, network, a
 	}, nil
 }
 
-func (c *socks5Connector) muxBindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) (net.Listener, error) {
+func (c *socks5Connector) muxBindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) (net.Listener, error) {
 	laddr, err := c.bind(conn, socks.CmdMuxBind, network, address, log)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (c *socks5Connector) muxBindTCP(ctx context.Context, conn net.Conn, network
 	}, nil
 }
 
-func (c *socks5Connector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions, log logger.Logger) (net.Listener, error) {
+func (c *socks5Connector) bindUDP(ctx context.Context, conn net.Conn, network, address string, opts *connector.BindOptions, log logger.ILogger) (net.Listener, error) {
 	laddr, err := c.bind(conn, socks.CmdUDPTun, network, address, log)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (c *socks5Connector) bindUDP(ctx context.Context, conn net.Conn, network, a
 	return ln, nil
 }
 
-func (l *socks5Connector) bind(conn net.Conn, cmd uint8, network, address string, log logger.Logger) (net.Addr, error) {
+func (l *socks5Connector) bind(conn net.Conn, cmd uint8, network, address string, log logger.ILogger) (net.Addr, error) {
 	addr := gosocks5.Addr{}
 	addr.ParseFrom(address)
 	req := gosocks5.NewRequest(cmd, &addr)
