@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/jxo-me/netx/x/app"
+	"github.com/jxo-me/netx/x/boot"
 	"log"
 	_ "net/http/pprof"
 	"os"
@@ -12,9 +14,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/judwhite/go-svc"
 	"github.com/jxo-me/netx/core/logger"
 	xlogger "github.com/jxo-me/netx/x/logger"
-	"github.com/judwhite/go-svc"
 )
 
 var (
@@ -28,6 +30,7 @@ var (
 )
 
 func init() {
+	boot.Boots(app.Runtime)
 	args := strings.Join(os.Args[1:], "  ")
 
 	if strings.Contains(args, " -- ") {

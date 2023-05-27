@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/jxo-me/netx/x/app"
-	"github.com/jxo-me/netx/x/boot"
 	"net/http"
 	"os"
 
@@ -29,7 +28,6 @@ func (p *program) Init(env svc.Environment) error {
 		return err
 	}
 	cfg = p.mergeConfig(cfg, cmdCfg)
-	boot.Boots(app.Runtime)
 	if len(cfg.Services) == 0 && apiAddr == "" {
 		if err := cfg.Load(); err != nil {
 			return err
