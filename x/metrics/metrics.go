@@ -43,7 +43,7 @@ func GetCounter(name metrics.MetricName, labels metrics.Labels) metrics.ICounter
 	return global.Counter(name, labels)
 }
 
-func GetGauge(name metrics.MetricName, labels metrics.Labels) metrics.Gauge {
+func GetGauge(name metrics.MetricName, labels metrics.Labels) metrics.IGauge {
 	return global.Gauge(name, labels)
 }
 

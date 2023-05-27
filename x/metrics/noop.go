@@ -20,7 +20,7 @@ func (m *noopMetrics) Counter(name metrics.MetricName, labels metrics.Labels) me
 	return nopCounter
 }
 
-func (m *noopMetrics) Gauge(name metrics.MetricName, labels metrics.Labels) metrics.Gauge {
+func (m *noopMetrics) Gauge(name metrics.MetricName, labels metrics.Labels) metrics.IGauge {
 	return nopGauge
 }
 

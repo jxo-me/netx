@@ -6,7 +6,7 @@ import (
 	"syscall"
 )
 
-type Conn interface {
+type IConn interface {
 	net.PacketConn
 	io.Reader
 	io.Writer

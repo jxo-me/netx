@@ -98,7 +98,7 @@ func NewMetrics() metrics.IMetrics {
 	return m
 }
 
-func (m *promMetrics) Gauge(name metrics.MetricName, labels metrics.Labels) metrics.Gauge {
+func (m *promMetrics) Gauge(name metrics.MetricName, labels metrics.Labels) metrics.IGauge {
 	v, ok := m.gauges[name]
 	if !ok {
 		return nil

@@ -4,7 +4,7 @@ type MetricName string
 
 type Labels map[string]string
 
-type Gauge interface {
+type IGauge interface {
 	Inc()
 	Dec()
 	Add(float64)
@@ -22,6 +22,6 @@ type IObserver interface {
 
 type IMetrics interface {
 	Counter(name MetricName, labels Labels) ICounter
-	Gauge(name MetricName, labels Labels) Gauge
+	Gauge(name MetricName, labels Labels) IGauge
 	Observer(name MetricName, labels Labels) IObserver
 }
