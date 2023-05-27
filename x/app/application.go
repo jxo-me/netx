@@ -61,13 +61,9 @@ func NewConfig() *Application {
 	}
 
 	// Register connectors
-	app.InitConnector()
 	// Register dialers
-	app.InitDialer()
 	// Register handlers
-	app.InitHandler()
 	// Register listeners
-	app.InitListener()
 
 	return &app
 }

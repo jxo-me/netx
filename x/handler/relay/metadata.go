@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"math"
 	"strings"
 	"time"
@@ -47,7 +48,7 @@ func (h *relayHandler) parseMetadata(md mdata.IMetaData) (err error) {
 
 	h.md.entryPoint = mdutil.GetString(md, entryPoint)
 	// @todo fix
-	//h.md.ingress = app.Runtime.IngressRegistry().Get(mdutil.GetString(md, "ingress"))
+	h.md.ingress = app.Runtime.IngressRegistry().Get(mdutil.GetString(md, "ingress"))
 	h.md.directTunnel = mdutil.GetBool(md, "tunnel.direct")
 
 	if h.md.ingress == nil {
