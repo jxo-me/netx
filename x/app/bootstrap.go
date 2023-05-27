@@ -226,7 +226,7 @@ func (a *Application) InitHandler() {
 	// sshd
 	a.HandlerRegistry().Register("sshd", handlerSshd.NewHandler)
 	// tap
-	a.HandlerRegistry().Register("http", tap.NewHandler)
+	a.HandlerRegistry().Register("tap", tap.NewHandler)
 	// tun
 	a.HandlerRegistry().Register("tun", tun.NewHandler)
 }
