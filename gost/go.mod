@@ -8,7 +8,6 @@ replace (
 	github.com/jxo-me/netx/gosocks5 => ../gosocks5
 	github.com/jxo-me/netx/plugin => ../plugin
 	github.com/jxo-me/netx/relay => ../relay
-	github.com/jxo-me/netx/sdk => ../sdk
 	github.com/jxo-me/netx/tls-dissector => ../tls-dissector
 	github.com/jxo-me/netx/x => ../x
 )
