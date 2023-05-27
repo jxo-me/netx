@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createIngressRequest
@@ -42,7 +42,7 @@ func createIngress(ctx *gin.Context) {
 
 	v := parsing.ParseIngress(&req.Data)
 
-	if err := registry.IngressRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.IngressRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -87,7 +87,7 @@ func updateIngress(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.IngressRegistry().IsRegistered(req.Ingress) {
+	if !app.Runtime.IngressRegistry().IsRegistered(req.Ingress) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -96,9 +96,9 @@ func updateIngress(ctx *gin.Context) {
 
 	v := parsing.ParseIngress(&req.Data)
 
-	registry.IngressRegistry().Unregister(req.Ingress)
+	app.Runtime.IngressRegistry().Unregister(req.Ingress)
 
-	if err := registry.IngressRegistry().Register(req.Ingress, v); err != nil {
+	if err := app.Runtime.IngressRegistry().Register(req.Ingress, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -145,11 +145,11 @@ func deleteIngress(ctx *gin.Context) {
 	var req deleteIngressRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.IngressRegistry().IsRegistered(req.Ingress) {
+	if !app.Runtime.IngressRegistry().IsRegistered(req.Ingress) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.IngressRegistry().Unregister(req.Ingress)
+	app.Runtime.IngressRegistry().Unregister(req.Ingress)
 
 	config.OnUpdate(func(c *config.Config) error {
 		ingresses := c.Ingresses

@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createResolverRequest
@@ -46,7 +46,7 @@ func createResolver(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.ResolverRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.ResolverRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -91,7 +91,7 @@ func updateResolver(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.ResolverRegistry().IsRegistered(req.Resolver) {
+	if !app.Runtime.ResolverRegistry().IsRegistered(req.Resolver) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -104,9 +104,9 @@ func updateResolver(ctx *gin.Context) {
 		return
 	}
 
-	registry.ResolverRegistry().Unregister(req.Resolver)
+	app.Runtime.ResolverRegistry().Unregister(req.Resolver)
 
-	if err := registry.ResolverRegistry().Register(req.Resolver, v); err != nil {
+	if err := app.Runtime.ResolverRegistry().Register(req.Resolver, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -153,11 +153,11 @@ func deleteResolver(ctx *gin.Context) {
 	var req deleteResolverRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.ResolverRegistry().IsRegistered(req.Resolver) {
+	if !app.Runtime.ResolverRegistry().IsRegistered(req.Resolver) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.ResolverRegistry().Unregister(req.Resolver)
+	app.Runtime.ResolverRegistry().Unregister(req.Resolver)
 
 	config.OnUpdate(func(c *config.Config) error {
 		resolvers := c.Resolvers

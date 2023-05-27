@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createChainRequest
@@ -46,7 +46,7 @@ func createChain(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.ChainRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.ChainRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -92,7 +92,7 @@ func updateChain(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.ChainRegistry().IsRegistered(req.Chain) {
+	if !app.Runtime.ChainRegistry().IsRegistered(req.Chain) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -105,9 +105,9 @@ func updateChain(ctx *gin.Context) {
 		return
 	}
 
-	registry.ChainRegistry().Unregister(req.Chain)
+	app.Runtime.ChainRegistry().Unregister(req.Chain)
 
-	if err := registry.ChainRegistry().Register(req.Chain, v); err != nil {
+	if err := app.Runtime.ChainRegistry().Register(req.Chain, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -154,11 +154,11 @@ func deleteChain(ctx *gin.Context) {
 	var req deleteChainRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.ChainRegistry().IsRegistered(req.Chain) {
+	if !app.Runtime.ChainRegistry().IsRegistered(req.Chain) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.ChainRegistry().Unregister(req.Chain)
+	app.Runtime.ChainRegistry().Unregister(req.Chain)
 
 	config.OnUpdate(func(c *config.Config) error {
 		chains := c.Chains

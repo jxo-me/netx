@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createHopRequest
@@ -46,7 +46,7 @@ func createHop(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.HopRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.HopRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -92,7 +92,7 @@ func updateHop(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.HopRegistry().IsRegistered(req.Hop) {
+	if !app.Runtime.HopRegistry().IsRegistered(req.Hop) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -105,9 +105,9 @@ func updateHop(ctx *gin.Context) {
 		return
 	}
 
-	registry.HopRegistry().Unregister(req.Hop)
+	app.Runtime.HopRegistry().Unregister(req.Hop)
 
-	if err := registry.HopRegistry().Register(req.Hop, v); err != nil {
+	if err := app.Runtime.HopRegistry().Register(req.Hop, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -154,11 +154,11 @@ func deleteHop(ctx *gin.Context) {
 	var req deleteHopRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.HopRegistry().IsRegistered(req.Hop) {
+	if !app.Runtime.HopRegistry().IsRegistered(req.Hop) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.HopRegistry().Unregister(req.Hop)
+	app.Runtime.HopRegistry().Unregister(req.Hop)
 
 	config.OnUpdate(func(c *config.Config) error {
 		hops := c.Hops

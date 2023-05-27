@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createServiceRequest
@@ -40,7 +40,7 @@ func createService(ctx *gin.Context) {
 		return
 	}
 
-	if registry.ServiceRegistry().IsRegistered(req.Data.Name) {
+	if app.Runtime.ServiceRegistry().IsRegistered(req.Data.Name) {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -51,7 +51,7 @@ func createService(ctx *gin.Context) {
 		return
 	}
 
-	if err := registry.ServiceRegistry().Register(req.Data.Name, svc); err != nil {
+	if err := app.Runtime.ServiceRegistry().Register(req.Data.Name, svc); err != nil {
 		svc.Close()
 		writeError(ctx, ErrDup)
 		return
@@ -99,7 +99,7 @@ func updateService(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	old := registry.ServiceRegistry().Get(req.Service)
+	old := app.Runtime.ServiceRegistry().Get(req.Service)
 	if old == nil {
 		writeError(ctx, ErrNotFound)
 		return
@@ -114,9 +114,9 @@ func updateService(ctx *gin.Context) {
 		return
 	}
 
-	registry.ServiceRegistry().Unregister(req.Service)
+	app.Runtime.ServiceRegistry().Unregister(req.Service)
 
-	if err := registry.ServiceRegistry().Register(req.Service, svc); err != nil {
+	if err := app.Runtime.ServiceRegistry().Register(req.Service, svc); err != nil {
 		svc.Close()
 		writeError(ctx, ErrDup)
 		return
@@ -166,13 +166,13 @@ func deleteService(ctx *gin.Context) {
 	var req deleteServiceRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := registry.ServiceRegistry().Get(req.Service)
+	svc := app.Runtime.ServiceRegistry().Get(req.Service)
 	if svc == nil {
 		writeError(ctx, ErrNotFound)
 		return
 	}
 
-	registry.ServiceRegistry().Unregister(req.Service)
+	app.Runtime.ServiceRegistry().Unregister(req.Service)
 	svc.Close()
 
 	config.OnUpdate(func(c *config.Config) error {

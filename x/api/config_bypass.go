@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createBypassRequest
@@ -42,7 +42,7 @@ func createBypass(ctx *gin.Context) {
 
 	v := parsing.ParseBypass(&req.Data)
 
-	if err := registry.BypassRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.BypassRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -87,7 +87,7 @@ func updateBypass(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.BypassRegistry().IsRegistered(req.Bypass) {
+	if !app.Runtime.BypassRegistry().IsRegistered(req.Bypass) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -96,9 +96,9 @@ func updateBypass(ctx *gin.Context) {
 
 	v := parsing.ParseBypass(&req.Data)
 
-	registry.BypassRegistry().Unregister(req.Bypass)
+	app.Runtime.BypassRegistry().Unregister(req.Bypass)
 
-	if err := registry.BypassRegistry().Register(req.Bypass, v); err != nil {
+	if err := app.Runtime.BypassRegistry().Register(req.Bypass, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -145,11 +145,11 @@ func deleteBypass(ctx *gin.Context) {
 	var req deleteBypassRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.BypassRegistry().IsRegistered(req.Bypass) {
+	if !app.Runtime.BypassRegistry().IsRegistered(req.Bypass) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.BypassRegistry().Unregister(req.Bypass)
+	app.Runtime.BypassRegistry().Unregister(req.Bypass)
 
 	config.OnUpdate(func(c *config.Config) error {
 		bypasses := c.Bypasses

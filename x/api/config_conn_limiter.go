@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createConnLimiterRequest
@@ -42,7 +42,7 @@ func createConnLimiter(ctx *gin.Context) {
 
 	v := parsing.ParseConnLimiter(&req.Data)
 
-	if err := registry.ConnLimiterRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.ConnLimiterRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -87,7 +87,7 @@ func updateConnLimiter(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.ConnLimiterRegistry().IsRegistered(req.Limiter) {
+	if !app.Runtime.ConnLimiterRegistry().IsRegistered(req.Limiter) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -96,9 +96,9 @@ func updateConnLimiter(ctx *gin.Context) {
 
 	v := parsing.ParseConnLimiter(&req.Data)
 
-	registry.ConnLimiterRegistry().Unregister(req.Limiter)
+	app.Runtime.ConnLimiterRegistry().Unregister(req.Limiter)
 
-	if err := registry.ConnLimiterRegistry().Register(req.Limiter, v); err != nil {
+	if err := app.Runtime.ConnLimiterRegistry().Register(req.Limiter, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -145,11 +145,11 @@ func deleteConnLimiter(ctx *gin.Context) {
 	var req deleteConnLimiterRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.ConnLimiterRegistry().IsRegistered(req.Limiter) {
+	if !app.Runtime.ConnLimiterRegistry().IsRegistered(req.Limiter) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.ConnLimiterRegistry().Unregister(req.Limiter)
+	app.Runtime.ConnLimiterRegistry().Unregister(req.Limiter)
 
 	config.OnUpdate(func(c *config.Config) error {
 		limiteres := c.CLimiters

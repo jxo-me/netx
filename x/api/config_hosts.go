@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createHostsRequest
@@ -42,7 +42,7 @@ func createHosts(ctx *gin.Context) {
 
 	v := parsing.ParseHosts(&req.Data)
 
-	if err := registry.HostsRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.HostsRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -87,7 +87,7 @@ func updateHosts(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.HostsRegistry().IsRegistered(req.Hosts) {
+	if !app.Runtime.HostsRegistry().IsRegistered(req.Hosts) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -96,9 +96,9 @@ func updateHosts(ctx *gin.Context) {
 
 	v := parsing.ParseHosts(&req.Data)
 
-	registry.HostsRegistry().Unregister(req.Hosts)
+	app.Runtime.HostsRegistry().Unregister(req.Hosts)
 
-	if err := registry.HostsRegistry().Register(req.Hosts, v); err != nil {
+	if err := app.Runtime.HostsRegistry().Register(req.Hosts, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -145,11 +145,11 @@ func deleteHosts(ctx *gin.Context) {
 	var req deleteHostsRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.HostsRegistry().IsRegistered(req.Hosts) {
+	if !app.Runtime.HostsRegistry().IsRegistered(req.Hosts) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.HostsRegistry().Unregister(req.Hosts)
+	app.Runtime.HostsRegistry().Unregister(req.Hosts)
 
 	config.OnUpdate(func(c *config.Config) error {
 		hosts := c.Hosts

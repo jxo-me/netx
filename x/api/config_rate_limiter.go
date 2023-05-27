@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createRateLimiterRequest
@@ -42,7 +42,7 @@ func createRateLimiter(ctx *gin.Context) {
 
 	v := parsing.ParseRateLimiter(&req.Data)
 
-	if err := registry.RateLimiterRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.RateLimiterRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -87,7 +87,7 @@ func updateRateLimiter(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.RateLimiterRegistry().IsRegistered(req.Limiter) {
+	if !app.Runtime.RateLimiterRegistry().IsRegistered(req.Limiter) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -96,9 +96,9 @@ func updateRateLimiter(ctx *gin.Context) {
 
 	v := parsing.ParseRateLimiter(&req.Data)
 
-	registry.RateLimiterRegistry().Unregister(req.Limiter)
+	app.Runtime.RateLimiterRegistry().Unregister(req.Limiter)
 
-	if err := registry.RateLimiterRegistry().Register(req.Limiter, v); err != nil {
+	if err := app.Runtime.RateLimiterRegistry().Register(req.Limiter, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -145,11 +145,11 @@ func deleteRateLimiter(ctx *gin.Context) {
 	var req deleteRateLimiterRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.RateLimiterRegistry().IsRegistered(req.Limiter) {
+	if !app.Runtime.RateLimiterRegistry().IsRegistered(req.Limiter) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.RateLimiterRegistry().Unregister(req.Limiter)
+	app.Runtime.RateLimiterRegistry().Unregister(req.Limiter)
 
 	config.OnUpdate(func(c *config.Config) error {
 		limiteres := c.RLimiters

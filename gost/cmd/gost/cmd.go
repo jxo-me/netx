@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/jxo-me/netx/sdk"
+	"github.com/jxo-me/netx/x/app"
 	"net/url"
 	"os"
 	"strconv"
@@ -323,10 +323,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	svc := &config.ServiceConfig{
 		Addr: url.Host,
 	}
-	if h := sdk.Runtime.HandlerRegistry().Get(handler); h == nil {
+	if h := app.Runtime.HandlerRegistry().Get(handler); h == nil {
 		handler = "auto"
 	}
-	if ln := sdk.Runtime.ListenerRegistry().Get(listener); ln == nil {
+	if ln := app.Runtime.ListenerRegistry().Get(listener); ln == nil {
 		listener = "tcp"
 		if handler == "ssu" {
 			listener = "udp"
@@ -444,10 +444,10 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		Addr: url.Host,
 	}
 
-	if c := sdk.Runtime.ConnectorRegistry().Get(connector); c == nil {
+	if c := app.Runtime.ConnectorRegistry().Get(connector); c == nil {
 		connector = "http"
 	}
-	if d := sdk.Runtime.DialerRegistry().Get(dialer); d == nil {
+	if d := app.Runtime.DialerRegistry().Get(dialer); d == nil {
 		dialer = "tcp"
 		if connector == "ssu" {
 			dialer = "udp"

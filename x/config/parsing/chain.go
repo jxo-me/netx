@@ -2,6 +2,7 @@ package parsing
 
 import (
 	"fmt"
+	"github.com/jxo-me/netx/x/app"
 	"net"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	mdx "github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 func ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
@@ -50,7 +50,7 @@ func ParseChain(cfg *config.ChainConfig) (chain.IChainer, error) {
 				return nil, err
 			}
 		} else {
-			hop = registry.HopRegistry().Get(ch.Name)
+			hop = app.Runtime.HopRegistry().Get(ch.Name)
 		}
 		if hop != nil {
 			c.AddHop(hop)
@@ -121,7 +121,7 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 			"kind": "connector",
 		})
 		var cr connector.IConnector
-		if rf := registry.ConnectorRegistry().Get(v.Connector.Type); rf != nil {
+		if rf := app.Runtime.ConnectorRegistry().Get(v.Connector.Type); rf != nil {
 			cr = rf(
 				connector.AuthOption(parseAuth(v.Connector.Auth)),
 				connector.TLSConfigOption(tlsConfig),
@@ -164,7 +164,7 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 		})
 
 		var d dialer.IDialer
-		if rf := registry.DialerRegistry().Get(v.Dialer.Type); rf != nil {
+		if rf := app.Runtime.DialerRegistry().Get(v.Dialer.Type); rf != nil {
 			d = rf(
 				dialer.AuthOption(parseAuth(v.Dialer.Auth)),
 				dialer.TLSConfigOption(tlsConfig),
@@ -223,8 +223,8 @@ func ParseHop(cfg *config.HopConfig) (chain.IHop, error) {
 		opts := []chain.NodeOption{
 			chain.TransportNodeOption(tr),
 			chain.BypassNodeOption(bypass.BypassGroup(bypassList(v.Bypass, v.Bypasses...)...)),
-			chain.ResoloverNodeOption(registry.ResolverRegistry().Get(v.Resolver)),
-			chain.HostMapperNodeOption(registry.HostsRegistry().Get(v.Hosts)),
+			chain.ResoloverNodeOption(app.Runtime.ResolverRegistry().Get(v.Resolver)),
+			chain.HostMapperNodeOption(app.Runtime.HostsRegistry().Get(v.Hosts)),
 			chain.MetadataNodeOption(nm),
 			chain.HostNodeOption(host),
 			chain.ProtocolNodeOption(v.Protocol),

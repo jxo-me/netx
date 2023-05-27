@@ -10,7 +10,6 @@ import (
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	xingress "github.com/jxo-me/netx/x/ingress"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 type metadata struct {
@@ -47,7 +46,8 @@ func (h *relayHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	h.md.hash = mdutil.GetString(md, hash)
 
 	h.md.entryPoint = mdutil.GetString(md, entryPoint)
-	h.md.ingress = registry.IngressRegistry().Get(mdutil.GetString(md, "ingress"))
+	// @todo fix
+	//h.md.ingress = app.Runtime.IngressRegistry().Get(mdutil.GetString(md, "ingress"))
 	h.md.directTunnel = mdutil.GetBool(md, "tunnel.direct")
 
 	if h.md.ingress == nil {

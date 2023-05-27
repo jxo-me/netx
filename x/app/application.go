@@ -1,4 +1,4 @@
-package runtime
+package app
 
 import (
 	"github.com/jxo-me/netx/core/admission"
@@ -16,6 +16,8 @@ import (
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/registry"
 )
+
+var Runtime IRuntime = NewConfig()
 
 type Application struct {
 	admissionReg      reg.IRegistry[admission.IAdmission]

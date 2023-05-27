@@ -2,6 +2,7 @@ package parsing
 
 import (
 	"fmt"
+	"github.com/jxo-me/netx/x/app"
 	"strings"
 
 	"github.com/jxo-me/netx/core/admission"
@@ -19,7 +20,6 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	"github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -107,8 +107,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		listener.AuthOption(parseAuth(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
 		listener.AdmissionOption(admission.AdmissionGroup(admissions...)),
-		listener.TrafficLimiterOption(registry.TrafficLimiterRegistry().Get(cfg.Limiter)),
-		listener.ConnLimiterOption(registry.ConnLimiterRegistry().Get(cfg.CLimiter)),
+		listener.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Limiter)),
+		listener.ConnLimiterOption(app.Runtime.ConnLimiterRegistry().Get(cfg.CLimiter)),
 		listener.LoggerOption(listenerLogger),
 		listener.ServiceOption(cfg.Name),
 		listener.ProxyProtocolOption(ppv),
@@ -120,7 +120,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 
 	var ln listener.IListener
-	if rf := registry.ListenerRegistry().Get(cfg.Listener.Type); rf != nil {
+	if rf := app.Runtime.ListenerRegistry().Get(cfg.Listener.Type); rf != nil {
 		ln = rf(listenOpts...)
 	} else {
 		return nil, fmt.Errorf("unregistered listener: %s", cfg.Listener.Type)
@@ -168,7 +168,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	var recorders []recorder.RecorderObject
 	for _, r := range cfg.Recorders {
 		recorders = append(recorders, recorder.RecorderObject{
-			Recorder: registry.RecorderRegistry().Get(r.Name),
+			Recorder: app.Runtime.RecorderRegistry().Get(r.Name),
 			Record:   r.Record,
 		})
 	}
@@ -178,8 +178,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		// chain.TimeoutRouterOption(10*time.Second),
 		chain.InterfaceRouterOption(ifce),
 		chain.SockOptsRouterOption(sockOpts),
-		chain.ResolverRouterOption(registry.ResolverRegistry().Get(cfg.Resolver)),
-		chain.HostMapperRouterOption(registry.HostsRegistry().Get(cfg.Hosts)),
+		chain.ResolverRouterOption(app.Runtime.ResolverRegistry().Get(cfg.Resolver)),
+		chain.HostMapperRouterOption(app.Runtime.HostsRegistry().Get(cfg.Hosts)),
 		chain.RecordersRouterOption(recorders...),
 		chain.LoggerRouterOption(handlerLogger),
 	}
@@ -191,14 +191,14 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	router := chain.NewRouter(routerOpts...)
 
 	var h handler.IHandler
-	if rf := registry.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
+	if rf := app.Runtime.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
 		h = rf(
 			handler.RouterOption(router),
 			handler.AutherOption(auther),
 			handler.AuthOption(parseAuth(cfg.Handler.Auth)),
 			handler.BypassOption(bypass.BypassGroup(bypassList(cfg.Bypass, cfg.Bypasses...)...)),
 			handler.TLSConfigOption(tlsConfig),
-			handler.RateLimiterOption(registry.RateLimiterRegistry().Get(cfg.RLimiter)),
+			handler.RateLimiterOption(app.Runtime.RateLimiterRegistry().Get(cfg.RLimiter)),
 			handler.LoggerOption(handlerLogger),
 			handler.ServiceOption(cfg.Name),
 		)
@@ -280,16 +280,16 @@ func parseForwarder(cfg *config.ForwarderConfig) (chain.IHop, error) {
 	if len(hc.Nodes) > 0 {
 		return ParseHop(&hc)
 	}
-	return registry.HopRegistry().Get(hc.Name), nil
+	return app.Runtime.HopRegistry().Get(hc.Name), nil
 }
 
 func bypassList(name string, names ...string) []bypass.IBypass {
 	var bypasses []bypass.IBypass
-	if bp := registry.BypassRegistry().Get(name); bp != nil {
+	if bp := app.Runtime.BypassRegistry().Get(name); bp != nil {
 		bypasses = append(bypasses, bp)
 	}
 	for _, s := range names {
-		if bp := registry.BypassRegistry().Get(s); bp != nil {
+		if bp := app.Runtime.BypassRegistry().Get(s); bp != nil {
 			bypasses = append(bypasses, bp)
 		}
 	}
@@ -298,11 +298,11 @@ func bypassList(name string, names ...string) []bypass.IBypass {
 
 func autherList(name string, names ...string) []auth.IAuthenticator {
 	var authers []auth.IAuthenticator
-	if auther := registry.AutherRegistry().Get(name); auther != nil {
+	if auther := app.Runtime.AutherRegistry().Get(name); auther != nil {
 		authers = append(authers, auther)
 	}
 	for _, s := range names {
-		if auther := registry.AutherRegistry().Get(s); auther != nil {
+		if auther := app.Runtime.AutherRegistry().Get(s); auther != nil {
 			authers = append(authers, auther)
 		}
 	}
@@ -311,11 +311,11 @@ func autherList(name string, names ...string) []auth.IAuthenticator {
 
 func admissionList(name string, names ...string) []admission.IAdmission {
 	var admissions []admission.IAdmission
-	if adm := registry.AdmissionRegistry().Get(name); adm != nil {
+	if adm := app.Runtime.AdmissionRegistry().Get(name); adm != nil {
 		admissions = append(admissions, adm)
 	}
 	for _, s := range names {
-		if adm := registry.AdmissionRegistry().Get(s); adm != nil {
+		if adm := app.Runtime.AdmissionRegistry().Get(s); adm != nil {
 			admissions = append(admissions, adm)
 		}
 	}
@@ -327,12 +327,12 @@ func chainGroup(name string, group *config.ChainGroupConfig) chain.IChainer {
 	var chains []chain.IChainer
 	var sel selector.ISelector[chain.IChainer]
 
-	if c := registry.ChainRegistry().Get(name); c != nil {
+	if c := app.Runtime.ChainRegistry().Get(name); c != nil {
 		chains = append(chains, c)
 	}
 	if group != nil {
 		for _, s := range group.Chains {
-			if c := registry.ChainRegistry().Get(s); c != nil {
+			if c := app.Runtime.ChainRegistry().Get(s); c != nil {
 				chains = append(chains, c)
 			}
 		}

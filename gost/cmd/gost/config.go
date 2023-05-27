@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jxo-me/netx/sdk"
+	"github.com/jxo-me/netx/x/app"
 	"io"
 	"os"
 	"path/filepath"
@@ -25,7 +25,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, autherCfg := range cfg.Authers {
 		if auther := parsing.ParseAuther(autherCfg); auther != nil {
-			if err := sdk.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
+			if err := app.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -33,7 +33,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, admissionCfg := range cfg.Admissions {
 		if adm := parsing.ParseAdmission(admissionCfg); adm != nil {
-			if err := sdk.Runtime.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
+			if err := app.Runtime.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -41,7 +41,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, bypassCfg := range cfg.Bypasses {
 		if bp := parsing.ParseBypass(bypassCfg); bp != nil {
-			if err := sdk.Runtime.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
+			if err := app.Runtime.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -53,7 +53,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 			log.Fatal(err)
 		}
 		if r != nil {
-			if err := sdk.Runtime.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
+			if err := app.Runtime.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -61,7 +61,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, hostsCfg := range cfg.Hosts {
 		if h := parsing.ParseHosts(hostsCfg); h != nil {
-			if err := sdk.Runtime.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
+			if err := app.Runtime.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -69,7 +69,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, ingressCfg := range cfg.Ingresses {
 		if h := parsing.ParseIngress(ingressCfg); h != nil {
-			if err := sdk.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
+			if err := app.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -77,7 +77,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, recorderCfg := range cfg.Recorders {
 		if h := parsing.ParseRecorder(recorderCfg); h != nil {
-			if err := sdk.Runtime.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
+			if err := app.Runtime.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -85,21 +85,21 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	for _, limiterCfg := range cfg.Limiters {
 		if h := parsing.ParseTrafficLimiter(limiterCfg); h != nil {
-			if err := sdk.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+			if err := app.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, limiterCfg := range cfg.CLimiters {
 		if h := parsing.ParseConnLimiter(limiterCfg); h != nil {
-			if err := sdk.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+			if err := app.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, limiterCfg := range cfg.RLimiters {
 		if h := parsing.ParseRateLimiter(limiterCfg); h != nil {
-			if err := sdk.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+			if err := app.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -110,7 +110,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 			log.Fatal(err)
 		}
 		if hop != nil {
-			if err := sdk.Runtime.HopRegistry().Register(hopCfg.Name, hop); err != nil {
+			if err := app.Runtime.HopRegistry().Register(hopCfg.Name, hop); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -121,7 +121,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 			log.Fatal(err)
 		}
 		if c != nil {
-			if err := sdk.Runtime.ChainRegistry().Register(chainCfg.Name, c); err != nil {
+			if err := app.Runtime.ChainRegistry().Register(chainCfg.Name, c); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -133,7 +133,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 			log.Fatal(err)
 		}
 		if svc != nil {
-			if err := sdk.Runtime.ServiceRegistry().Register(svcCfg.Name, svc); err != nil {
+			if err := app.Runtime.ServiceRegistry().Register(svcCfg.Name, svc); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -188,7 +188,7 @@ func logFromConfig(cfg *config.LogConfig) logger.ILogger {
 func buildAPIService(cfg *config.APIConfig) (service.IService, error) {
 	auther := parsing.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
-		auther = sdk.Runtime.AutherRegistry().Get(cfg.Auther)
+		auther = app.Runtime.AutherRegistry().Get(cfg.Auther)
 	}
 	return api.NewService(
 		cfg.Addr,

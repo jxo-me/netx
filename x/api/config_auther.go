@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createAutherRequest
@@ -41,7 +41,7 @@ func createAuther(ctx *gin.Context) {
 	}
 
 	v := parsing.ParseAuther(&req.Data)
-	if err := registry.AutherRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.AutherRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -86,7 +86,7 @@ func updateAuther(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.AutherRegistry().IsRegistered(req.Auther) {
+	if !app.Runtime.AutherRegistry().IsRegistered(req.Auther) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -94,9 +94,9 @@ func updateAuther(ctx *gin.Context) {
 	req.Data.Name = req.Auther
 
 	v := parsing.ParseAuther(&req.Data)
-	registry.AutherRegistry().Unregister(req.Auther)
+	app.Runtime.AutherRegistry().Unregister(req.Auther)
 
-	if err := registry.AutherRegistry().Register(req.Auther, v); err != nil {
+	if err := app.Runtime.AutherRegistry().Register(req.Auther, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -143,11 +143,11 @@ func deleteAuther(ctx *gin.Context) {
 	var req deleteAutherRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.AutherRegistry().IsRegistered(req.Auther) {
+	if !app.Runtime.AutherRegistry().IsRegistered(req.Auther) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.AutherRegistry().Unregister(req.Auther)
+	app.Runtime.AutherRegistry().Unregister(req.Auther)
 
 	config.OnUpdate(func(c *config.Config) error {
 		authers := c.Authers

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jxo-me/netx/sdk"
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 	"os"
 
@@ -141,7 +141,7 @@ func (p *program) Start() error {
 }
 
 func (p *program) Stop() error {
-	for name, srv := range sdk.Runtime.ServiceRegistry().GetAll() {
+	for name, srv := range app.Runtime.ServiceRegistry().GetAll() {
 		srv.Close()
 		logger.Default().Debugf("service %s shutdown", name)
 	}

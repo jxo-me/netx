@@ -1,12 +1,12 @@
 package api
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 // swagger:parameters createAdmissionRequest
@@ -42,7 +42,7 @@ func createAdmission(ctx *gin.Context) {
 
 	v := parsing.ParseAdmission(&req.Data)
 
-	if err := registry.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
+	if err := app.Runtime.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -87,7 +87,7 @@ func updateAdmission(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !registry.AdmissionRegistry().IsRegistered(req.Admission) {
+	if !app.Runtime.AdmissionRegistry().IsRegistered(req.Admission) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
@@ -96,9 +96,9 @@ func updateAdmission(ctx *gin.Context) {
 
 	v := parsing.ParseAdmission(&req.Data)
 
-	registry.AdmissionRegistry().Unregister(req.Admission)
+	app.Runtime.AdmissionRegistry().Unregister(req.Admission)
 
-	if err := registry.AdmissionRegistry().Register(req.Admission, v); err != nil {
+	if err := app.Runtime.AdmissionRegistry().Register(req.Admission, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
 	}
@@ -145,11 +145,11 @@ func deleteAdmission(ctx *gin.Context) {
 	var req deleteAdmissionRequest
 	ctx.ShouldBindUri(&req)
 
-	if !registry.AdmissionRegistry().IsRegistered(req.Admission) {
+	if !app.Runtime.AdmissionRegistry().IsRegistered(req.Admission) {
 		writeError(ctx, ErrNotFound)
 		return
 	}
-	registry.AdmissionRegistry().Unregister(req.Admission)
+	app.Runtime.AdmissionRegistry().Unregister(req.Admission)
 
 	config.OnUpdate(func(c *config.Config) error {
 		admissiones := c.Admissions

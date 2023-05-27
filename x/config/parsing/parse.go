@@ -3,6 +3,7 @@ package parsing
 import (
 	"context"
 	"crypto/tls"
+	"github.com/jxo-me/netx/x/app"
 	"net"
 	"net/url"
 
@@ -30,7 +31,6 @@ import (
 	xrate "github.com/jxo-me/netx/x/limiter/rate"
 	xtraffic "github.com/jxo-me/netx/x/limiter/traffic"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
-	"github.com/jxo-me/netx/x/registry"
 	resolver_impl "github.com/jxo-me/netx/x/resolver"
 	xs "github.com/jxo-me/netx/x/selector"
 	"google.golang.org/grpc"
@@ -307,7 +307,7 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	for _, server := range cfg.Nameservers {
 		nameservers = append(nameservers, resolver_impl.NameServer{
 			Addr:     server.Addr,
-			Chain:    registry.ChainRegistry().Get(server.Chain),
+			Chain:    app.Runtime.ChainRegistry().Get(server.Chain),
 			TTL:      server.TTL,
 			Timeout:  server.Timeout,
 			ClientIP: net.ParseIP(server.ClientIP),
