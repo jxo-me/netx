@@ -5,7 +5,7 @@ import (
 
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 	"github.com/google/uuid"
 )
 

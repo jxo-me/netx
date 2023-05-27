@@ -13,7 +13,7 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/service"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/registry"
 	xservice "github.com/jxo-me/netx/x/service"

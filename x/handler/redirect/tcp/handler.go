@@ -18,7 +18,7 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	dissector "github.com/go-gost/tls-dissector"
+	dissector "github.com/jxo-me/netx/tls-dissector"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/registry"

@@ -12,7 +12,7 @@ import (
 
 	"github.com/jxo-me/netx/core/common/bufpool"
 	mdata "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 )
 
 type tcpConn struct {

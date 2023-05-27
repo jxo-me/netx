@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/core/logger"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	"github.com/google/uuid"
 )

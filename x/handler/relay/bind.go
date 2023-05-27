@@ -9,7 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"

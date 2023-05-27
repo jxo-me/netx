@@ -16,7 +16,7 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	xnet "github.com/jxo-me/netx/x/internal/net"

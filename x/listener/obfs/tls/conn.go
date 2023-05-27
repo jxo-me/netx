@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	dissector "github.com/go-gost/tls-dissector"
+	dissector "github.com/jxo-me/netx/tls-dissector"
 )
 
 const (

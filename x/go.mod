@@ -16,10 +16,10 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.0
-	github.com/go-gost/gosocks4 v0.0.1
-	github.com/go-gost/gosocks5 v0.3.0
-	github.com/go-gost/relay v0.4.0
-	github.com/go-gost/tls-dissector v0.0.1
+	github.com/jxo-me/netx/gosocks4 v0.0.1
+	github.com/jxo-me/netx/gosocks5 v0.3.0
+	github.com/jxo-me/netx/relay v0.4.0
+	github.com/jxo-me/netx/tls-dissector v0.0.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/snappy v0.0.4

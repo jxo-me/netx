@@ -10,7 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/gosocks5"
+	"github.com/jxo-me/netx/gosocks5"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
 	"github.com/jxo-me/netx/x/internal/util/ss"

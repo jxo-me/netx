@@ -10,7 +10,7 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/gosocks4"
+	"github.com/jxo-me/netx/gosocks4"
 	"github.com/jxo-me/netx/x/registry"
 )
 

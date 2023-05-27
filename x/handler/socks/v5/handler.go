@@ -9,7 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/gosocks5"
+	"github.com/jxo-me/netx/gosocks5"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 	"github.com/jxo-me/netx/x/registry"
 )

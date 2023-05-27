@@ -9,7 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/common/bufpool"
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/gosocks5"
+	"github.com/jxo-me/netx/gosocks5"
 	"github.com/jxo-me/netx/x/internal/util/ss"
 	"github.com/jxo-me/netx/x/registry"
 	"github.com/shadowsocks/go-shadowsocks2/core"

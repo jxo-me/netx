@@ -33,10 +33,6 @@ require (
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.9.0 // indirect
-	github.com/go-gost/gosocks4 v0.0.1 // indirect
-	github.com/go-gost/gosocks5 v0.3.0 // indirect
-	github.com/go-gost/relay v0.4.0 // indirect
-	github.com/go-gost/tls-dissector v0.0.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
@@ -53,7 +49,11 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/jxo-me/netx/gosocks4 v0.0.1 // indirect
+	github.com/jxo-me/netx/gosocks5 v0.3.0 // indirect
 	github.com/jxo-me/netx/plugin v0.0.0-00010101000000-000000000000 // indirect
+	github.com/jxo-me/netx/relay v0.4.0 // indirect
+	github.com/jxo-me/netx/tls-dissector v0.0.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.14 // indirect
 	github.com/klauspost/reedsolomon v1.10.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

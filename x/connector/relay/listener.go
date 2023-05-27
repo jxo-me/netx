@@ -7,7 +7,7 @@ import (
 
 	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
-	"github.com/go-gost/relay"
+	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	mdx "github.com/jxo-me/netx/x/metadata"
 )

@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/jxo-me/netx/core/common/bufpool"
-	"github.com/go-gost/gosocks5"
+	"github.com/jxo-me/netx/gosocks5"
 )
 
 type udpTunConn struct {
