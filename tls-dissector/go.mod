@@ -1,3 +1,3 @@
-module github.com/jxo-me/tls-dissector
+module github.com/jxo-me/netx/tls-dissector
 
 go 1.20

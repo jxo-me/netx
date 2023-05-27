@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	mdutil "github.com/go-gost/core/metadata/util"
-	"github.com/go-gost/x/config"
-	"github.com/go-gost/x/limiter/conn"
-	"github.com/go-gost/x/limiter/traffic"
-	mdx "github.com/go-gost/x/metadata"
-	"github.com/go-gost/x/registry"
+	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	"github.com/jxo-me/netx/x/config"
+	"github.com/jxo-me/netx/x/limiter/conn"
+	"github.com/jxo-me/netx/x/limiter/traffic"
+	mdx "github.com/jxo-me/netx/x/metadata"
+	"github.com/jxo-me/netx/x/registry"
 )
 
 var (

@@ -1,3 +1,3 @@
-module github.com/go-gost/gosocks5
+module github.com/jxo-me/netx/gosocks5
 
-go 1.16
+go 1.20

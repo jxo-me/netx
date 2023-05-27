@@ -1,12 +1,12 @@
-module github.com/go-gost/gost
+module github.com/jxo-me/netx/gost
 
 go 1.20
 
 replace github.com/templexxx/cpu v0.0.7 => github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a
 
 require (
-	github.com/go-gost/core v0.0.0-20230418124644-a2115a3d3876
-	github.com/go-gost/x v0.0.0-20230521074751-46db8480faa9
+	github.com/jxo-me/netx/core v0.0.0-20230418124644-a2115a3d3876
+	github.com/jxo-me/netx/x v0.0.0-20230521074751-46db8480faa9
 	github.com/judwhite/go-svc v1.2.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

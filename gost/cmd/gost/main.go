@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-gost/core/logger"
-	xlogger "github.com/go-gost/x/logger"
+	"github.com/jxo-me/netx/core/logger"
+	xlogger "github.com/jxo-me/netx/x/logger"
 	"github.com/judwhite/go-svc"
 )
 

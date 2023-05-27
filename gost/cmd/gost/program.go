@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/x/config"
-	"github.com/go-gost/x/config/parsing"
-	xmetrics "github.com/go-gost/x/metrics"
-	"github.com/go-gost/x/registry"
+	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/x/config"
+	"github.com/jxo-me/netx/x/config/parsing"
+	xmetrics "github.com/jxo-me/netx/x/metrics"
+	"github.com/jxo-me/netx/x/registry"
 	"github.com/judwhite/go-svc"
 )
 
