@@ -12,6 +12,7 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
 	xlogger "github.com/jxo-me/netx/x/logger"
+	metrics "github.com/jxo-me/netx/x/metrics/service"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
