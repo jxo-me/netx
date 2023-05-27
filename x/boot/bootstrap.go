@@ -208,19 +208,19 @@ func Boots(a app.IRuntime) *Boot {
 	// Register dialers
 	err = insBoot.InitDialer()
 	if err != nil {
-		panic(fmt.Sprintf("InitConnector error: %s", err.Error()))
+		panic(fmt.Sprintf("InitDialer error: %s", err.Error()))
 		return nil
 	}
 	// Register handlers
 	err = insBoot.InitHandler()
 	if err != nil {
-		panic(fmt.Sprintf("InitConnector error: %s", err.Error()))
+		panic(fmt.Sprintf("InitHandler error: %s", err.Error()))
 		return nil
 	}
 	// Register listeners
 	err = insBoot.InitListener()
 	if err != nil {
-		panic(fmt.Sprintf("InitConnector error: %s", err.Error()))
+		panic(fmt.Sprintf("InitListener error: %s", err.Error()))
 		return nil
 	}
 
@@ -238,6 +238,7 @@ type Boot struct {
 func (b *Boot) InitConnector() (err error) {
 	// connector
 	for name, connector := range b.Connectors {
+		//fmt.Println("Register Connector type:", name)
 		err = b.App.ConnectorRegistry().Register(name, connector)
 		if err != nil {
 			return
@@ -249,6 +250,7 @@ func (b *Boot) InitConnector() (err error) {
 func (b *Boot) InitDialer() (err error) {
 	// dialer
 	for name, dialer := range b.Dialers {
+		//fmt.Println("Register Dialer type:", name)
 		err = b.App.DialerRegistry().Register(name, dialer)
 		if err != nil {
 			return err
@@ -260,6 +262,7 @@ func (b *Boot) InitDialer() (err error) {
 func (b *Boot) InitHandler() (err error) {
 	// handler
 	for name, handle := range b.Handlers {
+		//fmt.Println("Register Handler type:", name)
 		if name == consts.Auto {
 			err = b.App.HandlerRegistry().Register(consts.Auto, func(opts ...handler.Option) handler.IHandler {
 				options := handler.Options{}
@@ -300,6 +303,7 @@ func (b *Boot) InitHandler() (err error) {
 func (b *Boot) InitListener() (err error) {
 	// listener
 	for name, listener := range b.Listeners {
+		//fmt.Println("Register Listener type:", name)
 		err = b.App.ListenerRegistry().Register(name, listener)
 		if err != nil {
 			return err
