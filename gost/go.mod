@@ -8,6 +8,7 @@ replace (
 	github.com/jxo-me/netx/gosocks5 => ../gosocks5
 	github.com/jxo-me/netx/plugin => ../plugin
 	github.com/jxo-me/netx/relay => ../relay
+	github.com/jxo-me/netx/sdk => ../sdk
 	github.com/jxo-me/netx/tls-dissector => ../tls-dissector
 	github.com/jxo-me/netx/x => ../x
 )
@@ -15,6 +16,7 @@ replace (
 require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/core v0.0.0-00010101000000-000000000000
+	github.com/jxo-me/netx/sdk v0.0.0-00010101000000-000000000000
 	github.com/jxo-me/netx/x v0.0.0-00010101000000-000000000000
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )

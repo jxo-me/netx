@@ -1,15 +1,15 @@
 package main
 
 import (
+	"github.com/jxo-me/netx/sdk"
 	"net/http"
 	"os"
 
+	"github.com/judwhite/go-svc"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
 	xmetrics "github.com/jxo-me/netx/x/metrics"
-	"github.com/jxo-me/netx/x/registry"
-	"github.com/judwhite/go-svc"
 )
 
 type program struct {
@@ -141,7 +141,7 @@ func (p *program) Start() error {
 }
 
 func (p *program) Stop() error {
-	for name, srv := range registry.ServiceRegistry().GetAll() {
+	for name, srv := range sdk.Runtime.ServiceRegistry().GetAll() {
 		srv.Close()
 		logger.Default().Debugf("service %s shutdown", name)
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/jxo-me/netx/sdk"
 	"net/url"
 	"os"
 	"strconv"
@@ -15,7 +16,6 @@ import (
 	"github.com/jxo-me/netx/x/limiter/conn"
 	"github.com/jxo-me/netx/x/limiter/traffic"
 	mdx "github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 var (
@@ -323,11 +323,10 @@ func buildServiceConfig(url *url.URL) (*config.ServiceConfig, error) {
 	svc := &config.ServiceConfig{
 		Addr: url.Host,
 	}
-	netx.Runtime
-	if h := runtime.HandlerRegistry().Get(handler); h == nil {
+	if h := sdk.Runtime.HandlerRegistry().Get(handler); h == nil {
 		handler = "auto"
 	}
-	if ln := registry.ListenerRegistry().Get(listener); ln == nil {
+	if ln := sdk.Runtime.ListenerRegistry().Get(listener); ln == nil {
 		listener = "tcp"
 		if handler == "ssu" {
 			listener = "udp"
@@ -445,10 +444,10 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 		Addr: url.Host,
 	}
 
-	if c := registry.ConnectorRegistry().Get(connector); c == nil {
+	if c := sdk.Runtime.ConnectorRegistry().Get(connector); c == nil {
 		connector = "http"
 	}
-	if d := registry.DialerRegistry().Get(dialer); d == nil {
+	if d := sdk.Runtime.DialerRegistry().Get(dialer); d == nil {
 		dialer = "tcp"
 		if connector == "ssu" {
 			dialer = "udp"
