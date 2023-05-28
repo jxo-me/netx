@@ -1,6 +1,7 @@
 package boot
 
 import (
+	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/x/consts"
 	"github.com/jxo-me/netx/x/handler/dns"
 	"github.com/jxo-me/netx/x/handler/forward/local"
@@ -19,10 +20,9 @@ import (
 	handlerSshd "github.com/jxo-me/netx/x/handler/sshd"
 	"github.com/jxo-me/netx/x/handler/tap"
 	"github.com/jxo-me/netx/x/handler/tun"
-	"github.com/jxo-me/netx/x/registry"
 )
 
-var Handlers = map[string]registry.NewHandler{
+var Handlers = map[string]handler.NewHandler{
 	consts.Dns:      dns.NewHandler,
 	consts.Tcp:      local.NewHandler,
 	consts.Udp:      local.NewHandler,

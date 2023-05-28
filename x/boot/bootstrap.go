@@ -3,10 +3,12 @@ package boot
 import (
 	"fmt"
 	"github.com/jxo-me/netx/core/app"
+	"github.com/jxo-me/netx/core/connector"
+	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/x/consts"
 	"github.com/jxo-me/netx/x/handler/auto"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 var (
@@ -49,10 +51,10 @@ func Boots(a app.IRuntime) *Boot {
 
 type Boot struct {
 	App        app.IRuntime
-	Connectors map[string]registry.NewConnector
-	Dialers    map[string]registry.NewDialer
-	Handlers   map[string]registry.NewHandler
-	Listeners  map[string]registry.NewListener
+	Connectors map[string]connector.NewConnector
+	Dialers    map[string]dialer.NewDialer
+	Handlers   map[string]handler.NewHandler
+	Listeners  map[string]listener.NewListener
 }
 
 func (b *Boot) InitConnector() (err error) {

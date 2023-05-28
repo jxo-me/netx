@@ -1,6 +1,7 @@
 package boot
 
 import (
+	"github.com/jxo-me/netx/core/connector"
 	direct "github.com/jxo-me/netx/x/connector/direct"
 	"github.com/jxo-me/netx/x/connector/forward"
 	"github.com/jxo-me/netx/x/connector/http"
@@ -13,10 +14,9 @@ import (
 	ssu "github.com/jxo-me/netx/x/connector/ss/udp"
 	"github.com/jxo-me/netx/x/connector/sshd"
 	"github.com/jxo-me/netx/x/consts"
-	"github.com/jxo-me/netx/x/registry"
 )
 
-var Connectors = map[string]registry.NewConnector{
+var Connectors = map[string]connector.NewConnector{
 	consts.Direct:  direct.NewConnector,
 	consts.Virtual: direct.NewConnector,
 	consts.Forward: forward.NewConnector,

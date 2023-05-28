@@ -1,6 +1,7 @@
 package boot
 
 import (
+	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/x/consts"
 	dialerDirect "github.com/jxo-me/netx/x/dialer/direct"
 	"github.com/jxo-me/netx/x/dialer/dtls"
@@ -23,10 +24,9 @@ import (
 	dialerTls "github.com/jxo-me/netx/x/dialer/tls"
 	dialerUdp "github.com/jxo-me/netx/x/dialer/udp"
 	"github.com/jxo-me/netx/x/dialer/ws"
-	"github.com/jxo-me/netx/x/registry"
 )
 
-var Dialers = map[string]registry.NewDialer{
+var Dialers = map[string]dialer.NewDialer{
 	consts.Direct:  dialerDirect.NewDialer,
 	consts.Virtual: dialerDirect.NewDialer,
 	consts.Dtls:    dtls.NewDialer,

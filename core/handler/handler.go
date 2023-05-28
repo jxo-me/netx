@@ -16,3 +16,5 @@ type IHandler interface {
 type IForwarder interface {
 	Forward(chain.IHop)
 }
+
+type NewHandler func(opts ...Option) IHandler
