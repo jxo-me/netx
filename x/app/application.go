@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/jxo-me/netx/core/admission"
+	"github.com/jxo-me/netx/core/app"
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
@@ -17,7 +18,7 @@ import (
 	"github.com/jxo-me/netx/x/registry"
 )
 
-var Runtime IRuntime = NewConfig()
+var Runtime app.IRuntime = NewConfig()
 
 type Application struct {
 	admissionReg      reg.IRegistry[admission.IAdmission]

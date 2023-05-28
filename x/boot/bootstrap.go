@@ -2,8 +2,8 @@ package boot
 
 import (
 	"fmt"
+	"github.com/jxo-me/netx/core/app"
 	"github.com/jxo-me/netx/core/handler"
-	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/consts"
 	"github.com/jxo-me/netx/x/handler/auto"
 	"github.com/jxo-me/netx/x/registry"
