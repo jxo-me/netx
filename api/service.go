@@ -1,11 +1,11 @@
 package api
 
 import (
+	"github.com/gogf/gf/v2/net/ghttp"
 	"net"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/service"
 )
@@ -51,31 +51,26 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 	for _, opt := range opts {
 		opt(&options)
 	}
-
-	gin.SetMode(gin.ReleaseMode)
-
-	r := gin.New()
-	r.Use(
-		cors.New(cors.Config{
-			AllowAllOrigins: true,
-			AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowHeaders:    []string{"*"},
-		}),
-		gin.Recovery(),
-	)
-	if options.accessLog {
-		r.Use(mwLogger())
+	r := g.Server()
+	r.SetLogStdout(false)
+	err = r.SetListener(ln)
+	if err != nil {
+		return nil, err
 	}
+	r.BindMiddlewareDefault(CORSMiddleware)
 
 	router := r.Group("")
 	if options.pathPrefix != "" {
 		router = router.Group(options.pathPrefix)
 	}
 
-	router.StaticFS("/docs", http.FS(swaggerDoc))
-
+	if options.accessLog {
+		router.Middleware(mwLogger())
+	}
+	_ = InitDoc(r)
 	config := router.Group("/config")
-	config.Use(mwBasicAuth(options.auther))
+	config.Middleware(Response)
+	config.Middleware(mwBasicAuth(options.auther))
 	registerConfig(config)
 
 	return &server{
@@ -98,13 +93,11 @@ func (s *server) Close() error {
 	return s.s.Close()
 }
 
-func registerConfig(config *gin.RouterGroup) {
-	config.GET("", getConfig)
-	config.POST("", saveConfig)
-
-	config.POST("/services", createService)
-	config.PUT("/services/:service", updateService)
-	config.DELETE("/services/:service", deleteService)
+func registerConfig(config *ghttp.RouterGroup) {
+	config.Bind(
+		Config,
+		Service,
+	)
 
 	config.POST("/chains", createChain)
 	config.PUT("/chains/:chain", updateChain)
