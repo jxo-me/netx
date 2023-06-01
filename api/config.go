@@ -14,7 +14,7 @@ var (
 type hConfig struct{}
 
 type GetConfigReq struct {
-	g.Meta `path:"" method:"get" tags:"Config" summary:"Get current config."`
+	g.Meta `path:"/" method:"get" tags:"Config" summary:"Get current config."`
 	// output format, one of yaml|json, default is json.
 	// in: query
 	Format string `form:"format" json:"format" description:"output format, one of yaml|json, default is yaml."`
@@ -31,7 +31,7 @@ func (h *hConfig) GetConfig(ctx context.Context, req *GetConfigReq) (res *GetCon
 }
 
 type SaveConfigReq struct {
-	g.Meta `path:"" method:"post" tags:"Config" summary:"Save current config to file (gost.yaml or gost.json)."`
+	g.Meta `path:"/" method:"post" tags:"Config" summary:"Save current config to file (gost.yaml or gost.json)."`
 	// output format, one of yaml|json, default is yaml.
 	// in: query
 	Format string `form:"format" json:"format" description:"output format, one of yaml|json, default is yaml."`

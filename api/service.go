@@ -50,7 +50,8 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		opt(&options)
 	}
 	r := g.Server()
-	r.SetOpenApiPath("/openapi")
+	r.SetOpenApiPath("/api.json")
+	r.SetSwaggerPath("/swagger")
 	r.SetDumpRouterMap(false)
 	r.SetLogStdout(false)
 	err = r.SetListener(ln)
@@ -80,7 +81,8 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 }
 
 func (s *server) Serve() error {
-	return s.s.Start()
+	s.s.Run()
+	return nil
 }
 
 func (s *server) Addr() net.Addr {

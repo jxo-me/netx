@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jxo-me/netx/api"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/service"
-	"github.com/jxo-me/netx/x/api"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
