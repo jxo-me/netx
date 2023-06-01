@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/net/goai"
 )
 
-func InitDoc(s *ghttp.Server) error {
+func registerApiDocument(s *ghttp.Server) error {
 	//glog.Debug(ctx, "EnhanceOpenAPIDoc init ...")
 	openapi := s.GetOpenApi()
 	openapi.Config.CommonResponse = ghttp.DefaultHandlerResponse{}

@@ -68,7 +68,10 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		CORSMiddleware,
 		Response,
 	)
-	_ = InitDoc(s)
+	err = registerApiDocument(s)
+	if err != nil {
+		return nil, err
+	}
 	s.Group("", func(root *ghttp.RouterGroup) {
 		if options.pathPrefix != "" {
 			root = root.Group(options.pathPrefix)
@@ -82,6 +85,7 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		)
 		registerRouters(cfg)
 	})
+
 	return &server{
 		s:  s,
 		ln: ln,

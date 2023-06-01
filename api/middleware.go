@@ -4,6 +4,7 @@ import (
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/net/ghttp"
+	"github.com/jxo-me/netx/api/handler"
 	"github.com/jxo-me/netx/core/logger"
 	"net/http"
 	"time"
@@ -67,6 +68,14 @@ func Response(r *ghttp.Request) {
 		res  = r.GetHandlerResponse()
 		code = gerror.Code(err)
 	)
+	contentType := r.Get("format")
+	//glog.Debug(r.GetCtx(), "Content-Type:", contentType)
+	if contentType.String() == "yaml" {
+		r.Response.Header().Set("Content-Type", "text/x-yaml")
+		err = handler.Write(r.Response.ResponseWriter, res, "yaml")
+		r.Exit()
+	}
+
 	if err != nil {
 		code = gerror.Code(err)
 		if code == gcode.CodeNil {
