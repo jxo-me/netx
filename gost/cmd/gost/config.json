@@ -1,0 +1,11 @@
+{
+  "api": {
+    "addr": ":1800",
+    "pathPrefix": "/api",
+    "accesslog": true,
+    "auth": {
+      "username": "mickey",
+      "password": "mickey2020"
+    }
+  }
+}

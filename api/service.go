@@ -49,33 +49,40 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 	for _, opt := range opts {
 		opt(&options)
 	}
-	r := g.Server()
-	r.SetOpenApiPath("/api.json")
-	r.SetSwaggerPath("/swagger")
-	r.SetDumpRouterMap(false)
-	r.SetLogStdout(false)
-	err = r.SetListener(ln)
+	s := g.Server()
+	s.SetOpenApiPath("/api.json")
+	s.SetSwaggerPath("/swagger")
+	s.SetDumpRouterMap(false)
+	s.SetLogStdout(false)
+	err = s.SetListener(ln)
 	if err != nil {
 		return nil, err
 	}
-	r.BindMiddlewareDefault(CORSMiddleware)
+	s.BindStatusHandlerByMap(map[int]ghttp.HandlerFunc{
+		403: func(r *ghttp.Request) { r.Response.ClearBuffer(); r.Response.Writeln("403") },
+		404: func(r *ghttp.Request) { r.Response.ClearBuffer(); r.Response.Writeln("404") },
+		500: func(r *ghttp.Request) { r.Response.ClearBuffer(); r.Response.Writeln("500") },
+	})
+	s.BindMiddlewareDefault(
+		CORSMiddleware,
+		Response,
+	)
+	_ = InitDoc(s)
+	s.Group("", func(root *ghttp.RouterGroup) {
+		if options.pathPrefix != "" {
+			root = root.Group(options.pathPrefix)
+		}
 
-	router := r.Group("")
-	if options.pathPrefix != "" {
-		router = router.Group(options.pathPrefix)
-	}
-
-	if options.accessLog {
-		router.Middleware(mwLogger())
-	}
-	_ = InitDoc(r)
-	config := router.Group("/config")
-	config.Middleware(Response)
-	config.Middleware(mwBasicAuth(options.auther))
-	registerConfig(config)
-
+		if options.accessLog {
+			root.Middleware(mwLogger())
+		}
+		cfg := root.Group("/config").Middleware(
+			mwBasicAuth(options.auther),
+		)
+		registerConfig(cfg)
+	})
 	return &server{
-		s:  r,
+		s:  s,
 		ln: ln,
 	}, nil
 }
