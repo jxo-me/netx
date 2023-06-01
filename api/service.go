@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
+	"github.com/jxo-me/netx/api/handler"
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/service"
 	"net"
@@ -102,18 +103,18 @@ func (s *server) Close() error {
 
 func registerConfig(config *ghttp.RouterGroup) {
 	config.Bind(
-		Config,
-		Service,
-		Chain,
-		Hop,
-		Auther,
-		Admission,
-		Bypass,
-		Resolver,
-		Hosts,
-		Ingress,
-		Limiter,
-		ConnLimiter,
-		RateLimiter,
+		handler.Config,
+		handler.Service,
+		handler.Chain,
+		handler.Hop,
+		handler.Auther,
+		handler.Admission,
+		handler.Bypass,
+		handler.Resolver,
+		handler.Hosts,
+		handler.Ingress,
+		handler.Limiter,
+		handler.ConnLimiter,
+		handler.RateLimiter,
 	)
 }

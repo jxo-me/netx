@@ -1,3 +1,3 @@
-package api
+package handler
 
 type NullStructRes struct{}
