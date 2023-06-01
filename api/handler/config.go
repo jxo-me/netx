@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
-	"github.com/gogf/gf/v2/os/glog"
 	"github.com/jxo-me/netx/x/config"
 	"os"
 )
@@ -28,7 +27,6 @@ type GetConfigRes struct {
 func (h *hConfig) GetConfig(ctx context.Context, req *GetConfigReq) (res *GetConfigRes, err error) {
 	res = &GetConfigRes{}
 	res.Config = config.Global()
-	glog.Info(ctx, "GetConfig:", res)
 	return res, nil
 }
 
