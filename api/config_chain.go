@@ -72,7 +72,7 @@ func (h *hChain) UpdateChain(ctx context.Context, req *UpdateChainReq) (res *Nul
 		return nil, ErrDup
 	}
 
-	config.OnUpdate(func(c *config.Config) error {
+	_ = config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Chains {
 			if c.Chains[i].Name == req.Chain {
 				c.Chains[i] = &req.Data

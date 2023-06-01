@@ -97,49 +97,16 @@ func registerConfig(config *ghttp.RouterGroup) {
 	config.Bind(
 		Config,
 		Service,
+		Chain,
+		Hop,
+		Auther,
+		Admission,
+		Bypass,
+		Resolver,
+		Hosts,
+		Ingress,
+		Limiter,
+		ConnLimiter,
+		RateLimiter,
 	)
-
-	config.POST("/chains", createChain)
-	config.PUT("/chains/:chain", updateChain)
-	config.DELETE("/chains/:chain", deleteChain)
-
-	config.POST("/hops", createHop)
-	config.PUT("/hops/:hop", updateHop)
-	config.DELETE("/hops/:hop", deleteHop)
-
-	config.POST("/authers", createAuther)
-	config.PUT("/authers/:auther", updateAuther)
-	config.DELETE("/authers/:auther", deleteAuther)
-
-	config.POST("/admissions", createAdmission)
-	config.PUT("/admissions/:admission", updateAdmission)
-	config.DELETE("/admissions/:admission", deleteAdmission)
-
-	config.POST("/bypasses", createBypass)
-	config.PUT("/bypasses/:bypass", updateBypass)
-	config.DELETE("/bypasses/:bypass", deleteBypass)
-
-	config.POST("/resolvers", createResolver)
-	config.PUT("/resolvers/:resolver", updateResolver)
-	config.DELETE("/resolvers/:resolver", deleteResolver)
-
-	config.POST("/hosts", createHosts)
-	config.PUT("/hosts/:hosts", updateHosts)
-	config.DELETE("/hosts/:hosts", deleteHosts)
-
-	config.POST("/ingresses", createIngress)
-	config.PUT("/ingresses/:ingress", updateIngress)
-	config.DELETE("/ingresses/:ingress", deleteIngress)
-
-	config.POST("/limiters", createLimiter)
-	config.PUT("/limiters/:limiter", updateLimiter)
-	config.DELETE("/limiters/:limiter", deleteLimiter)
-
-	config.POST("/climiters", createConnLimiter)
-	config.PUT("/climiters/:limiter", updateConnLimiter)
-	config.DELETE("/climiters/:limiter", deleteConnLimiter)
-
-	config.POST("/rlimiters", createRateLimiter)
-	config.PUT("/rlimiters/:limiter", updateRateLimiter)
-	config.DELETE("/rlimiters/:limiter", deleteRateLimiter)
 }
