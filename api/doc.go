@@ -42,8 +42,8 @@ func InitDoc(s *ghttp.Server) error {
 
 	// API description.
 	openapi.Info = goai.Info{
-		Title:       "Go Plus Framework",
-		Description: `Go Plus Framework is based on GoFrame `,
+		Title:       "NetX Framework",
+		Description: `NetX Framework is based on GoFrame `,
 		Version:     "3.0.1",
 		Contact: &goai.Contact{
 			Name: "NetX",
