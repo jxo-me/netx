@@ -3,6 +3,7 @@ module github.com/jxo-me/netx/gost
 go 1.20
 
 replace (
+	github.com/jxo-me/netx/api => ../api
 	github.com/jxo-me/netx/core => ../core
 	github.com/jxo-me/netx/gosocks4 => ../gosocks4
 	github.com/jxo-me/netx/gosocks5 => ../gosocks5
@@ -14,8 +15,8 @@ replace (
 
 require (
 	github.com/judwhite/go-svc v1.2.1
-	github.com/jxo-me/netx/core v0.0.0-00010101000000-000000000000
-	github.com/jxo-me/netx/x v0.0.0-00010101000000-000000000000
+	github.com/jxo-me/netx/core v0.0.0-20230531025546-78c9020abc9b
+	github.com/jxo-me/netx/x v0.0.0-20230531025546-78c9020abc9b
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 

@@ -1,13 +1,11 @@
 package api
 
 import (
-	"github.com/gogf/gf/v2/net/ghttp"
-	"net"
-	"net/http"
-
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/service"
+	"net"
 )
 
 type options struct {
@@ -37,7 +35,7 @@ func AutherOption(auther auth.IAuthenticator) Option {
 }
 
 type server struct {
-	s  *http.Server
+	s  *ghttp.Server
 	ln net.Listener
 }
 
@@ -52,6 +50,8 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		opt(&options)
 	}
 	r := g.Server()
+	r.SetOpenApiPath("/openapi")
+	r.SetDumpRouterMap(false)
 	r.SetLogStdout(false)
 	err = r.SetListener(ln)
 	if err != nil {
@@ -74,15 +74,13 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 	registerConfig(config)
 
 	return &server{
-		s: &http.Server{
-			Handler: r,
-		},
+		s:  r,
 		ln: ln,
 	}, nil
 }
 
 func (s *server) Serve() error {
-	return s.s.Serve(s.ln)
+	return s.s.Start()
 }
 
 func (s *server) Addr() net.Addr {
@@ -90,7 +88,7 @@ func (s *server) Addr() net.Addr {
 }
 
 func (s *server) Close() error {
-	return s.s.Close()
+	return s.s.Shutdown()
 }
 
 func registerConfig(config *ghttp.RouterGroup) {
