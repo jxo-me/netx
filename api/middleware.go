@@ -34,6 +34,7 @@ func mwLogger() ghttp.HandlerFunc {
 func mwBasicAuth(auther auth.IAuthenticator) ghttp.HandlerFunc {
 	return func(r *ghttp.Request) {
 		if auther == nil {
+			r.Middleware.Next()
 			return
 		}
 		u, p, _ := r.Request.BasicAuth()

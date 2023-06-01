@@ -80,7 +80,7 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		cfg := root.Group("/config").Middleware(
 			mwBasicAuth(options.auther),
 		)
-		registerConfig(cfg)
+		registerRouters(cfg)
 	})
 	return &server{
 		s:  s,
@@ -101,8 +101,8 @@ func (s *server) Close() error {
 	return s.s.Shutdown()
 }
 
-func registerConfig(config *ghttp.RouterGroup) {
-	config.Bind(
+func registerRouters(r *ghttp.RouterGroup) {
+	r.Bind(
 		handler.Config,
 		handler.Service,
 		handler.Chain,
