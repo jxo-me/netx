@@ -60,6 +60,19 @@ func (p *program) Init(env svc.Environment) error {
 			Addr: apiAddr,
 		}
 	}
+	if cfg.API != nil {
+		if botEnable {
+			if apiDomain != "" {
+				cfg.API.Domain = apiDomain
+			}
+			if botToken != "" {
+				cfg.API.BotToken = botToken
+			}
+			if cfg.API.Domain != "" && cfg.API.BotToken != "" {
+				cfg.API.BotEnable = botEnable
+			}
+		}
+	}
 	if debug {
 		if cfg.Log == nil {
 			cfg.Log = &config.LogConfig{}
@@ -144,6 +157,9 @@ func (p *program) Stop() error {
 	for name, srv := range app.Runtime.ServiceRegistry().GetAll() {
 		srv.Close()
 		logger.Default().Debugf("service %s shutdown", name)
+	}
+	if app.ApiSrv != nil {
+		_ = app.ApiSrv.Close()
 	}
 	return nil
 }

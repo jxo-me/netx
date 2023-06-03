@@ -42,6 +42,9 @@ type APIConfig struct {
 	AccessLog  bool        `yaml:"accesslog,omitempty" json:"accesslog,omitempty"`
 	Auth       *AuthConfig `yaml:",omitempty" json:"auth,omitempty"`
 	Auther     string      `yaml:",omitempty" json:"auther,omitempty"`
+	BotEnable  bool        `yaml:"botEnable,omitempty" json:"botEnable,omitempty"`
+	Domain     string      `yaml:"domain,omitempty" json:"domain,omitempty"`
+	BotToken   string      `yaml:"botToken,omitempty" json:"botToken,omitempty"`
 }
 
 type MetricsConfig struct {

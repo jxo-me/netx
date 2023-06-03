@@ -17,7 +17,7 @@ func registerApiDocument(s *ghttp.Server) error {
 			//	Value: &goai.SecurityScheme{
 			//		Type: "apiKey",
 			//		In:   "header",
-			//		Name: "token",
+			//		Name: "botToken",
 			//	},
 			//},
 			"BasicAuth": goai.SecuritySchemeRef{

@@ -26,9 +26,11 @@ func (s *Server) BotHook() telebot.Hook {
 }
 
 func (s *Server) Serve() error {
-	go func() {
-		s.Bot.Bot.Start()
-	}()
+	if s.Bot != nil {
+		go func() {
+			s.Bot.Bot.Start()
+		}()
+	}
 	s.Srv.Run()
 	return nil
 }
@@ -38,9 +40,8 @@ func (s *Server) Addr() net.Addr {
 }
 
 func (s *Server) Close() error {
-	_, err := s.Bot.Bot.Close()
-	if err != nil {
-		return err
+	if s.Bot != nil {
+		s.Bot.Bot.Stop()
 	}
 	return s.Srv.Shutdown()
 }
@@ -133,7 +134,7 @@ func apiService(ln net.Listener, options options, b *api.TGBot) (s *ghttp.Server
 }
 
 func botService(ctx context.Context, op options) (s *api.TGBot, err error) {
-	s, err = NewBot(ctx, op.domain, op.token, op.pathPrefix)
+	s, err = NewBot(ctx, op.domain, op.botToken, op.pathPrefix)
 	return
 }
 

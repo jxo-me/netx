@@ -196,9 +196,9 @@ func buildAPIService(cfg *config.APIConfig) (iApi.IApi, error) {
 		api.PathPrefixOption(cfg.PathPrefix),
 		api.AccessLogOption(cfg.AccessLog),
 		api.AutherOption(auther),
-		api.BotEnableOption(true),
-		api.DomainOption("dev.us.jxo.me"),
-		api.TokenOption("5548720536:AAFY-wb4ir22eF5vRMQXft_sj-RDhaB54EQ"),
+		api.BotEnableOption(cfg.BotEnable),
+		api.DomainOption(cfg.Domain),
+		api.TokenOption(cfg.BotToken),
 	)
 }
 

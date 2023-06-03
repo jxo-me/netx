@@ -26,7 +26,10 @@ var (
 	nodes        stringList
 	debug        bool
 	apiAddr      string
+	apiDomain    string
 	metricsAddr  string
+	botEnable    bool
+	botToken     string
 )
 
 func init() {
@@ -79,7 +82,10 @@ func init() {
 	flag.BoolVar(&printVersion, "V", false, "print version")
 	flag.StringVar(&outputFormat, "O", "", "output format, one of yaml|json format")
 	flag.BoolVar(&debug, "D", false, "debug mode")
+	flag.BoolVar(&botEnable, "B", false, "enable telegram bot")
 	flag.StringVar(&apiAddr, "api", "", "api service address")
+	flag.StringVar(&apiDomain, "domain", "", "api service domain")
+	flag.StringVar(&botToken, "token", "", "tg bot token")
 	flag.StringVar(&metricsAddr, "metrics", "", "metrics service address")
 	flag.Parse()
 

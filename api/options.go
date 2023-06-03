@@ -8,7 +8,7 @@ type options struct {
 	auther     auth.IAuthenticator
 	botEnable  bool
 	domain     string
-	token      string
+	botToken   string
 }
 
 type Option func(*options)
@@ -45,6 +45,6 @@ func BotEnableOption(enable bool) Option {
 
 func TokenOption(token string) Option {
 	return func(o *options) {
-		o.token = token
+		o.botToken = token
 	}
 }
