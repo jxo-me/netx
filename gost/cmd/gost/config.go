@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/jxo-me/netx/api"
+	iApi "github.com/jxo-me/netx/core/api"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/app"
@@ -185,7 +186,7 @@ func logFromConfig(cfg *config.LogConfig) logger.ILogger {
 	return xlogger.NewLogger(opts...)
 }
 
-func buildAPIService(cfg *config.APIConfig) (service.IService, error) {
+func buildAPIService(cfg *config.APIConfig) (iApi.IApi, error) {
 	auther := parsing.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
 		auther = app.Runtime.AutherRegistry().Get(cfg.Auther)
@@ -195,6 +196,9 @@ func buildAPIService(cfg *config.APIConfig) (service.IService, error) {
 		api.PathPrefixOption(cfg.PathPrefix),
 		api.AccessLogOption(cfg.AccessLog),
 		api.AutherOption(auther),
+		api.BotEnableOption(true),
+		api.DomainOption("dev.us.jxo.me"),
+		api.TokenOption("5548720536:AAFY-wb4ir22eF5vRMQXft_sj-RDhaB54EQ"),
 	)
 }
 

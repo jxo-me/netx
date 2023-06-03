@@ -15,7 +15,7 @@ replace (
 
 require (
 	github.com/judwhite/go-svc v1.2.1
-	github.com/jxo-me/netx/api v0.0.0-00010101000000-000000000000
+	github.com/jxo-me/netx/api v0.0.0-20230601103646-f32dd55b6fe3
 	github.com/jxo-me/netx/core v0.0.0-20230531025546-78c9020abc9b
 	github.com/jxo-me/netx/x v0.0.0-20230531025546-78c9020abc9b
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -38,7 +38,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/gogf/gf/v2 v2.4.1 // indirect
+	github.com/gogf/gf/v2 v2.4.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -48,6 +48,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grokify/html-strip-tags-go v0.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/jxo-me/gfbot v0.1.14 // indirect
 	github.com/jxo-me/netx/gosocks4 v0.0.1 // indirect
 	github.com/jxo-me/netx/gosocks5 v0.3.0 // indirect
 	github.com/jxo-me/netx/plugin v0.0.0-00010101000000-000000000000 // indirect

@@ -9,12 +9,15 @@ replace (
 	github.com/jxo-me/netx/plugin => ../plugin
 	github.com/jxo-me/netx/relay => ../relay
 	github.com/jxo-me/netx/tls-dissector => ../tls-dissector
+	github.com/jxo-me/netx/x => ../x
 )
 
 require (
 	github.com/gogf/gf/v2 v2.4.1
+	github.com/jxo-me/gfbot v0.1.14
 	github.com/jxo-me/netx/core v0.0.0-20230531025546-78c9020abc9b
 	github.com/jxo-me/netx/x v0.0.0-20230531025546-78c9020abc9b
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -72,5 +75,4 @@ require (
 	google.golang.org/grpc v1.55.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

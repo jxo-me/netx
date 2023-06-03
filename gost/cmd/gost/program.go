@@ -102,6 +102,7 @@ func (p *program) Start() error {
 			log.Info("api service on ", s.Addr())
 			log.Fatal(s.Serve())
 		}()
+		app.ApiSrv = s
 	}
 	if cfg.Profiling != nil {
 		go func() {

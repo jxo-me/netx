@@ -1,56 +1,81 @@
 package api
 
 import (
+	"context"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
+	telebot "github.com/jxo-me/gfbot"
+	"github.com/jxo-me/netx/api/bot"
 	"github.com/jxo-me/netx/api/handler"
-	"github.com/jxo-me/netx/core/auth"
-	"github.com/jxo-me/netx/core/service"
+	"github.com/jxo-me/netx/core/api"
 	"net"
 )
 
-type options struct {
-	accessLog  bool
-	pathPrefix string
-	auther     auth.IAuthenticator
+type Server api.Server
+
+func (s *Server) HttpServer() *ghttp.Server {
+	return s.Srv
 }
 
-type Option func(*options)
+func (s *Server) TGBot() *api.TGBot {
+	return s.Bot
+}
 
-func PathPrefixOption(pathPrefix string) Option {
-	return func(o *options) {
-		o.pathPrefix = pathPrefix
+func (s *Server) BotHook() telebot.Hook {
+	return s.Bot.Hook
+}
+
+func (s *Server) Serve() error {
+	go func() {
+		s.Bot.Bot.Start()
+	}()
+	s.Srv.Run()
+	return nil
+}
+
+func (s *Server) Addr() net.Addr {
+	return s.Listener.Addr()
+}
+
+func (s *Server) Close() error {
+	_, err := s.Bot.Bot.Close()
+	if err != nil {
+		return err
 	}
+	return s.Srv.Shutdown()
 }
 
-func AccessLogOption(enable bool) Option {
-	return func(o *options) {
-		o.accessLog = enable
-	}
-}
-
-func AutherOption(auther auth.IAuthenticator) Option {
-	return func(o *options) {
-		o.auther = auther
-	}
-}
-
-type server struct {
-	s  *ghttp.Server
-	ln net.Listener
-}
-
-func NewService(addr string, opts ...Option) (service.IService, error) {
+func NewService(addr string, opts ...Option) (api.IApi, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 
-	var options options
+	var option options
 	for _, opt := range opts {
-		opt(&options)
+		opt(&option)
 	}
-	s := g.Server()
+	ctx := context.Background()
+	var b *api.TGBot
+	// bot
+	if option.botEnable {
+		b, err = botService(ctx, option)
+	}
+	// api
+	s, err := apiService(ln, option, b)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Server{
+		Srv:      s,
+		Listener: ln,
+		Bot:      b,
+	}, nil
+}
+
+func apiService(ln net.Listener, options options, b *api.TGBot) (s *ghttp.Server, err error) {
+	s = g.Server()
 	s.SetOpenApiPath("/api.json")
 	s.SetSwaggerPath("/swagger")
 	s.SetDumpRouterMap(false)
@@ -64,10 +89,10 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		404: func(r *ghttp.Request) { r.Response.ClearBuffer(); r.Response.Writeln("404") },
 		500: func(r *ghttp.Request) { r.Response.ClearBuffer(); r.Response.Writeln("500") },
 	})
-	s.BindMiddlewareDefault(
-		CORSMiddleware,
-		Response,
-	)
+	//s.BindMiddlewareDefault(
+	//	CORSMiddleware,
+	//	Response,
+	//)
 	err = registerApiDocument(s)
 	if err != nil {
 		return nil, err
@@ -76,7 +101,25 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		if options.pathPrefix != "" {
 			root = root.Group(options.pathPrefix)
 		}
-
+		// register TG bot
+		if options.botEnable && b != nil {
+			// TG bot Hook api
+			root.POST("", bot.Bot.Hook)
+			if b.Bot != nil {
+				// bot routers
+				for key, handlerFunc := range bot.Router().List {
+					b.Bot.Handle(key, handlerFunc)
+				}
+				for key, handlerFunc := range bot.Router().Btns {
+					b.Bot.Handle(key, handlerFunc)
+				}
+			}
+		}
+		// Middlewares
+		root.Middleware(
+			CORSMiddleware,
+			Response,
+		)
 		if options.accessLog {
 			root.Middleware(mwLogger())
 		}
@@ -86,23 +129,12 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 		registerRouters(cfg)
 	})
 
-	return &server{
-		s:  s,
-		ln: ln,
-	}, nil
+	return s, nil
 }
 
-func (s *server) Serve() error {
-	s.s.Run()
-	return nil
-}
-
-func (s *server) Addr() net.Addr {
-	return s.ln.Addr()
-}
-
-func (s *server) Close() error {
-	return s.s.Shutdown()
+func botService(ctx context.Context, op options) (s *api.TGBot, err error) {
+	s, err = NewBot(ctx, op.domain, op.token, op.pathPrefix)
+	return
 }
 
 func registerRouters(r *ghttp.RouterGroup) {

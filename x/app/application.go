@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/jxo-me/netx/core/admission"
+	"github.com/jxo-me/netx/core/api"
 	"github.com/jxo-me/netx/core/app"
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/bypass"
@@ -22,7 +23,10 @@ import (
 	"github.com/jxo-me/netx/x/registry"
 )
 
-var Runtime app.IRuntime = NewConfig()
+var (
+	Runtime app.IRuntime = NewConfig()
+	ApiSrv  api.IApi
+)
 
 type Application struct {
 	admissionReg      reg.IRegistry[admission.IAdmission]
@@ -45,7 +49,7 @@ type Application struct {
 }
 
 func NewConfig() *Application {
-	app := Application{
+	a := Application{
 		admissionReg:      new(registry.AdmissionRegistry),
 		autherReg:         new(registry.AutherRegistry),
 		bypassReg:         new(registry.BypassRegistry),
@@ -70,7 +74,7 @@ func NewConfig() *Application {
 	// Register handlers
 	// Register listeners
 
-	return &app
+	return &a
 }
 
 func (a *Application) AdmissionRegistry() reg.IRegistry[admission.IAdmission] {

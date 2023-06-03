@@ -1,6 +1,6 @@
 {
   "api": {
-    "addr": ":1800",
+    "addr": ":80",
     "pathPrefix": "/api",
     "accesslog": true,
     "auth": {
