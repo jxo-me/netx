@@ -3,6 +3,7 @@ module github.com/jxo-me/netx/api
 go 1.20
 
 replace (
+	github.com/jxo-me/gfbot => ../../gfbot
 	github.com/jxo-me/netx/core => ../core
 	github.com/jxo-me/netx/gosocks4 => ../gosocks4
 	github.com/jxo-me/netx/gosocks5 => ../gosocks5
@@ -13,7 +14,7 @@ replace (
 )
 
 require (
-	github.com/gogf/gf/v2 v2.4.1
+	github.com/gogf/gf/v2 v2.4.2
 	github.com/jxo-me/gfbot v0.1.14
 	github.com/jxo-me/netx/core v0.0.0-20230531025546-78c9020abc9b
 	github.com/jxo-me/netx/x v0.0.0-20230531025546-78c9020abc9b

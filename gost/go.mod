@@ -3,6 +3,7 @@ module github.com/jxo-me/netx/gost
 go 1.20
 
 replace (
+	github.com/jxo-me/gfbot => ../../gfbot
 	github.com/jxo-me/netx/api => ../api
 	github.com/jxo-me/netx/core => ../core
 	github.com/jxo-me/netx/gosocks4 => ../gosocks4
