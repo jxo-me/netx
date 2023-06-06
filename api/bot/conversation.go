@@ -8,50 +8,43 @@ import (
 	"strconv"
 )
 
-func NewConversation() handlers.Conversation {
+func NewConversation(cmd, cancel string) handlers.Conversation {
 	return handlers.NewConversation(
-		[]telebot.IHandler{telebot.HandlerFunc(start)}, // 入口
+		cmd,
+		telebot.HandlerFunc(startHandler), // 入口
 		map[string][]telebot.IHandler{
-			NAME: {telebot.HandlerFunc(name)},
-			AGE:  {telebot.HandlerFunc(age)},
+			NAME:     {telebot.HandlerFunc(nameHandler)},
+			AGE:      {telebot.HandlerFunc(ageHandler)},
+			LOCATION: {telebot.HandlerFunc(locationHandler)},
 		}, // states状态
 		&handlers.ConversationOpts{
-			Exits:        []telebot.IHandler{telebot.HandlerFunc(cancel)},
+			ExitName:     cancel,
+			ExitHandler:  telebot.HandlerFunc(cancelHandler),
 			AllowReEntry: true,
 		}, // options
 	)
 }
 
-// age gets the user's age
-func age(ctx telebot.IContext) error {
-	inputAge := ctx.Message().Text
-	ageNumber, err := strconv.ParseInt(inputAge, 10, 64)
+func startHandler(ctx telebot.IContext) error {
+	err := ctx.Reply(fmt.Sprintf("Hello, I'm @%s.\nWhat is your name?.", ctx.Bot().Me.Username), &telebot.SendOptions{})
 	if err != nil {
-		// If the number is not valid, try again!
-		ctx.Reply(fmt.Sprintf("This doesn't seem to be a number. Could you repeat?"), &telebot.SendOptions{})
-		// We try the age handler again
-		return handlers.NextConversationState(AGE)
+		return fmt.Errorf("failed to send start message: %w", err)
 	}
-
-	err = ctx.Reply(fmt.Sprintf("Ah, you're %d years old!", ageNumber), &telebot.SendOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to send age message: %w", err)
-	}
-	return handlers.EndConversation()
+	// 设置当前用户下一个入口
+	return handlers.NextConversationState(NAME)
 }
 
-// cancel cancels the conversation.
-func cancel(ctx telebot.IContext) error {
+// cancelHandler cancels the conversation.
+func cancelHandler(ctx telebot.IContext) error {
 	err := ctx.Reply("Oh, goodbye!", &telebot.SendOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to send cancel message: %w", err)
+		return fmt.Errorf("failed to send cancelHandler message: %w", err)
 	}
 	return handlers.EndConversation()
 }
 
-// name gets the user's name
-func name(ctx telebot.IContext) error {
-	fmt.Println("888888888888888888888888888888888:", ctx.Message())
+// nameHandler gets the user's nameHandler
+func nameHandler(ctx telebot.IContext) error {
 	inputName := ctx.Message().Text
 	err := ctx.Reply(fmt.Sprintf("Nice to meet you, %s!\n\nAnd how old are you?", html.EscapeString(inputName)), &telebot.SendOptions{})
 	if err != nil {
@@ -60,11 +53,31 @@ func name(ctx telebot.IContext) error {
 	return handlers.NextConversationState(AGE)
 }
 
-func start(ctx telebot.IContext) error {
-	err := ctx.Reply(fmt.Sprintf("Hello, I'm @%s.\nWhat is your name?.", ctx.Bot().Me.Username), &telebot.SendOptions{})
+// ageHandler gets the user's ageHandler
+func ageHandler(ctx telebot.IContext) error {
+	inputAge := ctx.Message().Text
+	ageNumber, err := strconv.ParseInt(inputAge, 10, 64)
 	if err != nil {
-		return fmt.Errorf("failed to send start message: %w", err)
+		// If the number is not valid, try again!
+		ctx.Reply(fmt.Sprintf("This doesn't seem to be a number. Could you repeat?"), &telebot.SendOptions{})
+		// We try the ageHandler handler again
+		return handlers.NextConversationState(AGE)
 	}
-	// 设置当前用户下一个入口
-	return handlers.NextConversationState(NAME)
+
+	err = ctx.Reply(fmt.Sprintf("age %d\n What's your location?", ageNumber), &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send ageHandler message: %w", err)
+	}
+	return handlers.NextConversationState(LOCATION)
+}
+
+func locationHandler(ctx telebot.IContext) error {
+	inputLocation := ctx.Message().Text
+	err := ctx.Reply(fmt.Sprintf("Full name: name\nAge: {age}\nLocation: %s", html.EscapeString(inputLocation)), &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send name message: %w", err)
+	}
+
+	// 完成
+	return handlers.EndConversation()
 }

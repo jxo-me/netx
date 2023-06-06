@@ -20,7 +20,7 @@ type hBot struct {
 
 type HookReq struct {
 	g.Meta `path:"/v1/bot/hook" method:"post" tags:"TGBot" summary:"Bot WebHook API"`
-	//Name   string `v:"required" json:"name" description:"名称"`
+	//Name   string `v:"required" json:"nameHandler" description:"名称"`
 }
 
 type HookRes struct {
