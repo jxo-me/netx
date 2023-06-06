@@ -81,11 +81,11 @@ func (h *hEvent) OnClickService(c telebot.IContext) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
-			selector.Data("@update", "update", "update"),
-			selector.Data("@delete", "delete", "delete"),
+			//selector.Data("@update", "update", "update"),
+			selector.Data("@add", "add", "add"),
 			selector.Data("@list", "list", "list"),
 		),
-		selector.Row(selector.Data("« 返回服务列表", "backServices", "backServices")),
+		selector.Row(selector.Data("« 返回 服务列表", "backServices", "backServices")),
 	)
 	return c.Edit(msg, selector)
 }

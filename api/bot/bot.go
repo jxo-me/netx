@@ -4,12 +4,6 @@ import (
 	telebot "github.com/jxo-me/gfbot"
 )
 
-const (
-	NAME     = "nameHandler"
-	LOCATION = "locationHandler"
-	AGE      = "ageHandler"
-)
-
 var (
 	insBotRouter = Routers{
 		List: map[string]telebot.IHandler{
@@ -38,12 +32,6 @@ var (
 		},
 		Btns: map[*telebot.Btn]telebot.IHandler{
 			//&bot.BtnBetting:       bot.Event.OnBtnBetting,
-		},
-		Test: map[string]telebot.IHandler{
-			"Test": telebot.HandlerFunc(func(c telebot.IContext) error {
-				return nil
-			}),
-			"Test2": NewConversation("Test2", "/cancel"),
 		},
 	}
 )

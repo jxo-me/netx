@@ -8,9 +8,15 @@ import (
 	"strconv"
 )
 
-func NewConversation(cmd, cancel string) handlers.Conversation {
+const (
+	NAME     = "nameHandler"
+	LOCATION = "locationHandler"
+	AGE      = "ageHandler"
+)
+
+func NewConversation(entry, cancel string) handlers.Conversation {
 	return handlers.NewConversation(
-		cmd,
+		entry,
 		telebot.HandlerFunc(startHandler), // 入口
 		map[string][]telebot.IHandler{
 			NAME:     {telebot.HandlerFunc(nameHandler)},
