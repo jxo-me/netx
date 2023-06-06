@@ -30,7 +30,7 @@ type (
 	hEvent struct{}
 )
 
-func (h *hEvent) OnText(c telebot.Context) error {
+func (h *hEvent) OnText(c telebot.IContext) error {
 	return c.Send("OnText")
 }
 
@@ -64,17 +64,17 @@ func getSelectMenus() *telebot.ReplyMarkup {
 	return selector
 }
 
-func (h *hEvent) OnBackServices(c telebot.Context) error {
+func (h *hEvent) OnBackServices(c telebot.IContext) error {
 	selector := getSelectMenus()
 	return c.Edit("从下面的列表中选择一个服务:", selector)
 }
 
-func (h *hEvent) OnHostTextCommand(c telebot.Context) error {
+func (h *hEvent) OnHostTextCommand(c telebot.IContext) error {
 	selector := getSelectMenus()
 	return c.Send("从下面的列表中选择一个服务:", selector)
 }
 
-func (h *hEvent) OnClickService(c telebot.Context) error {
+func (h *hEvent) OnClickService(c telebot.IContext) error {
 	user := c.Callback().Sender
 	cmd := c.Callback().Data
 	msg := fmt.Sprintf("选中服务: %s %d.\nWhat do you want to do with the bot?", cmd, user.ID)
@@ -90,10 +90,10 @@ func (h *hEvent) OnClickService(c telebot.Context) error {
 	return c.Edit(msg, selector)
 }
 
-func (h *hEvent) OnCallback(c telebot.Context) error {
+func (h *hEvent) OnCallback(c telebot.IContext) error {
 	return c.Send("OnCallback")
 }
 
-func (h *hEvent) OnUserJoined(c telebot.Context) error {
+func (h *hEvent) OnUserJoined(c telebot.IContext) error {
 	return c.Send("OnUserJoined")
 }

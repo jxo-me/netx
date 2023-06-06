@@ -11,7 +11,7 @@ const (
 
 var (
 	insBotRouter = Routers{
-		List: map[string]telebot.Handler{
+		List: map[string]telebot.IHandler{
 			"/Test2":             NewConversation(),
 			telebot.OnText:       telebot.HandlerFunc(Event.OnText),
 			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
@@ -35,11 +35,11 @@ var (
 			// TextCommand
 			HostTextCommand: telebot.HandlerFunc(Event.OnHostTextCommand),
 		},
-		Btns: map[*telebot.Btn]telebot.Handler{
+		Btns: map[*telebot.Btn]telebot.IHandler{
 			//&bot.BtnBetting:       bot.Event.OnBtnBetting,
 		},
-		Test: map[string]telebot.Handler{
-			"Test": telebot.HandlerFunc(func(c telebot.Context) error {
+		Test: map[string]telebot.IHandler{
+			"Test": telebot.HandlerFunc(func(c telebot.IContext) error {
 				return nil
 			}),
 			"Test2": NewConversation(),
@@ -48,9 +48,9 @@ var (
 )
 
 type Routers struct {
-	List map[string]telebot.Handler
-	Btns map[*telebot.Btn]telebot.Handler
-	Test map[string]telebot.Handler
+	List map[string]telebot.IHandler
+	Btns map[*telebot.Btn]telebot.IHandler
+	Test map[string]telebot.IHandler
 }
 
 func Router() *Routers {

@@ -4,28 +4,26 @@ import (
 	"fmt"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/gfbot/handlers"
-	"github.com/jxo-me/gfbot/handlers/conversation"
 	"html"
 	"strconv"
 )
 
 func NewConversation() handlers.Conversation {
 	return handlers.NewConversation(
-		[]telebot.Handler{telebot.HandlerFunc(start)},
-		map[string][]telebot.Handler{
+		[]telebot.IHandler{telebot.HandlerFunc(start)}, // 入口
+		map[string][]telebot.IHandler{
 			NAME: {telebot.HandlerFunc(name)},
 			AGE:  {telebot.HandlerFunc(age)},
-		},
+		}, // states状态
 		&handlers.ConversationOpts{
-			Exits:        []telebot.Handler{telebot.HandlerFunc(cancel)},
-			StateStorage: conversation.NewInMemoryStorage(conversation.KeyStrategySenderAndChat),
+			Exits:        []telebot.IHandler{telebot.HandlerFunc(cancel)},
 			AllowReEntry: true,
-		},
+		}, // options
 	)
 }
 
 // age gets the user's age
-func age(ctx telebot.Context) error {
+func age(ctx telebot.IContext) error {
 	inputAge := ctx.Message().Text
 	ageNumber, err := strconv.ParseInt(inputAge, 10, 64)
 	if err != nil {
@@ -43,7 +41,7 @@ func age(ctx telebot.Context) error {
 }
 
 // cancel cancels the conversation.
-func cancel(ctx telebot.Context) error {
+func cancel(ctx telebot.IContext) error {
 	err := ctx.Reply("Oh, goodbye!", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancel message: %w", err)
@@ -52,7 +50,7 @@ func cancel(ctx telebot.Context) error {
 }
 
 // name gets the user's name
-func name(ctx telebot.Context) error {
+func name(ctx telebot.IContext) error {
 	fmt.Println("888888888888888888888888888888888:", ctx.Message())
 	inputName := ctx.Message().Text
 	err := ctx.Reply(fmt.Sprintf("Nice to meet you, %s!\n\nAnd how old are you?", html.EscapeString(inputName)), &telebot.SendOptions{})
@@ -62,10 +60,11 @@ func name(ctx telebot.Context) error {
 	return handlers.NextConversationState(AGE)
 }
 
-func start(ctx telebot.Context) error {
+func start(ctx telebot.IContext) error {
 	err := ctx.Reply(fmt.Sprintf("Hello, I'm @%s.\nWhat is your name?.", ctx.Bot().Me.Username), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
+	// 设置当前用户下一个入口
 	return handlers.NextConversationState(NAME)
 }

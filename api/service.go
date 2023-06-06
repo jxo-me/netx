@@ -21,7 +21,7 @@ func (s *Server) TGBot() *api.TGBot {
 	return s.Bot
 }
 
-func (s *Server) BotHook() telebot.Hook {
+func (s *Server) BotHook() telebot.IHook {
 	return s.Bot.Hook
 }
 
