@@ -46,7 +46,8 @@ func cancelHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
 	}
-	return handlers.EndConversation()
+	//return handlers.EndConversation()
+	return nil
 }
 
 // nameHandler gets the user's nameHandler
