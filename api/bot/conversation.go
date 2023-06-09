@@ -37,7 +37,7 @@ func startHandler(ctx telebot.IContext) error {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
 	// 设置当前用户下一个入口
-	return handlers.NextConversationState(NAME)
+	return handlers.NextConversationState(handlers.Entry, NAME)
 }
 
 // cancelHandler cancels the conversation.
@@ -57,7 +57,7 @@ func nameHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed to send name message: %w", err)
 	}
-	return handlers.NextConversationState(AGE)
+	return handlers.NextConversationState(NAME, AGE)
 }
 
 // ageHandler gets the user's ageHandler
@@ -68,14 +68,14 @@ func ageHandler(ctx telebot.IContext) error {
 		// If the number is not valid, try again!
 		ctx.Reply(fmt.Sprintf("This doesn't seem to be a number. Could you repeat?"), &telebot.SendOptions{})
 		// We try the ageHandler handler again
-		return handlers.NextConversationState(AGE)
+		return handlers.NextConversationState(NAME, AGE)
 	}
 
 	err = ctx.Reply(fmt.Sprintf("age %d\n What's your location?", ageNumber), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send ageHandler message: %w", err)
 	}
-	return handlers.NextConversationState(LOCATION)
+	return handlers.NextConversationState(AGE, LOCATION)
 }
 
 func locationHandler(ctx telebot.IContext) error {

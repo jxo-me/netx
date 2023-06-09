@@ -25,10 +25,14 @@ var (
 			OnClickConnLimiter: telebot.HandlerFunc(Event.OnClickService),
 			OnClickRateLimiter: telebot.HandlerFunc(Event.OnClickService),
 			OnClickConfig:      telebot.HandlerFunc(Event.OnClickService),
+
+			OnClickNode:    telebot.HandlerFunc(Event.OnBackServices),
+			OnClickAddNode: AddNodeConversation(OnClickAddNode, "/cancel"),
 			// back services
 			OnBackServices: telebot.HandlerFunc(Event.OnBackServices),
+			OnBackHosts:    telebot.HandlerFunc(Event.OnClickNode),
 			// TextCommand
-			HostTextCommand: telebot.HandlerFunc(Event.OnHostTextCommand),
+			NodeTextCommand: telebot.HandlerFunc(Event.OnClickNode),
 		},
 		Btns: map[*telebot.Btn]telebot.IHandler{
 			//&bot.BtnBetting:       bot.Event.OnBtnBetting,
