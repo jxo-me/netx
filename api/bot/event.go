@@ -1,8 +1,11 @@
 package bot
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	telebot "github.com/jxo-me/gfbot"
+	"github.com/jxo-me/netx/x/config"
 )
 
 var (
@@ -78,6 +81,18 @@ func (h *hEvent) OnClickService(c telebot.IContext) error {
 	user := c.Callback().Sender
 	cmd := c.Callback().Data
 	msg := fmt.Sprintf("选中服务: %s %d.\nWhat do you want to do with the bot?", cmd, user.ID)
+	cfg := config.Global()
+	var buf bytes.Buffer
+	bio := bufio.NewWriter(&buf)
+	err := cfg.Write(bio, "json")
+	if err != nil {
+		return err
+	}
+	err = bio.Flush()
+	if err != nil {
+		return err
+	}
+	msg = fmt.Sprintf("%s\n%s", msg, buf.String())
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
