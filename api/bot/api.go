@@ -29,7 +29,7 @@ type HookRes struct {
 func (h *hBot) Hook(ctx context.Context, req *HookReq) (result *HookRes, err error) {
 	r := g.RequestFromCtx(ctx)
 	if app.ApiSrv != nil {
-		app.ApiSrv.BotHook().Handler(r.Response.ResponseWriter, r.Request)
+		app.ApiSrv.TGBot().Bot.Hook().Handler(r.Response.ResponseWriter, r.Request)
 	}
 
 	return &HookRes{}, nil

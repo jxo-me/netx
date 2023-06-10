@@ -8,10 +8,9 @@ import (
 )
 
 type TGBot struct {
-	Hook   telebot.IHook `json:"hook"`
-	Bot    *telebot.Bot  `json:"bot"`
-	Domain string        `json:"domain"`
-	Token  string        `json:"token"`
+	Bot    *telebot.Bot `json:"bot"`
+	Domain string       `json:"domain"`
+	Token  string       `json:"token"`
 }
 
 type Server struct {
@@ -23,5 +22,4 @@ type Server struct {
 type IApi interface {
 	service.IService
 	TGBot() *TGBot
-	BotHook() telebot.IHook
 }

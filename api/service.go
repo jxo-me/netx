@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
-	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/netx/api/bot"
 	"github.com/jxo-me/netx/api/handler"
 	"github.com/jxo-me/netx/core/api"
@@ -19,10 +18,6 @@ func (s *Server) HttpServer() *ghttp.Server {
 
 func (s *Server) TGBot() *api.TGBot {
 	return s.Bot
-}
-
-func (s *Server) BotHook() telebot.IHook {
-	return s.Bot.Hook
 }
 
 func (s *Server) Serve() error {

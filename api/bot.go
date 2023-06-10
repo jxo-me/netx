@@ -26,6 +26,7 @@ func NewBot(ctx context.Context, domain, token, pathPrefix string) (*api.TGBot, 
 	pref := telebot.Settings{
 		Token:        token,
 		Poller:       hook,
+		Hook:         hook,
 		StateStorage: telebot.NewInMemoryStorage(telebot.KeyStrategySenderAndChat),
 	}
 
@@ -51,7 +52,6 @@ func NewBot(ctx context.Context, domain, token, pathPrefix string) (*api.TGBot, 
 	return &api.TGBot{
 		Domain: domain,
 		Token:  token, // dev.us.jxo.me
-		Hook:   hook,
 		Bot:    b,
 	}, nil
 }
