@@ -64,12 +64,12 @@ func nodeTokenHandler(ctx telebot.IContext) error {
 	inputToken := ctx.Message().Text
 	if len(inputToken) != 46 {
 		// If the number is not valid, try again!
-		ctx.Reply(fmt.Sprintf("输入的Token格式错误！请重新输入?"), &telebot.SendOptions{})
+		_ = ctx.Reply(fmt.Sprintf("输入的Token格式错误！请重新输入?"), &telebot.SendOptions{})
 		// We try the ageHandler handler again
 		return handlers.NextConversationState(NODENAME, NODETOKEN)
 	}
 
-	err := ctx.Reply(fmt.Sprintf("age %s\n What's your location?", inputToken), &telebot.SendOptions{})
+	err := ctx.Reply(fmt.Sprintf("Token %s\n 请输入绑定的域名?", inputToken), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send ageHandler message: %w", err)
 	}
@@ -77,8 +77,10 @@ func nodeTokenHandler(ctx telebot.IContext) error {
 }
 
 func nodeDomainHandler(ctx telebot.IContext) error {
-	inputLocation := ctx.Message().Text
-	err := ctx.Reply(fmt.Sprintf("Full name: name\nAge: {age}\nLocation: %s", html.EscapeString(inputLocation)), &telebot.SendOptions{})
+	inputDomain := ctx.Message().Text
+	nodeName := ""
+	nodeToken := ""
+	err := ctx.Reply(fmt.Sprintf("节点名称:%s\nToken: %s\n域名: %s", nodeName, nodeToken, html.EscapeString(inputDomain)), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send name message: %w", err)
 	}
