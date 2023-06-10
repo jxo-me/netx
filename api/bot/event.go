@@ -3,14 +3,17 @@ package bot
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/netx/x/config"
+	"strings"
 )
 
 var (
-	Event           = hEvent{}
-	NodeTextCommand = "/myHosts"
+	Event              = hEvent{}
+	NodeTextCommand    = "/myHosts"
+	ParsingTextCommand = "/parsing"
 	// Click group
 	OnClickAdmissions  = "\fAdmissions"
 	OnClickAuthers     = "\fAuthers"
@@ -141,4 +144,45 @@ func (h *hEvent) OnCallback(c telebot.IContext) error {
 
 func (h *hEvent) OnUserJoined(c telebot.IContext) error {
 	return c.Send("OnUserJoined")
+}
+
+func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
+	var (
+		services stringList
+		nodes    stringList
+	)
+
+	payload := c.Message().Text
+	//flag.Parse()
+	cmd := flag.NewFlagSet("/parsing", flag.ContinueOnError)
+	cmd.Var(&services, "L", "service list")
+	cmd.Var(&nodes, "F", "chain node list")
+	err := cmd.Parse(strings.Split(payload, " "))
+	if err != nil {
+		return c.Send("OnParsingCommand err:", err.Error())
+	}
+	cfg, err := buildConfigFromCmd(services, nodes)
+	if err != nil {
+		return c.Send("OnParsingCommand err:", err.Error())
+	}
+	var buf bytes.Buffer
+	bio := bufio.NewWriter(&buf)
+	err = cfg.Write(bio, "json")
+	if err != nil {
+		return err
+	}
+	err = bio.Flush()
+	if err != nil {
+		return err
+	}
+	//return c.Send("OnParsingCommand")
+	start := "```"
+	end := "```"
+	tpl := `
+%s
+%s
+%s
+`
+	msg := fmt.Sprintf(tpl, start, buf.String(), end)
+	return c.Edit(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 }
