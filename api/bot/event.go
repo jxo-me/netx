@@ -112,11 +112,11 @@ func (h *hEvent) OnClickService(c telebot.IContext) error {
 	bio := bufio.NewWriter(&buf)
 	err := cfg.Write(bio, "json")
 	if err != nil {
-		return err
+		return c.Reply("OnClickService cfg.Write err:", err.Error())
 	}
 	err = bio.Flush()
 	if err != nil {
-		return err
+		return c.Reply("OnClickService bio.Flush err:", err.Error())
 	}
 	start := "```"
 	end := "```"
@@ -176,7 +176,6 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 	if err != nil {
 		return c.Reply("OnParsingCommand err:", err.Error())
 	}
-	//return c.Send("OnParsingCommand")
 	start := "```"
 	end := "```"
 	tpl := `
