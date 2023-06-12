@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/netx/x/config"
 	"strings"
@@ -153,11 +154,12 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 	)
 
 	payload := c.Message().Text
+	str := strings.Split(payload, " ")
 	//flag.Parse()
-	cmd := flag.NewFlagSet("/parsing", flag.ContinueOnError)
+	cmd := flag.NewFlagSet(gconv.String(str[:1]), flag.ContinueOnError)
 	cmd.Var(&services, "L", "service list")
 	cmd.Var(&nodes, "F", "chain node list")
-	err := cmd.Parse(strings.Split(payload, " "))
+	err := cmd.Parse(str[1:])
 	if err != nil {
 		return c.Send("OnParsingCommand err:", err.Error())
 	}
@@ -169,11 +171,11 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 	bio := bufio.NewWriter(&buf)
 	err = cfg.Write(bio, "json")
 	if err != nil {
-		return err
+		return c.Send("OnParsingCommand err:", err.Error())
 	}
 	err = bio.Flush()
 	if err != nil {
-		return err
+		return c.Send("OnParsingCommand err:", err.Error())
 	}
 	//return c.Send("OnParsingCommand")
 	start := "```"
@@ -184,5 +186,5 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 %s
 `
 	msg := fmt.Sprintf(tpl, start, buf.String(), end)
-	return c.Edit(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
+	return c.Reply(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 }
