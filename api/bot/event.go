@@ -155,27 +155,26 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 
 	payload := c.Message().Text
 	str := strings.Split(payload, " ")
-	//flag.Parse()
 	cmd := flag.NewFlagSet(gconv.String(str[:1]), flag.ContinueOnError)
 	cmd.Var(&services, "L", "service list")
 	cmd.Var(&nodes, "F", "chain node list")
 	err := cmd.Parse(str[1:])
 	if err != nil {
-		return c.Send("OnParsingCommand err:", err.Error())
+		return c.Reply("OnParsingCommand err:", err.Error())
 	}
 	cfg, err := buildConfigFromCmd(services, nodes)
 	if err != nil {
-		return c.Send("OnParsingCommand err:", err.Error())
+		return c.Reply("OnParsingCommand err:", err.Error())
 	}
 	var buf bytes.Buffer
 	bio := bufio.NewWriter(&buf)
 	err = cfg.Write(bio, "json")
 	if err != nil {
-		return c.Send("OnParsingCommand err:", err.Error())
+		return c.Reply("OnParsingCommand err:", err.Error())
 	}
 	err = bio.Flush()
 	if err != nil {
-		return c.Send("OnParsingCommand err:", err.Error())
+		return c.Reply("OnParsingCommand err:", err.Error())
 	}
 	//return c.Send("OnParsingCommand")
 	start := "```"
