@@ -1,108 +1,56 @@
 package bot
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
-	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
-	"github.com/jxo-me/gfbot/handlers"
-	"html"
+	"github.com/jxo-me/netx/api/handler"
+	"github.com/jxo-me/netx/x/config"
 )
 
-const (
-	NODENAME   = "nodeName"
-	NODETOKEN  = "nodeToken"
-	NODEDOMAIN = "nodeDomain"
-)
+func (h *hEvent) OnClickNodes(c telebot.IContext) error {
+	user := c.Callback().Sender
+	cmd := c.Callback().Data
+	msg := fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", cmd, user.ID)
+	cfg := config.Global()
+	rowList := make([]telebot.Row, 0)
+	btnList := make([]telebot.Btn, 0)
+	selector := &telebot.ReplyMarkup{}
+	for i, service := range cfg.Services {
+		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), fmt.Sprintf("%s", service.Name), service.Name))
+		if i%3 == 0 {
+			rowList = append(rowList, selector.Row(btnList...))
+			btnList = make([]telebot.Btn, 0)
+		}
+	}
+	rowList = append(rowList, selector.Row(
+		//selector.Data("@update", "update", "update"),
+		selector.Data("@saveConfig", "saveConfig", "saveConfig"),
+		selector.Data("« 返回 服务列表", "backServices", "backServices"),
+	))
+	var buf bytes.Buffer
+	bio := bufio.NewWriter(&buf)
 
-func AddNodeConversation(entry, cancel string) handlers.Conversation {
-	return handlers.NewConversation(
-		entry,
-		telebot.HandlerFunc(nodeStartHandler), // 入口
-		map[string][]telebot.IHandler{
-			NODENAME:   {telebot.HandlerFunc(nodeNameHandler)},
-			NODETOKEN:  {telebot.HandlerFunc(nodeTokenHandler)},
-			NODEDOMAIN: {telebot.HandlerFunc(nodeDomainHandler)},
-		}, // states状态
-		&handlers.ConversationOpts{
-			ExitName:     cancel,
-			ExitHandler:  telebot.HandlerFunc(cancelNodeHandler),
-			AllowReEntry: true,
-		}, // options
+	err := handler.Write(bio, cfg.Services, "json")
+	if err != nil {
+		return c.Reply("OnClickService cfg.Write err:", err.Error())
+	}
+	err = bio.Flush()
+	if err != nil {
+		return c.Reply("OnClickService bio.Flush err:", err.Error())
+	}
+	start := "```"
+	end := "```"
+	tpl := `
+%s
+%s
+%s
+%s
+`
+	msg = fmt.Sprintf(tpl, msg, start, buf.String(), end)
+	selector.Inline(
+		rowList...,
 	)
-}
-
-func nodeStartHandler(ctx telebot.IContext) error {
-	err := ctx.Reply(fmt.Sprintf("你好, @%s.\n请输入新增节点名称?\n您可以随时键入 /cancel 来取消该过程。", ctx.Sender().Username), &telebot.SendOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to send start message: %w", err)
-	}
-
-	// 设置当前用户下一个入口
-	return handlers.NextConversationState(NODENAME)
-}
-
-// cancelNodeHandler cancels the conversation.
-func cancelNodeHandler(ctx telebot.IContext) error {
-	err := ctx.Reply("命令 AddNode 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to send cancelHandler message: %w", err)
-	}
-	//return handlers.EndConversation()
-	return nil
-}
-
-// nodeNameHandler gets the user's nodeNameHandler
-func nodeNameHandler(ctx telebot.IContext) error {
-	inputName := ctx.Message().Text
-	err := ctx.Reply(fmt.Sprintf("新增机器人名称:%s!\n\n 请输入机器人Token?", html.EscapeString(inputName)), &telebot.SendOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to send name message: %w", err)
-	}
-
-	_ = ctx.Bot().Store().UpdateData(ctx, NODENAME, inputName)
-
-	return handlers.NextConversationState(NODETOKEN)
-}
-
-// nodeTokenHandler gets the user's nodeTokenHandler
-func nodeTokenHandler(ctx telebot.IContext) error {
-	inputToken := ctx.Message().Text
-	if len(inputToken) != 46 {
-		// If the number is not valid, try again!
-		_ = ctx.Reply(fmt.Sprintf("输入的Token格式错误！请重新输入?"), &telebot.SendOptions{})
-		// We try the ageHandler handler again
-		return handlers.NextConversationState(NODETOKEN)
-	}
-
-	err := ctx.Reply(fmt.Sprintf("Token %s\n 请输入绑定的域名?", inputToken), &telebot.SendOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to send ageHandler message: %w", err)
-	}
-	_ = ctx.Bot().Store().UpdateData(ctx, NODETOKEN, inputToken)
-	return handlers.NextConversationState(NODEDOMAIN)
-}
-
-func nodeDomainHandler(ctx telebot.IContext) error {
-	inputDomain := ctx.Message().Text
-	nodeName := ""
-	nodeToken := ""
-	s, err := ctx.Bot().Store().Get(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Println("ctx data:", s.Data)
-	if n, ok := s.Data[NODENAME]; ok {
-		nodeName = gconv.String(n)
-	}
-	if n, ok := s.Data[NODETOKEN]; ok {
-		nodeToken = gconv.String(n)
-	}
-	err = ctx.Reply(fmt.Sprintf("节点名称:%s\nToken: %s\n域名: %s", nodeName, nodeToken, html.EscapeString(inputDomain)), &telebot.SendOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to send name message: %w", err)
-	}
-
-	_ = ctx.Bot().Store().UpdateData(ctx, NODEDOMAIN, inputDomain)
-	// 完成
-	return handlers.EndConversation()
+	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }

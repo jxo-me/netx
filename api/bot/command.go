@@ -4,7 +4,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/app"
+	"github.com/jxo-me/netx/x/config/parsing"
 	"net/url"
 	"os"
 	"strconv"
@@ -592,4 +595,131 @@ func parseSelector(m map[string]any) *config.SelectorConfig {
 		MaxFails:    maxFails,
 		FailTimeout: failTimeout,
 	}
+}
+
+func buildService(cfg *config.Config) (services []service.IService) {
+	if cfg == nil {
+		return
+	}
+
+	log := logger.Default()
+
+	for _, autherCfg := range cfg.Authers {
+		if auther := parsing.ParseAuther(autherCfg); auther != nil {
+			if err := app.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, admissionCfg := range cfg.Admissions {
+		if adm := parsing.ParseAdmission(admissionCfg); adm != nil {
+			if err := app.Runtime.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, bypassCfg := range cfg.Bypasses {
+		if bp := parsing.ParseBypass(bypassCfg); bp != nil {
+			if err := app.Runtime.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, resolverCfg := range cfg.Resolvers {
+		r, err := parsing.ParseResolver(resolverCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if r != nil {
+			if err := app.Runtime.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, hostsCfg := range cfg.Hosts {
+		if h := parsing.ParseHosts(hostsCfg); h != nil {
+			if err := app.Runtime.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, ingressCfg := range cfg.Ingresses {
+		if h := parsing.ParseIngress(ingressCfg); h != nil {
+			if err := app.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, recorderCfg := range cfg.Recorders {
+		if h := parsing.ParseRecorder(recorderCfg); h != nil {
+			if err := app.Runtime.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, limiterCfg := range cfg.Limiters {
+		if h := parsing.ParseTrafficLimiter(limiterCfg); h != nil {
+			if err := app.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	for _, limiterCfg := range cfg.CLimiters {
+		if h := parsing.ParseConnLimiter(limiterCfg); h != nil {
+			if err := app.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	for _, limiterCfg := range cfg.RLimiters {
+		if h := parsing.ParseRateLimiter(limiterCfg); h != nil {
+			if err := app.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	for _, hopCfg := range cfg.Hops {
+		hop, err := parsing.ParseHop(hopCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if hop != nil {
+			if err := app.Runtime.HopRegistry().Register(hopCfg.Name, hop); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	for _, chainCfg := range cfg.Chains {
+		c, err := parsing.ParseChain(chainCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if c != nil {
+			if err := app.Runtime.ChainRegistry().Register(chainCfg.Name, c); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, svcCfg := range cfg.Services {
+		svc, err := parsing.ParseService(svcCfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if svc != nil {
+			if err := app.Runtime.ServiceRegistry().Register(svcCfg.Name, svc); err != nil {
+				log.Fatal(err)
+			}
+		}
+		services = append(services, svc)
+	}
+
+	return
 }
