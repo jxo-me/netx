@@ -13,6 +13,7 @@ import (
 
 var (
 	Event              = hEvent{}
+	StartTextCommand   = "/start"
 	NodeTextCommand    = "/myHosts"
 	ParsingTextCommand = "/parsing"
 	// Click group
@@ -185,4 +186,15 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 `
 	msg := fmt.Sprintf(tpl, start, buf.String(), end)
 	return c.Reply(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
+}
+
+func (h *hEvent) OnStartCommand(c telebot.IContext) error {
+	payload := c.Message().Text
+	user := c.Message().Sender
+	str := strings.Split(payload, " ")
+	token := ""
+	if len(str) >= 2 {
+		token = strings.Join(str[1:], "")
+	}
+	return c.Send(fmt.Sprintf("欢迎 %s 加入 参数:%s", user.Username, token))
 }

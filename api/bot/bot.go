@@ -32,6 +32,7 @@ var (
 			OnBackServices: telebot.HandlerFunc(Event.OnBackServices),
 			OnBackHosts:    telebot.HandlerFunc(Event.OnClickNode),
 			// TextCommand
+			StartTextCommand:   telebot.HandlerFunc(Event.OnStartCommand),
 			NodeTextCommand:    telebot.HandlerFunc(Event.OnClickNode),
 			ParsingTextCommand: telebot.HandlerFunc(Event.OnParsingCommand),
 		},
