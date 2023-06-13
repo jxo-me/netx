@@ -139,7 +139,7 @@ func configAdmissionHandler(ctx telebot.IContext) error {
 	}
 	v := parsing.ParseAdmission(&data)
 	if err = app.Runtime.AdmissionRegistry().Register(data.Name, v); err != nil {
-		return ctx.Reply("object duplicated")
+		return ctx.Reply(ErrDup)
 	}
 
 	_ = config.OnUpdate(func(c *config.Config) error {

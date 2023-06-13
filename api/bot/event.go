@@ -22,6 +22,7 @@ var (
 	OnClickHops            = "\fHops"
 	OnClickIngress         = "\fIngress"
 	OnClickServices        = "\fServices"
+	OnClickAddService      = "\faddService"
 	OnClickDetailService   = "\fdetailService"
 	OnClickDelService      = "\fdelService"
 	OnClickChains          = "\fChains"

@@ -14,4 +14,9 @@ const (
 %s
 %s
 `
+	ErrInvalid  = "object invalid"
+	ErrDup      = "object duplicated"
+	ErrCreate   = "object creation failed"
+	ErrNotFound = "object not found"
+	ErrSave     = "save config failed"
 )

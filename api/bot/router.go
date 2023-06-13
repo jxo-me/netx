@@ -23,6 +23,7 @@ var (
 			OnClickIngress: telebot.HandlerFunc(Event.OnClickService),
 			// OnClickServices group
 			OnClickServices:      telebot.HandlerFunc(Event.OnClickServices),
+			OnClickAddService:    AddServiceConversation(OnClickAddService, "/cancel"),
 			OnClickDetailService: telebot.HandlerFunc(Event.OnClickDetailService),
 			OnClickDelService:    telebot.HandlerFunc(Event.OnClickDelService),
 

@@ -1,10 +1,17 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 	telebot "github.com/jxo-me/gfbot"
+	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
+	"github.com/jxo-me/netx/x/config/parsing"
+)
+
+const (
+	ServiceCfg = "serviceCfg"
 )
 
 func (h *hEvent) OnClickServices(c telebot.IContext) error {
@@ -98,4 +105,75 @@ func (h *hEvent) OnClickDelService(c telebot.IContext) error {
 	})
 	_ = c.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 删除成功!", cmd)})
 	return h.OnClickServices(c)
+}
+
+func AddServiceConversation(entry, cancel string) handlers.Conversation {
+	return handlers.NewConversation(
+		entry,
+		telebot.HandlerFunc(startServiceHandler), // 入口
+		map[string][]telebot.IHandler{
+			ServiceCfg: {telebot.HandlerFunc(configServiceHandler)},
+		}, // states状态
+		&handlers.ConversationOpts{
+			ExitName:     cancel,
+			ExitHandler:  telebot.HandlerFunc(cancelServiceHandler),
+			AllowReEntry: true,
+		}, // options
+	)
+}
+
+func startServiceHandler(ctx telebot.IContext) error {
+	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send start message: %w", err)
+	}
+
+	// 设置当前用户下一个入口
+	return handlers.NextConversationState(ServiceCfg)
+}
+
+func configServiceHandler(ctx telebot.IContext) error {
+	var (
+		data config.ServiceConfig
+	)
+
+	str := ctx.Message().Text
+	err := json.Unmarshal([]byte(str), &data)
+	if err != nil {
+		return ctx.Reply("configServiceHandler json.Unmarshal error:", err.Error())
+	}
+	if app.Runtime.ServiceRegistry().IsRegistered(data.Name) {
+		return ctx.Reply(ErrDup)
+	}
+
+	svc, err := parsing.ParseService(&data)
+	if err != nil {
+		return ctx.Reply(ErrCreate)
+	}
+
+	if err := app.Runtime.ServiceRegistry().Register(data.Name, svc); err != nil {
+		_ = svc.Close()
+		return ctx.Reply(ErrDup)
+	}
+
+	go svc.Serve()
+
+	_ = config.OnUpdate(func(c *config.Config) error {
+		c.Services = append(c.Services, &data)
+		return nil
+	})
+
+	_ = ctx.Send(fmt.Sprintf("%s 添加成功!", data.Name))
+	_ = Event.OnClickServices(ctx)
+
+	return handlers.EndConversation()
+}
+
+func cancelServiceHandler(ctx telebot.IContext) error {
+	err := ctx.Reply("添加 服务 操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send cancelHandler message: %w", err)
+	}
+	//return handlers.EndConversation()
+	return nil
 }
