@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	BypassCfg = "admissionCfg"
+	BypassCfg = "bypassCfg"
 )
 
 func (h *hEvent) OnClickBypasses(c telebot.IContext) error {
