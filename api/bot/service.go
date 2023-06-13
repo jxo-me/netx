@@ -19,7 +19,7 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
 	for i, service := range cfg.Services {
-		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), fmt.Sprintf("%s", service.Name), service.Name))
+		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailService", service.Name))
 		if i%3 == 0 {
 			rowList = append(rowList, selector.Row(btnList...))
 			btnList = make([]telebot.Btn, 0)
@@ -56,11 +56,11 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickServiceDetail(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
 	user := c.Callback().Sender
 	cmd := c.Callback().Data
-	serviceName := ""
-	msg := fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", cmd, user.ID)
+	serviceName := cmd
+	msg := fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
 	start := "```"
 	end := "```"
 	tpl := `
@@ -93,7 +93,7 @@ func (h *hEvent) OnClickServiceDetail(c telebot.IContext) error {
 	selector.Inline(
 		selector.Row(
 			//selector.Data("@update", "update", "update"),
-			selector.Data("@delService", "addService", "addService"),
+			selector.Data("@delService", "delService", serviceName),
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
 		),
 	)
@@ -102,8 +102,9 @@ func (h *hEvent) OnClickServiceDetail(c telebot.IContext) error {
 
 func (h *hEvent) OnClickDelService(c telebot.IContext) error {
 	//user := c.Callback().Sender
-	//cmd := c.Callback().Data
-	serviceName := ""
+	cmd := c.Callback().Data
+	fmt.Println("OnClickDelService cmd:", cmd)
+	serviceName := cmd
 	svc := app.Runtime.ServiceRegistry().Get(serviceName)
 	if svc == nil {
 		return c.Send("object not found")
@@ -124,5 +125,5 @@ func (h *hEvent) OnClickDelService(c telebot.IContext) error {
 		return nil
 	})
 
-	return c.Send("删除成功!")
+	return c.Send(fmt.Sprintf("%s 删除成功!", cmd))
 }
