@@ -12,8 +12,8 @@ import (
 
 func (h *hEvent) OnClickServices(c telebot.IContext) error {
 	user := c.Callback().Sender
-	cmd := c.Callback().Data
-	msg := fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", cmd, user.ID)
+	//cmd := c.Callback().Data
+	msg := fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
 	cfg := config.Global()
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
@@ -26,8 +26,7 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 		}
 	}
 	rowList = append(rowList, selector.Row(
-		//selector.Data("@update", "update", "update"),
-		selector.Data("@addService", "addService", "addService"),
+		selector.Data("@添加服务", "addService", "addService"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),
 	))
 	var buf bytes.Buffer
@@ -93,7 +92,7 @@ func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
 	selector.Inline(
 		selector.Row(
 			//selector.Data("@update", "update", "update"),
-			selector.Data("@delService", "delService", serviceName),
+			selector.Data("@删除服务", "delService", serviceName),
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
 		),
 	)
@@ -124,6 +123,6 @@ func (h *hEvent) OnClickDelService(c telebot.IContext) error {
 		}
 		return nil
 	})
-
-	return c.Send(fmt.Sprintf("%s 删除成功!", cmd))
+	_ = c.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 删除成功!", cmd)})
+	return h.OnClickServices(c)
 }
