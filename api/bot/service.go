@@ -10,17 +10,7 @@ import (
 func (h *hEvent) OnClickServices(c telebot.IContext) error {
 	var (
 		msg string
-		//str  string
-		//err  error
-		//user *telebot.User
 	)
-	//if c.Message() != nil {
-	//	user = c.Message().Sender
-	//}
-	//if c.Callback() != nil {
-	//	user = c.Callback().Sender
-	//}
-	//msg = fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
 
 	cfg := config.Global()
 	rowList := make([]telebot.Row, 0)
@@ -37,23 +27,16 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 		selector.Data("@添加服务", "addService", "addService"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),
 	))
-	//if cfg.Services != nil {
-	//	str, err = ConvertJsonMsg(cfg.Services)
-	//	if err != nil {
-	//		return c.Reply("OnClickServices ConvertJsonMsg err:", err.Error())
-	//	}
-	//	msg = fmt.Sprintf(CodeMsgTpl, msg, CodeStart, str, CodeEnd)
-	//}
 
 	selector.Inline(
 		rowList...,
 	)
-	if c.Message() != nil {
-		msg = "从下面的列表中选择一个服务:"
-		return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
+	msg = "Services List:\n"
+	if c.Callback() != nil {
+		return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 	}
 
-	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
+	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
 func (h *hEvent) OnClickDetailService(c telebot.IContext) error {

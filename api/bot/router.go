@@ -12,24 +12,30 @@ var (
 			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
 			telebot.OnUserJoined: telebot.HandlerFunc(Event.OnUserJoined),
 			// Click Callback
-			OnClickAdmissions: telebot.HandlerFunc(Event.OnClickService),
-			OnClickAuthers:    telebot.HandlerFunc(Event.OnClickService),
-			OnClickBypass:     telebot.HandlerFunc(Event.OnClickService),
-			OnClickHops:       telebot.HandlerFunc(Event.OnClickService),
-			OnClickIngress:    telebot.HandlerFunc(Event.OnClickService),
+			OnClickAdmissions:      telebot.HandlerFunc(Event.OnClickAdmissions),
+			OnClickAddAdmission:    AddAdmissionConversation(OnClickAddAdmission, "/cancel"),
+			OnClickDetailAdmission: telebot.HandlerFunc(Event.OnClickDetailAdmission),
+			OnClickDelAdmission:    telebot.HandlerFunc(Event.OnClickDelAdmission),
+			// OnClickAuthers group
+			OnClickAuthers: telebot.HandlerFunc(Event.OnClickService),
+			OnClickBypass:  telebot.HandlerFunc(Event.OnClickService),
+			OnClickHops:    telebot.HandlerFunc(Event.OnClickService),
+			OnClickIngress: telebot.HandlerFunc(Event.OnClickService),
 			// OnClickServices group
 			OnClickServices:      telebot.HandlerFunc(Event.OnClickServices),
 			OnClickDetailService: telebot.HandlerFunc(Event.OnClickDetailService),
 			OnClickDelService:    telebot.HandlerFunc(Event.OnClickDelService),
 
-			OnClickChains:      telebot.HandlerFunc(Event.OnClickService),
-			OnClickHosts:       telebot.HandlerFunc(Event.OnClickService),
-			OnClickResolver:    telebot.HandlerFunc(Event.OnClickService),
+			OnClickChains:   telebot.HandlerFunc(Event.OnClickService),
+			OnClickHosts:    telebot.HandlerFunc(Event.OnClickService),
+			OnClickResolver: telebot.HandlerFunc(Event.OnClickService),
+			// OnClickLimiter group
 			OnClickLimiter:     telebot.HandlerFunc(Event.OnClickService),
 			OnClickConnLimiter: telebot.HandlerFunc(Event.OnClickService),
 			OnClickRateLimiter: telebot.HandlerFunc(Event.OnClickService),
-			OnClickConfig:      telebot.HandlerFunc(Event.OnClickConfig),
-			OnClickSaveConfig:  telebot.HandlerFunc(Event.OnClickSaveConfig),
+			// OnClickConfig group
+			OnClickConfig:     telebot.HandlerFunc(Event.OnClickConfig),
+			OnClickSaveConfig: telebot.HandlerFunc(Event.OnClickSaveConfig),
 
 			OnClickNode:    telebot.HandlerFunc(Event.OnBackServices),
 			OnClickAddNode: AddNodeConversation(OnClickAddNode, "/cancel"),
