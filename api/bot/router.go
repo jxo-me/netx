@@ -7,7 +7,6 @@ import (
 var (
 	insBotRouter = Routers{
 		List: map[string]telebot.IHandler{
-			"/Test2":             NewConversation("/Test2", "/cancel"),
 			telebot.OnText:       telebot.HandlerFunc(Event.OnText),
 			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
 			telebot.OnUserJoined: telebot.HandlerFunc(Event.OnUserJoined),

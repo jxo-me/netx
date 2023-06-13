@@ -163,7 +163,7 @@ func configServiceHandler(ctx telebot.IContext) error {
 		return nil
 	})
 
-	_ = ctx.Send(fmt.Sprintf("%s 添加成功!", data.Name))
+	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 添加成功!", data.Name)})
 	_ = Event.OnClickServices(ctx)
 
 	return handlers.EndConversation()

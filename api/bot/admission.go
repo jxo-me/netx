@@ -146,7 +146,8 @@ func configAdmissionHandler(ctx telebot.IContext) error {
 		c.Admissions = append(c.Admissions, &data)
 		return nil
 	})
-	_ = ctx.Send(fmt.Sprintf("%s 添加成功!", data.Name))
+
+	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 添加成功!", data.Name)})
 	_ = Event.OnClickAdmissions(ctx)
 
 	return handlers.EndConversation()
