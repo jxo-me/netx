@@ -100,6 +100,9 @@ func (h *hEvent) OnBackHosts(c telebot.IContext) error {
 
 func (h *hEvent) OnClickNode(c telebot.IContext) error {
 	selector := getSelectHosts()
+	if c.Callback() != nil {
+		return c.Edit("从下面的列表中选择一个服务:", selector)
+	}
 	return c.Send("从下面的列表中选择一个服务:", selector)
 }
 

@@ -56,7 +56,6 @@ func (h *hEvent) OnGostCommand(c telebot.IContext) error {
 	var (
 		services stringList
 		nodes    stringList
-		msg      string
 		err      error
 	)
 
@@ -80,14 +79,5 @@ func (h *hEvent) OnGostCommand(c telebot.IContext) error {
 			svc.Serve()
 		}()
 	}
-	cfgNew := config.Global()
-	if cfgNew != nil {
-		msg, err = ConvertJsonMsg(cfgNew)
-		if err != nil {
-			return c.Reply("OnGostCommand ConvertJsonMsg err:", err.Error())
-		}
-		msg = fmt.Sprintf(CodeTpl, CodeStart, msg, CodeEnd)
-	}
-
-	return c.Reply(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
+	return h.OnClickServices(c)
 }
