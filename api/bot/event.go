@@ -1,13 +1,8 @@
 package bot
 
 import (
-	"bufio"
-	"bytes"
-	"flag"
 	"fmt"
-	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
-	"github.com/jxo-me/netx/x/config"
 	"strings"
 )
 
@@ -135,103 +130,4 @@ func (h *hEvent) OnCallback(c telebot.IContext) error {
 
 func (h *hEvent) OnUserJoined(c telebot.IContext) error {
 	return c.Send("OnUserJoined")
-}
-
-func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
-	var (
-		services stringList
-		nodes    stringList
-	)
-
-	payload := c.Message().Text
-	str := strings.Split(payload, " ")
-	cmd := flag.NewFlagSet(gconv.String(str[:1]), flag.ContinueOnError)
-	cmd.Var(&services, "L", "service list")
-	cmd.Var(&nodes, "F", "chain node list")
-	err := cmd.Parse(str[1:])
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	cfg, err := buildConfigFromCmd(services, nodes)
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	var buf bytes.Buffer
-	bio := bufio.NewWriter(&buf)
-	err = cfg.Write(bio, "json")
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	err = bio.Flush()
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	start := "```"
-	end := "```"
-	tpl := `
-%s
-%s
-%s
-`
-	msg := fmt.Sprintf(tpl, start, buf.String(), end)
-	return c.Reply(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
-}
-
-func (h *hEvent) OnStartCommand(c telebot.IContext) error {
-	payload := c.Message().Text
-	user := c.Message().Sender
-	str := strings.Split(payload, " ")
-	token := ""
-	if len(str) >= 2 {
-		token = strings.Join(str[1:], "")
-	}
-	return c.Send(fmt.Sprintf("欢迎 %s 加入 参数:%s", user.Username, token))
-}
-
-func (h *hEvent) OnGostCommand(c telebot.IContext) error {
-	var (
-		services stringList
-		nodes    stringList
-	)
-
-	payload := c.Message().Text
-	str := strings.Split(payload, " ")
-	cmd := flag.NewFlagSet(gconv.String(str[:1]), flag.ContinueOnError)
-	cmd.Var(&services, "L", "service list")
-	cmd.Var(&nodes, "F", "chain node list")
-	err := cmd.Parse(str[1:])
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	cfg, err := buildConfigFromCmd(services, nodes)
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	config.Set(cfg)
-	for _, svc := range buildService(cfg) {
-		svc := svc
-		go func() {
-			svc.Serve()
-		}()
-	}
-	cfgNew := config.Global()
-	var buf bytes.Buffer
-	bio := bufio.NewWriter(&buf)
-	err = cfgNew.Write(bio, "json")
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	err = bio.Flush()
-	if err != nil {
-		return c.Reply("OnParsingCommand err:", err.Error())
-	}
-	start := "```"
-	end := "```"
-	tpl := `
-%s
-%s
-%s
-`
-	msg := fmt.Sprintf(tpl, start, buf.String(), end)
-	return c.Reply(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 }

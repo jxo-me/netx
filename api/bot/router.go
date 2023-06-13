@@ -29,7 +29,7 @@ var (
 			OnClickConfig:        telebot.HandlerFunc(Event.OnClickService),
 			OnClickSaveConfig:    telebot.HandlerFunc(Event.OnClickSaveConfig),
 
-			OnClickNode:    telebot.HandlerFunc(Event.OnClickNodes),
+			OnClickNode:    telebot.HandlerFunc(Event.OnBackServices),
 			OnClickAddNode: AddNodeConversation(OnClickAddNode, "/cancel"),
 			// back services
 			OnBackServices: telebot.HandlerFunc(Event.OnBackServices),
