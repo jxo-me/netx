@@ -12,15 +12,16 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 		msg string
 		//str  string
 		//err  error
-		user *telebot.User
+		//user *telebot.User
 	)
-	if c.Message() != nil {
-		user = c.Message().Sender
-	}
-	if c.Callback() != nil {
-		user = c.Callback().Sender
-	}
-	msg = fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
+	//if c.Message() != nil {
+	//	user = c.Message().Sender
+	//}
+	//if c.Callback() != nil {
+	//	user = c.Callback().Sender
+	//}
+	//msg = fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
+
 	cfg := config.Global()
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
@@ -48,6 +49,7 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 		rowList...,
 	)
 	if c.Message() != nil {
+		msg = "从下面的列表中选择一个服务:"
 		return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 	}
 
@@ -60,10 +62,10 @@ func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
 		str string
 		err error
 	)
-	user := c.Callback().Sender
-	serviceName := c.Callback().Data
-	msg = fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
+	//user := c.Callback().Sender
+	//msg = fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
 
+	serviceName := c.Callback().Data
 	cfg := config.Global()
 	var srv *config.ServiceConfig
 	for _, service := range cfg.Services {
