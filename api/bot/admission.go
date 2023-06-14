@@ -25,13 +25,10 @@ func (h *hEvent) OnClickAdmissions(c telebot.IContext) error {
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
-	for i, service := range cfg.Admissions {
+	for _, service := range cfg.Admissions {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailAdmission", service.Name))
-		if i%3 == 0 {
-			rowList = append(rowList, selector.Row(btnList...))
-			btnList = make([]telebot.Btn, 0)
-		}
 	}
+	rowList = append(rowList, selector.Split(3, btnList)...)
 	rowList = append(rowList, selector.Row(
 		selector.Data("@添加准入控制器", "addAdmission", "addAdmission"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),
