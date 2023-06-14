@@ -26,7 +26,6 @@ func (h *hEvent) OnClickConfig(c telebot.IContext) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
-			//selector.Data("@update", "update", "update"),
 			selector.Data("@saveConfig", "saveConfig", "saveConfig"),
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
 		),
