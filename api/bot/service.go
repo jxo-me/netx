@@ -25,13 +25,10 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
-	for i, service := range cfg.Services {
+	for _, service := range cfg.Services {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailService", service.Name))
-		if i%3 == 0 {
-			rowList = append(rowList, selector.Row(btnList...))
-			btnList = make([]telebot.Btn, 0)
-		}
 	}
+	rowList = append(rowList, selector.Split(MaxCol, btnList)...)
 	rowList = append(rowList,
 		selector.Row(
 			selector.Data("@添加服务", "addService", "addService"),

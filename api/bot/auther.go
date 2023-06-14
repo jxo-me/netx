@@ -25,13 +25,10 @@ func (h *hEvent) OnClickAuthers(c telebot.IContext) error {
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
-	for i, service := range cfg.Authers {
+	for _, service := range cfg.Authers {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailAuther", service.Name))
-		if i%3 == 0 {
-			rowList = append(rowList, selector.Row(btnList...))
-			btnList = make([]telebot.Btn, 0)
-		}
 	}
+	rowList = append(rowList, selector.Split(MaxCol, btnList)...)
 	rowList = append(rowList, selector.Row(
 		selector.Data("@添加认证器", "addAuther", "addAuther"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),

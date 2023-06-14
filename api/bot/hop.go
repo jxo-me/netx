@@ -25,13 +25,10 @@ func (h *hEvent) OnClickHops(c telebot.IContext) error {
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
-	for i, service := range cfg.Hops {
+	for _, service := range cfg.Hops {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailHop", service.Name))
-		if i%3 == 0 {
-			rowList = append(rowList, selector.Row(btnList...))
-			btnList = make([]telebot.Btn, 0)
-		}
 	}
+	rowList = append(rowList, selector.Split(MaxCol, btnList)...)
 	rowList = append(rowList, selector.Row(
 		selector.Data("@添加跳跃点", "addHop", "addHop"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),

@@ -25,13 +25,10 @@ func (h *hEvent) OnClickIngresses(c telebot.IContext) error {
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
-	for i, service := range cfg.Ingresses {
+	for _, service := range cfg.Ingresses {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailIngress", service.Name))
-		if i%3 == 0 {
-			rowList = append(rowList, selector.Row(btnList...))
-			btnList = make([]telebot.Btn, 0)
-		}
 	}
+	rowList = append(rowList, selector.Split(MaxCol, btnList)...)
 	rowList = append(rowList, selector.Row(
 		selector.Data("@添加Ingress", "addIngress", "addIngress"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),

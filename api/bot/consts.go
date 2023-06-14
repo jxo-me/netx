@@ -19,4 +19,6 @@ const (
 	ErrCreate   = "object creation failed"
 	ErrNotFound = "object not found"
 	ErrSave     = "save config failed"
+
+	MaxCol = 3
 )

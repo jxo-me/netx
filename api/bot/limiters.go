@@ -25,13 +25,10 @@ func (h *hEvent) OnClickLimiters(c telebot.IContext) error {
 	rowList := make([]telebot.Row, 0)
 	btnList := make([]telebot.Btn, 0)
 	selector := &telebot.ReplyMarkup{}
-	for i, service := range cfg.Limiters {
+	for _, service := range cfg.Limiters {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailLimiter", service.Name))
-		if i%3 == 0 {
-			rowList = append(rowList, selector.Row(btnList...))
-			btnList = make([]telebot.Btn, 0)
-		}
 	}
+	rowList = append(rowList, selector.Split(MaxCol, btnList)...)
 	rowList = append(rowList, selector.Row(
 		selector.Data("@添加流量速率限制器", "addLimiter", "addLimiter"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),

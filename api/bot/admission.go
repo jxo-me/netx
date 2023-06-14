@@ -28,7 +28,7 @@ func (h *hEvent) OnClickAdmissions(c telebot.IContext) error {
 	for _, service := range cfg.Admissions {
 		btnList = append(btnList, selector.Data(fmt.Sprintf("@%s", service.Name), "detailAdmission", service.Name))
 	}
-	rowList = append(rowList, selector.Split(3, btnList)...)
+	rowList = append(rowList, selector.Split(MaxCol, btnList)...)
 	rowList = append(rowList, selector.Row(
 		selector.Data("@添加准入控制器", "addAdmission", "addAdmission"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),
