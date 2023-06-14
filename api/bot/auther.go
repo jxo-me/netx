@@ -82,15 +82,15 @@ func (h *hEvent) OnClickDelAuther(c telebot.IContext) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.AutherRegistry().Get(serviceName)
 	if svc == nil {
-		return c.Send("object not found")
+		return c.Send(ErrNotFound)
 	}
 
 	app.Runtime.AutherRegistry().Unregister(serviceName)
 
 	_ = config.OnUpdate(func(c *config.Config) error {
-		admissiones := c.Authers
+		authers := c.Authers
 		c.Authers = nil
-		for _, s := range admissiones {
+		for _, s := range authers {
 			if s.Name == serviceName {
 				continue
 			}

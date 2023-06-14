@@ -21,16 +21,21 @@ var (
 			OnClickDetailAuther: telebot.HandlerFunc(Event.OnClickDetailAuther),
 			OnClickDelAuther:    telebot.HandlerFunc(Event.OnClickDelAuther),
 			// OnClickBypass group
-			OnClickBypass: telebot.HandlerFunc(Event.OnClickService),
-			OnClickBypass: telebot.HandlerFunc(Event.OnClickService),
-			OnClickBypass: telebot.HandlerFunc(Event.OnClickService),
-			OnClickBypass: telebot.HandlerFunc(Event.OnClickService),
+			OnClickBypass:       telebot.HandlerFunc(Event.OnClickBypasses),
+			OnClickAddBypass:    AddBypassConversation(OnClickAddBypass, "/cancel"),
+			OnClickDetailBypass: telebot.HandlerFunc(Event.OnClickDetailBypass),
+			OnClickDelBypass:    telebot.HandlerFunc(Event.OnClickDelBypass),
 			// OnClickHops group
-			OnClickHops:    telebot.HandlerFunc(Event.OnClickService),
+			OnClickHops:       telebot.HandlerFunc(Event.OnClickHops),
+			OnClickAddHops:    AddHopConversation(OnClickAddHops, "/cancel"),
+			OnClickDetailHops: telebot.HandlerFunc(Event.OnClickDetailHop),
+			OnClickDelHops:    telebot.HandlerFunc(Event.OnClickDelHop),
+			// OnClickIngress group
 			OnClickIngress: telebot.HandlerFunc(Event.OnClickService),
 			// OnClickServices group
 			OnClickServices:      telebot.HandlerFunc(Event.OnClickServices),
 			OnClickAddService:    AddServiceConversation(OnClickAddService, "/cancel"),
+			OnClickUpdateService: UpdateServiceConversation(OnClickUpdateService, "/cancel"),
 			OnClickDetailService: telebot.HandlerFunc(Event.OnClickDetailService),
 			OnClickDelService:    telebot.HandlerFunc(Event.OnClickDelService),
 

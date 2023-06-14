@@ -3,6 +3,7 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	ServiceCfg = "serviceCfg"
+	ServiceAdd    = "serviceAdd"
+	ServiceUpdate = "serviceUpdate"
 )
 
 func (h *hEvent) OnClickServices(c telebot.IContext) error {
@@ -30,10 +32,11 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 			btnList = make([]telebot.Btn, 0)
 		}
 	}
-	rowList = append(rowList, selector.Row(
-		selector.Data("@添加服务", "addService", "addService"),
-		selector.Data("« 返回 服务列表", "backServices", "backServices"),
-	))
+	rowList = append(rowList,
+		selector.Row(
+			selector.Data("@添加服务", "addService", "addService"),
+			selector.Data("« 返回 服务列表", "backServices", "backServices"),
+		))
 
 	selector.Inline(
 		rowList...,
@@ -52,8 +55,6 @@ func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
 		str string
 		err error
 	)
-	//user := c.Callback().Sender
-	//msg = fmt.Sprintf("选中服务: %s %d\\.\nWhat do you want to do with the bot?", "", user.ID)
 
 	serviceName := c.Callback().Data
 	cfg := config.Global()
@@ -73,7 +74,10 @@ func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
+			selector.Data("@更新服务", "updateService", serviceName),
 			selector.Data("@删除服务", "delService", serviceName),
+		),
+		selector.Row(
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
 		),
 	)
@@ -86,7 +90,7 @@ func (h *hEvent) OnClickDelService(c telebot.IContext) error {
 	serviceName := cmd
 	svc := app.Runtime.ServiceRegistry().Get(serviceName)
 	if svc == nil {
-		return c.Send("object not found")
+		return c.Send(ErrNotFound)
 	}
 
 	app.Runtime.ServiceRegistry().Unregister(serviceName)
@@ -110,9 +114,9 @@ func (h *hEvent) OnClickDelService(c telebot.IContext) error {
 func AddServiceConversation(entry, cancel string) handlers.Conversation {
 	return handlers.NewConversation(
 		entry,
-		telebot.HandlerFunc(startServiceHandler), // 入口
+		telebot.HandlerFunc(startAddServiceHandler), // 入口
 		map[string][]telebot.IHandler{
-			ServiceCfg: {telebot.HandlerFunc(configServiceHandler)},
+			ServiceAdd: {telebot.HandlerFunc(addServiceHandler)},
 		}, // states状态
 		&handlers.ConversationOpts{
 			ExitName:     cancel,
@@ -122,17 +126,32 @@ func AddServiceConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startServiceHandler(ctx telebot.IContext) error {
+func UpdateServiceConversation(entry, cancel string) handlers.Conversation {
+	return handlers.NewConversation(
+		entry,
+		telebot.HandlerFunc(startUpdateServiceHandler), // 入口
+		map[string][]telebot.IHandler{
+			ServiceUpdate: {telebot.HandlerFunc(updateServiceHandler)},
+		}, // states状态
+		&handlers.ConversationOpts{
+			ExitName:     cancel,
+			ExitHandler:  telebot.HandlerFunc(cancelServiceHandler),
+			AllowReEntry: true,
+		}, // options
+	)
+}
+
+func startAddServiceHandler(ctx telebot.IContext) error {
 	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
 
 	// 设置当前用户下一个入口
-	return handlers.NextConversationState(ServiceCfg)
+	return handlers.NextConversationState(ServiceAdd)
 }
 
-func configServiceHandler(ctx telebot.IContext) error {
+func addServiceHandler(ctx telebot.IContext) error {
 	var (
 		data config.ServiceConfig
 	)
@@ -140,7 +159,7 @@ func configServiceHandler(ctx telebot.IContext) error {
 	str := ctx.Message().Text
 	err := json.Unmarshal([]byte(str), &data)
 	if err != nil {
-		return ctx.Reply("configServiceHandler json.Unmarshal error:", err.Error())
+		return ctx.Reply("addServiceHandler json.Unmarshal error:", err.Error())
 	}
 	if app.Runtime.ServiceRegistry().IsRegistered(data.Name) {
 		return ctx.Reply(ErrDup)
@@ -169,11 +188,85 @@ func configServiceHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
+func startUpdateServiceHandler(ctx telebot.IContext) error {
+	srvName := ctx.Callback().Data
+	err := ctx.Bot().Store().UpdateData(ctx, ServiceUpdate, srvName)
+	if err != nil {
+		return fmt.Errorf("failed UpdateData message: %w", err)
+	}
+
+	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send start message: %w", err)
+	}
+
+	// 设置当前用户下一个入口
+	return handlers.NextConversationState(ServiceUpdate)
+}
+
+func updateServiceHandler(ctx telebot.IContext) error {
+	var (
+		data config.ServiceConfig
+	)
+	state, err := ctx.Bot().Store().Get(ctx)
+	if err != nil {
+		return ctx.Reply("updateServiceHandler Store().Get error:", err.Error())
+	}
+	srvName := ""
+	if sn, ok := state.Data[ServiceUpdate]; ok {
+		srvName = gconv.String(sn)
+	}
+	fmt.Println(fmt.Sprintf("srvName :%s", srvName))
+	if srvName == "" {
+		return ctx.Reply(ErrInvalid)
+	}
+	str := ctx.Message().Text
+	err = json.Unmarshal([]byte(str), &data)
+	if err != nil {
+		return ctx.Reply("updateServiceHandler json.Unmarshal error:", err.Error())
+	}
+	old := app.Runtime.ServiceRegistry().Get(srvName)
+	if old == nil {
+		return ctx.Reply(ErrInvalid)
+	}
+	_ = old.Close()
+
+	data.Name = srvName
+
+	svc, err := parsing.ParseService(&data)
+	if err != nil {
+		return ctx.Reply(ErrCreate)
+	}
+
+	app.Runtime.ServiceRegistry().Unregister(srvName)
+
+	if err := app.Runtime.ServiceRegistry().Register(srvName, svc); err != nil {
+		_ = svc.Close()
+		return ctx.Reply(ErrDup)
+	}
+
+	go svc.Serve()
+
+	_ = config.OnUpdate(func(c *config.Config) error {
+		for i := range c.Services {
+			if c.Services[i].Name == srvName {
+				c.Services[i] = &data
+				break
+			}
+		}
+		return nil
+	})
+
+	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 更新成功!", data.Name)})
+	_ = Event.OnClickServices(ctx)
+
+	return handlers.EndConversation()
+}
+
 func cancelServiceHandler(ctx telebot.IContext) error {
-	err := ctx.Reply("添加 服务 操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
+	err := ctx.Reply("当前操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
 	}
-	//return handlers.EndConversation()
 	return nil
 }

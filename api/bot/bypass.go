@@ -82,15 +82,15 @@ func (h *hEvent) OnClickDelBypass(c telebot.IContext) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.BypassRegistry().Get(serviceName)
 	if svc == nil {
-		return c.Send("object not found")
+		return c.Send(ErrNotFound)
 	}
 
 	app.Runtime.BypassRegistry().Unregister(serviceName)
 
 	_ = config.OnUpdate(func(c *config.Config) error {
-		admissiones := c.Bypasses
+		bypasses := c.Bypasses
 		c.Bypasses = nil
-		for _, s := range admissiones {
+		for _, s := range bypasses {
 			if s.Name == serviceName {
 				continue
 			}
