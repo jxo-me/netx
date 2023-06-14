@@ -3,6 +3,7 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	BypassCfg = "bypassCfg"
+	BypassAdd    = "bypassAdd"
+	BypassUpdate = "bypassUpdate"
 )
 
 func (h *hEvent) OnClickBypasses(c telebot.IContext) error {
@@ -31,7 +33,7 @@ func (h *hEvent) OnClickBypasses(c telebot.IContext) error {
 		}
 	}
 	rowList = append(rowList, selector.Row(
-		selector.Data("@添加准入控制器", "addBypass", "addBypass"),
+		selector.Data("@添加分流器", "addBypass", "addBypass"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),
 	))
 
@@ -71,7 +73,10 @@ func (h *hEvent) OnClickDetailBypass(c telebot.IContext) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
-			selector.Data("@删除准入控制器", "delBypass", serviceName),
+			selector.Data("@更新分流器", "updateBypass", serviceName),
+			selector.Data("@删除分流器", "delBypass", serviceName),
+		),
+		selector.Row(
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
 		),
 	)
@@ -105,9 +110,9 @@ func (h *hEvent) OnClickDelBypass(c telebot.IContext) error {
 func AddBypassConversation(entry, cancel string) handlers.Conversation {
 	return handlers.NewConversation(
 		entry,
-		telebot.HandlerFunc(startBypassHandler), // 入口
+		telebot.HandlerFunc(startAddBypassHandler), // 入口
 		map[string][]telebot.IHandler{
-			BypassCfg: {telebot.HandlerFunc(configBypassHandler)},
+			BypassAdd: {telebot.HandlerFunc(addBypassHandler)},
 		}, // states状态
 		&handlers.ConversationOpts{
 			ExitName:     cancel,
@@ -117,17 +122,32 @@ func AddBypassConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startBypassHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入准入控制器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+func UpdateBypassConversation(entry, cancel string) handlers.Conversation {
+	return handlers.NewConversation(
+		entry,
+		telebot.HandlerFunc(startUpdateBypassHandler), // 入口
+		map[string][]telebot.IHandler{
+			BypassUpdate: {telebot.HandlerFunc(updateBypassHandler)},
+		}, // states状态
+		&handlers.ConversationOpts{
+			ExitName:     cancel,
+			ExitHandler:  telebot.HandlerFunc(cancelBypassHandler),
+			AllowReEntry: true,
+		}, // options
+	)
+}
+
+func startAddBypassHandler(ctx telebot.IContext) error {
+	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入分流器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
 
 	// 设置当前用户下一个入口
-	return handlers.NextConversationState(BypassCfg)
+	return handlers.NextConversationState(BypassAdd)
 }
 
-func configBypassHandler(ctx telebot.IContext) error {
+func addBypassHandler(ctx telebot.IContext) error {
 	var (
 		data config.BypassConfig
 	)
@@ -135,7 +155,7 @@ func configBypassHandler(ctx telebot.IContext) error {
 	str := ctx.Message().Text
 	err := json.Unmarshal([]byte(str), &data)
 	if err != nil {
-		return ctx.Reply("configBypassHandler json.Unmarshal error:", err.Error())
+		return ctx.Reply("addBypassHandler json.Unmarshal error:", err.Error())
 	}
 	v := parsing.ParseBypass(&data)
 	if err = app.Runtime.BypassRegistry().Register(data.Name, v); err != nil {
@@ -153,8 +173,76 @@ func configBypassHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
+func startUpdateBypassHandler(ctx telebot.IContext) error {
+	srvName := ctx.Callback().Data
+	err := ctx.Bot().Store().UpdateData(ctx, BypassUpdate, srvName)
+	if err != nil {
+		return fmt.Errorf("failed UpdateData message: %w", err)
+	}
+
+	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send start message: %w", err)
+	}
+
+	// 设置当前用户下一个入口
+	return handlers.NextConversationState(BypassUpdate)
+}
+
+func updateBypassHandler(ctx telebot.IContext) error {
+	var (
+		data config.BypassConfig
+	)
+	state, err := ctx.Bot().Store().Get(ctx)
+	if err != nil {
+		return ctx.Reply("updateBypassHandler Store().Get error:", err.Error())
+	}
+	srvName := ""
+	if sn, ok := state.Data[BypassUpdate]; ok {
+		srvName = gconv.String(sn)
+	}
+	fmt.Println(fmt.Sprintf("srvName :%s", srvName))
+	if srvName == "" {
+		return ctx.Reply(ErrInvalid)
+	}
+	str := ctx.Message().Text
+	err = json.Unmarshal([]byte(str), &data)
+	if err != nil {
+		return ctx.Reply("updateBypassHandler json.Unmarshal error:", err.Error())
+	}
+
+	if !app.Runtime.BypassRegistry().IsRegistered(srvName) {
+		return ctx.Reply(ErrNotFound)
+	}
+
+	data.Name = srvName
+
+	v := parsing.ParseBypass(&data)
+
+	app.Runtime.BypassRegistry().Unregister(srvName)
+
+	if err = app.Runtime.BypassRegistry().Register(srvName, v); err != nil {
+		return ctx.Reply(ErrDup)
+	}
+
+	_ = config.OnUpdate(func(c *config.Config) error {
+		for i := range c.Bypasses {
+			if c.Bypasses[i].Name == srvName {
+				c.Bypasses[i] = &data
+				break
+			}
+		}
+		return nil
+	})
+
+	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 更新成功!", data.Name)})
+	_ = Event.OnClickBypasses(ctx)
+
+	return handlers.EndConversation()
+}
+
 func cancelBypassHandler(ctx telebot.IContext) error {
-	err := ctx.Reply("添加 准入控制器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
+	err := ctx.Reply("添加 分流器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
 	}

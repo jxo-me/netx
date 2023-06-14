@@ -13,16 +13,19 @@ var (
 			// Click Callback
 			OnClickAdmissions:      telebot.HandlerFunc(Event.OnClickAdmissions),
 			OnClickAddAdmission:    AddAdmissionConversation(OnClickAddAdmission, "/cancel"),
+			OnClickUpdateAdmission: UpdateAdmissionConversation(OnClickUpdateAdmission, "/cancel"),
 			OnClickDetailAdmission: telebot.HandlerFunc(Event.OnClickDetailAdmission),
 			OnClickDelAdmission:    telebot.HandlerFunc(Event.OnClickDelAdmission),
 			// OnClickAuthers group
 			OnClickAuthers:      telebot.HandlerFunc(Event.OnClickAuthers),
 			OnClickAddAuther:    AddAutherConversation(OnClickAddAuther, "/cancel"),
+			OnClickUpdateAuther: UpdateAutherConversation(OnClickUpdateAuther, "/cancel"),
 			OnClickDetailAuther: telebot.HandlerFunc(Event.OnClickDetailAuther),
 			OnClickDelAuther:    telebot.HandlerFunc(Event.OnClickDelAuther),
 			// OnClickBypass group
 			OnClickBypass:       telebot.HandlerFunc(Event.OnClickBypasses),
 			OnClickAddBypass:    AddBypassConversation(OnClickAddBypass, "/cancel"),
+			OnClickUpdateBypass: UpdateBypassConversation(OnClickUpdateBypass, "/cancel"),
 			OnClickDetailBypass: telebot.HandlerFunc(Event.OnClickDetailBypass),
 			OnClickDelBypass:    telebot.HandlerFunc(Event.OnClickDelBypass),
 			// OnClickHops group

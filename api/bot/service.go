@@ -240,7 +240,7 @@ func updateServiceHandler(ctx telebot.IContext) error {
 
 	app.Runtime.ServiceRegistry().Unregister(srvName)
 
-	if err := app.Runtime.ServiceRegistry().Register(srvName, svc); err != nil {
+	if err = app.Runtime.ServiceRegistry().Register(srvName, svc); err != nil {
 		_ = svc.Close()
 		return ctx.Reply(ErrDup)
 	}
