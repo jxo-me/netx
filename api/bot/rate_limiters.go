@@ -33,7 +33,7 @@ func (h *hEvent) OnClickRateLimiters(c telebot.IContext) error {
 		}
 	}
 	rowList = append(rowList, selector.Row(
-		selector.Data("@添加请求速率限制器", "addRateLimiter", "addRateLimiter"),
+		selector.Data("@添加速率限制器", "addRateLimiter", "addRateLimiter"),
 		selector.Data("« 返回 服务列表", "backServices", "backServices"),
 	))
 
@@ -73,8 +73,8 @@ func (h *hEvent) OnClickDetailRateLimiter(c telebot.IContext) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
-			selector.Data("@更新请求速率限制器", "updateRateLimiter", serviceName),
-			selector.Data("@删除请求速率限制器", "delRateLimiter", serviceName),
+			selector.Data("@更新速率限制器", "updateRateLimiter", serviceName),
+			selector.Data("@删除速率限制器", "delRateLimiter", serviceName),
 		),
 		selector.Row(
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
@@ -138,7 +138,7 @@ func UpdateRateLimiterConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddRateLimiterHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入请求速率限制器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入速率限制器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -242,7 +242,7 @@ func updateRateLimiterHandler(ctx telebot.IContext) error {
 }
 
 func cancelRateLimiterHandler(ctx telebot.IContext) error {
-	err := ctx.Reply("添加 请求速率限制器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
+	err := ctx.Reply("添加 速率限制器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
 	}

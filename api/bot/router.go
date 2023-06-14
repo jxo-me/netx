@@ -7,9 +7,6 @@ import (
 var (
 	insBotRouter = Routers{
 		List: map[string]telebot.IHandler{
-			telebot.OnText:       telebot.HandlerFunc(Event.OnText),
-			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
-			telebot.OnUserJoined: telebot.HandlerFunc(Event.OnUserJoined),
 			// Click Callback
 			OnClickAdmissions:      telebot.HandlerFunc(Event.OnClickAdmissions),
 			OnClickAddAdmission:    AddAdmissionConversation(OnClickAddAdmission, "/cancel"),
@@ -91,6 +88,11 @@ var (
 			// back services
 			OnBackServices: telebot.HandlerFunc(Event.OnBackServices),
 			OnBackHosts:    telebot.HandlerFunc(Event.OnClickNode),
+
+			telebot.OnText:       telebot.HandlerFunc(Event.OnText),
+			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
+			telebot.OnUserJoined: telebot.HandlerFunc(Event.OnUserJoined),
+
 			// TextCommand
 			StartTextCommand:   telebot.HandlerFunc(Event.OnStartCommand),
 			NodeTextCommand:    telebot.HandlerFunc(Event.OnClickNode),

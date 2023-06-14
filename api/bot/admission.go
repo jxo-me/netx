@@ -138,7 +138,18 @@ func UpdateAdmissionConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddAdmissionHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入准入控制器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	exampleJson := `
+{
+  "name": "admission-0",
+  "whitelist": false,
+  "matchers": [
+    "127.0.0.1",
+    "192.168.0.0/16"
+  ]
+}
+`
+	example := fmt.Sprintf(CodeTpl, CodeStart, exampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 准入控制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -167,7 +178,7 @@ func addAdmissionHandler(ctx telebot.IContext) error {
 		return nil
 	})
 
-	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 添加成功!", data.Name)})
+	_ = ctx.Reply(fmt.Sprintf("%s 添加成功!", data.Name))
 	_ = Event.OnClickAdmissions(ctx)
 
 	return handlers.EndConversation()
@@ -179,8 +190,18 @@ func startUpdateAdmissionHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	exampleJson := `
+{
+  "name": "admission-0",
+  "whitelist": false,
+  "matchers": [
+    "127.0.0.1",
+    "192.168.0.0/16"
+  ]
+}
+`
+	example := fmt.Sprintf(CodeTpl, CodeStart, exampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 准入控制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -235,7 +256,7 @@ func updateAdmissionHandler(ctx telebot.IContext) error {
 		return nil
 	})
 
-	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 更新成功!", data.Name)})
+	_ = ctx.Reply(fmt.Sprintf("%s 更新成功!", data.Name))
 	_ = Event.OnClickAdmissions(ctx)
 
 	return handlers.EndConversation()
