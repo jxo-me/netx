@@ -12,8 +12,23 @@ import (
 )
 
 const (
-	IngressAdd    = "ingressAdd"
-	IngressUpdate = "ingressUpdate"
+	IngressAdd         = "ingressAdd"
+	IngressUpdate      = "ingressUpdate"
+	IngressExampleJson = `
+{
+  "name": "ingress-0",
+  "rules": [
+    {
+      "hostname": "example.com",
+      "endpoint": "4d21094e-b74c-4916-86c1-d9fa36ea677b"
+    },
+    {
+      "hostname": "example.org",
+      "endpoint": "ac74d9dd-3125-442a-a7c1-f9e49e05faca"
+    }
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickIngresses(c telebot.IContext) error {
@@ -135,7 +150,8 @@ func UpdateIngressConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddIngressHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入Ingress JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, IngressExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 Ingress 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -176,8 +192,8 @@ func startUpdateIngressHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, IngressExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 Ingress 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

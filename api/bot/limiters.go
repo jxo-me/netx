@@ -12,8 +12,19 @@ import (
 )
 
 const (
-	LimiterAdd    = "limiterAdd"
-	LimiterUpdate = "limiterUpdate"
+	LimiterAdd         = "limiterAdd"
+	LimiterUpdate      = "limiterUpdate"
+	LimiterExampleJson = `
+{
+  "name": "limiter-0",
+  "limits": [
+    "$ 100MB  200MB",
+    "$$ 10MB",
+    "192.168.1.1  1MB 10MB",
+    "192.168.0.0/16  512KB  1MB"
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickLimiters(c telebot.IContext) error {
@@ -135,7 +146,8 @@ func UpdateLimiterConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddLimiterHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入流量速率限制器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, LimiterExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 流量速率限制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -176,8 +188,8 @@ func startUpdateLimiterHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, LimiterExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 流量速率限制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

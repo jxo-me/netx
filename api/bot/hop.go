@@ -12,8 +12,53 @@ import (
 )
 
 const (
-	HopAdd    = "hopAdd"
-	HopUpdate = "hopUpdate"
+	HopAdd         = "hopAdd"
+	HopUpdate      = "hopUpdate"
+	HopExampleJson = `
+{
+  "name": "hop-0",
+  "interface": "192.168.1.2",
+  "selector": {
+    "strategy": "rand",
+    "maxFails": 3,
+    "failTimeout": 60
+  },
+  "bypass": "bypass-0",
+  "nodes": [
+    {
+      "name": "node-0",
+      "addr": ":1080",
+      "interface": "eth1",
+      "bypass": "bypass-0",
+      "connector": {
+        "type": "socks5",
+        "auth": {
+          "username": "user",
+          "password": "pass"
+        },
+        "metadata": {
+          "foo": "bar"
+        }
+      },
+      "dialer": {
+        "type": "tcp",
+        "auth": {
+          "username": "user",
+          "password": "pass"
+        },
+        "tls": {
+          "caFile": "ca.pem",
+          "secure": true,
+          "serverName": "example.com"
+        },
+        "metadata": {
+          "bar": "baz"
+        }
+      }
+    }
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickHops(c telebot.IContext) error {
@@ -135,7 +180,8 @@ func UpdateHopConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddHopHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入跳跃点JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, HopExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 跳跃点 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -180,8 +226,8 @@ func startUpdateHopHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, HopExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 跳跃点 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

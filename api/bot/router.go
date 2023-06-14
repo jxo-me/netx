@@ -52,9 +52,9 @@ var (
 			// OnClickHosts group
 			OnClickHosts:       telebot.HandlerFunc(Event.OnClickHosts),
 			OnClickAddHosts:    AddHostsConversation(OnClickAddHosts, "/cancel"),
-			OnClickUpdateHosts: AddHostsConversation(OnClickAddHosts, "/cancel"),
+			OnClickUpdateHosts: UpdateHostsConversation(OnClickUpdateHosts, "/cancel"),
 			OnClickDetailHosts: telebot.HandlerFunc(Event.OnClickDetailHosts),
-			OnClickDelHost:     telebot.HandlerFunc(Event.OnClickDelHosts),
+			OnClickDelHosts:    telebot.HandlerFunc(Event.OnClickDelHosts),
 			// OnClickResolver group
 			OnClickResolvers:      telebot.HandlerFunc(Event.OnClickResolvers),
 			OnClickAddResolver:    AddResolverConversation(OnClickAddResolver, "/cancel"),

@@ -12,8 +12,33 @@ import (
 )
 
 const (
-	ResolverAdd    = "resolverAdd"
-	ResolverUpdate = "resolverUpdate"
+	ResolverAdd         = "resolverAdd"
+	ResolverUpdate      = "resolverUpdate"
+	ResolverExampleJson = `
+{
+  "name": "resolver-0",
+  "nameservers": [
+    {
+      "addr": "udp://8.8.8.8:53",
+      "chain": "chain-0",
+      "prefer": "ipv4",
+      "clientIP": "1.2.3.4",
+      "ttl": 60,
+      "timeout": 30
+    },
+    {
+      "addr": "tcp://1.1.1.1:53"
+    },
+    {
+      "addr": "tls://1.1.1.1:853"
+    },
+    {
+      "addr": "https://1.0.0.1/dns-query",
+      "hostname": "cloudflare-dns.com"
+    }
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickResolvers(c telebot.IContext) error {
@@ -135,7 +160,8 @@ func UpdateResolverConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddResolverHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入域名解析器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, ResolverExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 域名解析器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -179,8 +205,8 @@ func startUpdateResolverHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, ResolverExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 域名解析器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

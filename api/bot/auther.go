@@ -12,8 +12,19 @@ import (
 )
 
 const (
-	AutherAdd    = "autherAdd"
-	AutherUpdate = "autherUpdate"
+	AutherAdd         = "autherAdd"
+	AutherUpdate      = "autherUpdate"
+	AutherExampleJson = `
+{
+  "name": "auther-0",
+  "auths": [
+    {
+      "username": "user1",
+      "password": "pass1"
+    }
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickAuthers(c telebot.IContext) error {
@@ -135,7 +146,8 @@ func UpdateAutherConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddAutherHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入认证器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, AutherExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 认证器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -176,8 +188,8 @@ func startUpdateAutherHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, AutherExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 认证器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

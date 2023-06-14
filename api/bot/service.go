@@ -12,8 +12,68 @@ import (
 )
 
 const (
-	ServiceAdd    = "serviceAdd"
-	ServiceUpdate = "serviceUpdate"
+	ServiceAdd         = "serviceAdd"
+	ServiceUpdate      = "serviceUpdate"
+	ServiceExampleJson = `
+{
+  "name": "service-0",
+  "addr": ":8080",
+  "interface": "eth0",
+  "admission": "admission-0",
+  "bypass": "bypass-0",
+  "resolver": "resolver-0",
+  "hosts": "hosts-0",
+  "handler": {
+    "type": "http",
+    "auth": {
+      "username": "gost",
+      "password": "gost"
+    },
+    "auther": "auther-0",
+    "retries": 1,
+    "chain": "chain-0",
+    "metadata": {
+      "bar": "baz",
+      "foo": "bar"
+    }
+  },
+  "listener": {
+    "type": "tcp",
+    "auth": {
+      "username": "user",
+      "password": "pass"
+    },
+    "auther": "auther-0",
+    "chain": "chain-0",
+    "tls": {
+      "certFile": "cert.pem",
+      "keyFile": "key.pem",
+      "caFile": "ca.pem"
+    },
+    "metadata": {
+      "abc": "xyz",
+      "def": 456
+    }
+  },
+  "forwarder": {
+    "nodes": [
+      {
+        "name": "target-0",
+        "addr": "192.168.1.1:1234"
+      },
+      {
+        "name": "target-1",
+        "addr": "192.168.1.2:2345"
+      }
+    ],
+    "selector": {
+      "strategy": "round",
+      "maxFails": 1,
+      "failTimeout": 30
+    }
+  }
+}
+`
 )
 
 func (h *hEvent) OnClickServices(c telebot.IContext) error {
@@ -139,7 +199,8 @@ func UpdateServiceConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddServiceHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, ServiceExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 服务 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -191,8 +252,8 @@ func startUpdateServiceHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, ServiceExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 服务 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

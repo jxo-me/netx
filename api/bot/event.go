@@ -52,7 +52,7 @@ var (
 	OnClickAddHosts          = "\faddHosts"
 	OnClickUpdateHosts       = "\fupdateHosts"
 	OnClickDetailHosts       = "\fdetailHosts"
-	OnClickDelHost           = "\fdelHosts"
+	OnClickDelHosts          = "\fdelHosts"
 	OnClickResolvers         = "\fResolvers"
 	OnClickAddResolver       = "\faddResolver"
 	OnClickUpdateResolver    = "\fupdateResolver"

@@ -12,8 +12,18 @@ import (
 )
 
 const (
-	AdmissionAdd    = "admissionAdd"
-	AdmissionUpdate = "admissionUpdate"
+	AdmissionAdd         = "admissionAdd"
+	AdmissionUpdate      = "admissionUpdate"
+	AdmissionExampleJson = `
+{
+  "name": "admission-0",
+  "whitelist": false,
+  "matchers": [
+    "127.0.0.1",
+    "192.168.0.0/16"
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickAdmissions(c telebot.IContext) error {
@@ -135,17 +145,7 @@ func UpdateAdmissionConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddAdmissionHandler(ctx telebot.IContext) error {
-	exampleJson := `
-{
-  "name": "admission-0",
-  "whitelist": false,
-  "matchers": [
-    "127.0.0.1",
-    "192.168.0.0/16"
-  ]
-}
-`
-	example := fmt.Sprintf(CodeTpl, CodeStart, exampleJson, CodeEnd)
+	example := fmt.Sprintf(CodeTpl, CodeStart, AdmissionExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 准入控制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
@@ -187,17 +187,7 @@ func startUpdateAdmissionHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-	exampleJson := `
-{
-  "name": "admission-0",
-  "whitelist": false,
-  "matchers": [
-    "127.0.0.1",
-    "192.168.0.0/16"
-  ]
-}
-`
-	example := fmt.Sprintf(CodeTpl, CodeStart, exampleJson, CodeEnd)
+	example := fmt.Sprintf(CodeTpl, CodeStart, AdmissionExampleJson, CodeEnd)
 	err = ctx.Send(fmt.Sprintf("请输入 准入控制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)

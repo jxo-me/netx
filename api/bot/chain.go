@@ -12,8 +12,30 @@ import (
 )
 
 const (
-	ChainAdd    = "chainAdd"
-	ChainUpdate = "chainUpdate"
+	ChainAdd         = "chainAdd"
+	ChainUpdate      = "chainUpdate"
+	ChainExampleJson = `
+{
+  "name": "chain-0",
+  "hops": [
+    {
+      "name": "hop-0",
+      "nodes": [
+        {
+          "name": "node-0",
+          "addr": "192.168.1.1:8080",
+          "connector": {
+            "type": "http"
+          },
+          "dialer": {
+            "type": "tls"
+          }
+        }
+      ]
+    }
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickChains(c telebot.IContext) error {
@@ -135,7 +157,8 @@ func UpdateChainConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddChainHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入转发链JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, ChainExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 转发链 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -179,8 +202,8 @@ func startUpdateChainHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, ChainExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 转发链 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

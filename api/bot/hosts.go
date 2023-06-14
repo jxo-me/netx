@@ -12,8 +12,34 @@ import (
 )
 
 const (
-	HostAdd    = "hostAdd"
-	HostUpdate = "hostUpdate"
+	HostAdd          = "hostAdd"
+	HostUpdate       = "hostUpdate"
+	HostsExampleJson = `
+{
+  "name": "hosts-0",
+  "mappings": [
+    {
+      "ip": "127.0.0.1",
+      "hostname": "localhost"
+    },
+    {
+      "ip": "192.168.1.10",
+      "hostname": "foo.mydomain.org",
+      "aliases": [
+        "foo"
+      ]
+    },
+    {
+      "ip": "192.168.1.13",
+      "hostname": "bar.mydomain.org",
+      "aliases": [
+        "bar",
+        "baz"
+      ]
+    }
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickHosts(c telebot.IContext) error {
@@ -119,7 +145,7 @@ func AddHostsConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func UpdateHostConversation(entry, cancel string) handlers.Conversation {
+func UpdateHostsConversation(entry, cancel string) handlers.Conversation {
 	return handlers.NewConversation(
 		entry,
 		telebot.HandlerFunc(startUpdateHostHandler), // 入口
@@ -135,7 +161,8 @@ func UpdateHostConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddHostHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入主机映射器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, HostsExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 主机映射器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -176,8 +203,8 @@ func startUpdateHostHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, HostsExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 主机映射器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}

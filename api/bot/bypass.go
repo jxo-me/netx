@@ -12,8 +12,19 @@ import (
 )
 
 const (
-	BypassAdd    = "bypassAdd"
-	BypassUpdate = "bypassUpdate"
+	BypassAdd         = "bypassAdd"
+	BypassUpdate      = "bypassUpdate"
+	BypassExampleJson = `
+{
+  "name": "bypass-0",
+  "whitelist": false,
+  "matchers": [
+    "*.example.com",
+    ".example.org",
+    "0.0.0.0/8"
+  ]
+}
+`
 )
 
 func (h *hEvent) OnClickBypasses(c telebot.IContext) error {
@@ -135,7 +146,8 @@ func UpdateBypassConversation(entry, cancel string) handlers.Conversation {
 }
 
 func startAddBypassHandler(ctx telebot.IContext) error {
-	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入分流器JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, BypassExampleJson, CodeEnd)
+	err := ctx.Send(fmt.Sprintf("请输入 分流器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
@@ -176,8 +188,8 @@ func startUpdateBypassHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return fmt.Errorf("failed UpdateData message: %w", err)
 	}
-
-	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	example := fmt.Sprintf(CodeTpl, CodeStart, BypassExampleJson, CodeEnd)
+	err = ctx.Send(fmt.Sprintf("请输入 分流器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
