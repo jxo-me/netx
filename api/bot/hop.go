@@ -3,6 +3,7 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	HopCfg = "admissionCfg"
+	HopAdd    = "hopAdd"
+	HopUpdate = "hopUpdate"
 )
 
 func (h *hEvent) OnClickHops(c telebot.IContext) error {
@@ -71,7 +73,10 @@ func (h *hEvent) OnClickDetailHop(c telebot.IContext) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(
 		selector.Row(
+			selector.Data("@更新跳跃点", "updateHop", serviceName),
 			selector.Data("@删除跳跃点", "delHop", serviceName),
+		),
+		selector.Row(
 			selector.Data("« 返回 服务列表", "backServices", "backServices"),
 		),
 	)
@@ -105,9 +110,9 @@ func (h *hEvent) OnClickDelHop(c telebot.IContext) error {
 func AddHopConversation(entry, cancel string) handlers.Conversation {
 	return handlers.NewConversation(
 		entry,
-		telebot.HandlerFunc(startHopHandler), // 入口
+		telebot.HandlerFunc(startAddHopHandler), // 入口
 		map[string][]telebot.IHandler{
-			HopCfg: {telebot.HandlerFunc(configHopHandler)},
+			HopAdd: {telebot.HandlerFunc(addHopHandler)},
 		}, // states状态
 		&handlers.ConversationOpts{
 			ExitName:     cancel,
@@ -117,17 +122,32 @@ func AddHopConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startHopHandler(ctx telebot.IContext) error {
+func UpdateHopConversation(entry, cancel string) handlers.Conversation {
+	return handlers.NewConversation(
+		entry,
+		telebot.HandlerFunc(startUpdateHopHandler), // 入口
+		map[string][]telebot.IHandler{
+			HopUpdate: {telebot.HandlerFunc(updateHopHandler)},
+		}, // states状态
+		&handlers.ConversationOpts{
+			ExitName:     cancel,
+			ExitHandler:  telebot.HandlerFunc(cancelHopHandler),
+			AllowReEntry: true,
+		}, // options
+	)
+}
+
+func startAddHopHandler(ctx telebot.IContext) error {
 	err := ctx.Send(fmt.Sprintf("你好, @%s.\n请输入跳跃点JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
 	}
 
 	// 设置当前用户下一个入口
-	return handlers.NextConversationState(HopCfg)
+	return handlers.NextConversationState(HopAdd)
 }
 
-func configHopHandler(ctx telebot.IContext) error {
+func addHopHandler(ctx telebot.IContext) error {
 	var (
 		data config.HopConfig
 	)
@@ -135,7 +155,7 @@ func configHopHandler(ctx telebot.IContext) error {
 	str := ctx.Message().Text
 	err := json.Unmarshal([]byte(str), &data)
 	if err != nil {
-		return ctx.Reply("configHopHandler json.Unmarshal error:", err.Error())
+		return ctx.Reply("addHopHandler json.Unmarshal error:", err.Error())
 	}
 	v, err := parsing.ParseHop(&data)
 	if err != nil {
@@ -152,6 +172,76 @@ func configHopHandler(ctx telebot.IContext) error {
 	})
 
 	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 添加成功!", data.Name)})
+	_ = Event.OnClickHops(ctx)
+
+	return handlers.EndConversation()
+}
+
+func startUpdateHopHandler(ctx telebot.IContext) error {
+	srvName := ctx.Callback().Data
+	err := ctx.Bot().Store().UpdateData(ctx, HopUpdate, srvName)
+	if err != nil {
+		return fmt.Errorf("failed UpdateData message: %w", err)
+	}
+
+	err = ctx.Send(fmt.Sprintf("你好, @%s.\n请输入服务JSON配置?\n您可以随时键入 /cancel 来取消该操作。", ctx.Sender().Username), &telebot.SendOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to send start message: %w", err)
+	}
+
+	// 设置当前用户下一个入口
+	return handlers.NextConversationState(HopUpdate)
+}
+
+func updateHopHandler(ctx telebot.IContext) error {
+	var (
+		data config.HopConfig
+	)
+	state, err := ctx.Bot().Store().Get(ctx)
+	if err != nil {
+		return ctx.Reply("updateHopHandler Store().Get error:", err.Error())
+	}
+	srvName := ""
+	if sn, ok := state.Data[HopUpdate]; ok {
+		srvName = gconv.String(sn)
+	}
+	fmt.Println(fmt.Sprintf("srvName :%s", srvName))
+	if srvName == "" {
+		return ctx.Reply(ErrInvalid)
+	}
+	str := ctx.Message().Text
+	err = json.Unmarshal([]byte(str), &data)
+	if err != nil {
+		return ctx.Reply("updateHopHandler json.Unmarshal error:", err.Error())
+	}
+
+	if !app.Runtime.HopRegistry().IsRegistered(srvName) {
+		return ctx.Reply(ErrNotFound)
+	}
+
+	data.Name = srvName
+
+	v, err := parsing.ParseHop(&data)
+	if err != nil {
+		return ctx.Reply(ErrCreate)
+	}
+	app.Runtime.HopRegistry().Unregister(srvName)
+
+	if err = app.Runtime.HopRegistry().Register(srvName, v); err != nil {
+		return ctx.Reply(ErrDup)
+	}
+
+	_ = config.OnUpdate(func(c *config.Config) error {
+		for i := range c.Hops {
+			if c.Hops[i].Name == srvName {
+				c.Hops[i] = &data
+				break
+			}
+		}
+		return nil
+	})
+
+	_ = ctx.Respond(&telebot.CallbackResponse{Text: fmt.Sprintf("%s 更新成功!", data.Name)})
 	_ = Event.OnClickHops(ctx)
 
 	return handlers.EndConversation()

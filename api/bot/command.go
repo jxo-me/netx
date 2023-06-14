@@ -35,6 +35,7 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 		if err != nil {
 			return c.Reply("OnParsingCommand ConvertJsonMsg err:", err.Error())
 		}
+		fmt.Println("OnParsingCommand msg:", msg)
 		msg = fmt.Sprintf(CodeTpl, CodeStart, msg, CodeEnd)
 	}
 
