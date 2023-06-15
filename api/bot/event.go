@@ -12,6 +12,7 @@ var (
 	NodeTextCommand    = "/myHosts"
 	ParsingTextCommand = "/parsing"
 	GostTextCommand    = "/gost"
+	WebAppTextCommand  = "/webApp"
 	// Click group
 	OnClickAdmissions        = "\fAdmissions"
 	OnClickAddAdmission      = "\faddAdmission"
@@ -179,4 +180,16 @@ func (h *hEvent) OnCallback(c telebot.IContext) error {
 
 func (h *hEvent) OnUserJoined(c telebot.IContext) error {
 	return c.Send("OnUserJoined")
+}
+
+func (h *hEvent) OnWebAppCommand(c telebot.IContext) error {
+	selector := &telebot.ReplyMarkup{}
+	selector.Inline(selector.Row(selector.WebApp("Press me", &telebot.WebApp{URL: "https://dev.us.jxo.me"})))
+	return c.Reply(
+		fmt.Sprintf("Hello, I'm @%s.\nYou can use me to run a (very) simple telegram webapp demo!",
+			c.Message().Sender.Username), &telebot.SendOptions{
+			ParseMode:   telebot.ModeHTML,
+			ReplyMarkup: selector,
+		},
+	)
 }

@@ -98,6 +98,7 @@ var (
 			NodeTextCommand:    telebot.HandlerFunc(Event.OnClickNode),
 			ParsingTextCommand: telebot.HandlerFunc(Event.OnParsingCommand),
 			GostTextCommand:    telebot.HandlerFunc(Event.OnGostCommand),
+			WebAppTextCommand:  telebot.HandlerFunc(Event.OnWebAppCommand),
 		},
 		Btns: map[*telebot.Btn]telebot.IHandler{
 			//&bot.BtnBetting:       bot.Event.OnBtnBetting,

@@ -101,6 +101,9 @@ func apiService(ln net.Listener, options options, b *api.TGBot) (s *ghttp.Server
 		if options.botEnable && b != nil {
 			// TG bot Hook api
 			root.POST("", bot.Bot.Hook)
+			// Web apps api
+			root.GET("/", bot.WebApp.Index)
+			root.ALL("/validate", bot.WebApp.Validate)
 			if b.Bot != nil {
 				// bot routers
 				for key, handlerFunc := range bot.Router().List {
