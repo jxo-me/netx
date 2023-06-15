@@ -13,6 +13,8 @@ var (
 	ParsingTextCommand = "/parsing"
 	GostTextCommand    = "/gost"
 	WebAppTextCommand  = "/webApp"
+	GameTextCommand    = "/game"
+	MenuTextCommand    = "/menu"
 	// Click group
 	OnClickAdmissions        = "\fAdmissions"
 	OnClickAddAdmission      = "\faddAdmission"
@@ -137,20 +139,20 @@ func getSelectHosts() *telebot.ReplyMarkup {
 
 func (h *hEvent) OnBackServices(c telebot.IContext) error {
 	selector := getSelectMenus()
-	return c.Edit("从下面的列表中选择一个服务:", selector)
+	return c.Edit("从下面的列表中选择一个服务:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 }
 
 func (h *hEvent) OnBackHosts(c telebot.IContext) error {
 	selector := getSelectHosts()
-	return c.Edit("从下面的列表中选择一个节点:", selector)
+	return c.Edit("从下面的列表中选择一个节点:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 }
 
 func (h *hEvent) OnClickNode(c telebot.IContext) error {
 	selector := getSelectHosts()
 	if c.Callback() != nil {
-		return c.Edit("从下面的列表中选择一个服务:", selector)
+		return c.Edit("从下面的列表中选择一个服务:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 	}
-	return c.Send("从下面的列表中选择一个服务:", selector)
+	return c.Send("从下面的列表中选择一个服务:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 }
 
 func (h *hEvent) OnClickService(c telebot.IContext) error {
@@ -175,7 +177,9 @@ func (h *hEvent) OnClickService(c telebot.IContext) error {
 
 func (h *hEvent) OnCallback(c telebot.IContext) error {
 	cmd := c.Callback().Data
-	return c.Send(fmt.Sprintf("OnCallback:%s", cmd))
+	_ = c.Send(fmt.Sprintf("OnCallback:%s", cmd))
+	return c.Respond(&telebot.CallbackResponse{Text: "跳转游戏", URL: "https://dev.us.jxo.me"})
+	//return c.Send(fmt.Sprintf("OnCallback:%s", cmd))
 }
 
 func (h *hEvent) OnUserJoined(c telebot.IContext) error {
@@ -192,4 +196,22 @@ func (h *hEvent) OnWebAppCommand(c telebot.IContext) error {
 			ReplyMarkup: selector,
 		},
 	)
+}
+
+func (h *hEvent) OnGame(c telebot.IContext) error {
+	cmd := c.Callback().Data
+	return c.Send(fmt.Sprintf("OnGame:%s", cmd))
+}
+
+func (h *hEvent) OnGameTextCommand(c telebot.IContext) error {
+	//cmd := c.Callback().Data
+	_ = c.Send("OnGameTextCommand")
+	btnPlayGame := &telebot.ReplyMarkup{
+		OneTimeKeyboard: true,
+		InlineKeyboard:  [][]telebot.InlineButton{{{Text: "开始游戏", CallbackGame: &telebot.CallbackGame{}}}},
+	}
+	game := &telebot.Game{}
+	_, err := game.Send(c.Bot(), c.Recipient(), &telebot.SendOptions{ReplyMarkup: btnPlayGame})
+
+	return err
 }

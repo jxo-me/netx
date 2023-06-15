@@ -92,6 +92,7 @@ var (
 			telebot.OnText:       telebot.HandlerFunc(Event.OnText),
 			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
 			telebot.OnUserJoined: telebot.HandlerFunc(Event.OnUserJoined),
+			telebot.OnGame:       telebot.HandlerFunc(Event.OnGame),
 
 			// TextCommand
 			StartTextCommand:   telebot.HandlerFunc(Event.OnStartCommand),
@@ -99,6 +100,9 @@ var (
 			ParsingTextCommand: telebot.HandlerFunc(Event.OnParsingCommand),
 			GostTextCommand:    telebot.HandlerFunc(Event.OnGostCommand),
 			WebAppTextCommand:  telebot.HandlerFunc(Event.OnWebAppCommand),
+			GameTextCommand:    telebot.HandlerFunc(Event.OnGameTextCommand),
+			// menu Conversation
+			MenuTextCommand: SetMenuConversation(MenuTextCommand, "/cancel"),
 		},
 		Btns: map[*telebot.Btn]telebot.IHandler{
 			//&bot.BtnBetting:       bot.Event.OnBtnBetting,
