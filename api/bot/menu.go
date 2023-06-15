@@ -47,7 +47,7 @@ func setMenuHandler(ctx telebot.IContext) error {
 }
 
 func cancelSetMenuHandler(ctx telebot.IContext) error {
-	err := ctx.Reply("当前 /menu 操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
+	err := ctx.Reply("当前 /menu 操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{ReplyMarkup: &telebot.ReplyMarkup{RemoveKeyboard: true}})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
 	}
