@@ -42,8 +42,7 @@ func setMenuHandler(ctx telebot.IContext) error {
 	str := ctx.Message().Text
 	fmt.Println("set Menu status str:", str)
 	msg := `Success! The new status is: ENABLED. /help`
-	//_ = ctx.Send(msg, &telebot.SendOptions{ReplyMarkup: &telebot.ReplyMarkup{RemoveKeyboard: true}}) // 移除自定义键盘
-	_ = ctx.Send(msg)
+	_ = ctx.Send(msg, &telebot.SendOptions{ReplyMarkup: &telebot.ReplyMarkup{RemoveKeyboard: true}}) // 移除自定义键盘
 	return handlers.EndConversation()
 }
 
