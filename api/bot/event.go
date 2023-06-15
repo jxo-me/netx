@@ -14,6 +14,7 @@ var (
 	GostTextCommand    = "/gost"
 	WebAppTextCommand  = "/webApp"
 	GameTextCommand    = "/game"
+	ContactTextCommand = "/contact"
 	MenuTextCommand    = "/menu"
 	// Click group
 	OnClickAdmissions        = "\fAdmissions"
@@ -210,8 +211,16 @@ func (h *hEvent) OnGameTextCommand(c telebot.IContext) error {
 		OneTimeKeyboard: true,
 		InlineKeyboard:  [][]telebot.InlineButton{{{Text: "开始游戏", CallbackGame: &telebot.CallbackGame{}}}},
 	}
-	game := &telebot.Game{}
-	_, err := game.Send(c.Bot(), c.Recipient(), &telebot.SendOptions{ReplyMarkup: btnPlayGame})
+	game := &telebot.Game{Name: "HGsport"}
 
-	return err
+	return c.Send(game, &telebot.SendOptions{ReplyMarkup: btnPlayGame})
+}
+
+func (h *hEvent) OnContactTextCommand(c telebot.IContext) error {
+	//phone := c.Message().Text
+	_ = c.Send("OnContactTextCommand")
+
+	contact := &telebot.Contact{PhoneNumber: "+19106353888", FirstName: "Mickey"}
+
+	return c.Send(contact, &telebot.SendOptions{})
 }

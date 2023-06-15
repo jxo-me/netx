@@ -101,6 +101,7 @@ var (
 			GostTextCommand:    telebot.HandlerFunc(Event.OnGostCommand),
 			WebAppTextCommand:  telebot.HandlerFunc(Event.OnWebAppCommand),
 			GameTextCommand:    telebot.HandlerFunc(Event.OnGameTextCommand),
+			ContactTextCommand: telebot.HandlerFunc(Event.OnContactTextCommand),
 			// menu Conversation
 			MenuTextCommand: SetMenuConversation(MenuTextCommand, "/cancel"),
 		},
