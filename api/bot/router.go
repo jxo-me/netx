@@ -89,10 +89,11 @@ var (
 			OnBackServices: telebot.HandlerFunc(Event.OnBackServices),
 			OnBackHosts:    telebot.HandlerFunc(Event.OnClickNode),
 
-			telebot.OnText:       telebot.HandlerFunc(Event.OnText),
-			telebot.OnCallback:   telebot.HandlerFunc(Event.OnCallback),
-			telebot.OnUserJoined: telebot.HandlerFunc(Event.OnUserJoined),
-			telebot.OnGame:       telebot.HandlerFunc(Event.OnGame),
+			telebot.OnText:         telebot.HandlerFunc(Event.OnText),
+			telebot.OnCallback:     telebot.HandlerFunc(Event.OnCallback),
+			telebot.OnUserJoined:   telebot.HandlerFunc(Event.OnUserJoined),
+			telebot.OnCallbackGame: telebot.HandlerFunc(Event.OnCallbackGame),
+			telebot.OnMyChatMember: telebot.HandlerFunc(Event.OnMyChatMember),
 
 			// TextCommand
 			StartTextCommand:   telebot.HandlerFunc(Event.OnStartCommand),
@@ -102,6 +103,7 @@ var (
 			WebAppTextCommand:  telebot.HandlerFunc(Event.OnWebAppCommand),
 			GameTextCommand:    telebot.HandlerFunc(Event.OnGameTextCommand),
 			ContactTextCommand: telebot.HandlerFunc(Event.OnContactTextCommand),
+			VenueTextCommand:   telebot.HandlerFunc(Event.OnVenueTextCommand),
 			// menu Conversation
 			MenuTextCommand: SetMenuConversation(MenuTextCommand, "/cancel"),
 		},

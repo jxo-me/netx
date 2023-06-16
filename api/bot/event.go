@@ -15,6 +15,7 @@ var (
 	WebAppTextCommand  = "/webApp"
 	GameTextCommand    = "/game"
 	ContactTextCommand = "/contact"
+	VenueTextCommand   = "/venue"
 	MenuTextCommand    = "/menu"
 	// Click group
 	OnClickAdmissions        = "\fAdmissions"
@@ -91,6 +92,12 @@ type (
 )
 
 func (h *hEvent) OnText(c telebot.IContext) error {
+	btn := &telebot.MenuButton{
+		Type:   telebot.MenuButtonWebApp,
+		Text:   "WebApp",
+		WebApp: &telebot.WebApp{URL: "https://dev.us.jxo.me"},
+	}
+	_ = c.Bot().SetMenuButton(c.Sender(), btn)
 	return c.Send("OnText")
 }
 
@@ -178,9 +185,7 @@ func (h *hEvent) OnClickService(c telebot.IContext) error {
 
 func (h *hEvent) OnCallback(c telebot.IContext) error {
 	cmd := c.Callback().Data
-	_ = c.Send(fmt.Sprintf("OnCallback:%s", cmd))
-	return c.Respond(&telebot.CallbackResponse{Text: "跳转游戏", URL: "https://dev.us.jxo.me"})
-	//return c.Send(fmt.Sprintf("OnCallback:%s", cmd))
+	return c.Send(fmt.Sprintf("OnCallback:%s", cmd))
 }
 
 func (h *hEvent) OnUserJoined(c telebot.IContext) error {
@@ -193,15 +198,15 @@ func (h *hEvent) OnWebAppCommand(c telebot.IContext) error {
 	return c.Reply(
 		fmt.Sprintf("Hello, I'm @%s.\nYou can use me to run a (very) simple telegram webapp demo!",
 			c.Message().Sender.Username), &telebot.SendOptions{
-			ParseMode:   telebot.ModeHTML,
 			ReplyMarkup: selector,
 		},
 	)
 }
 
-func (h *hEvent) OnGame(c telebot.IContext) error {
-	cmd := c.Callback().Data
-	return c.Send(fmt.Sprintf("OnGame:%s", cmd))
+func (h *hEvent) OnCallbackGame(c telebot.IContext) error {
+	name := c.Callback().GameShortName
+	fmt.Println("Click Callback Game game name:", name)
+	return c.Respond(&telebot.CallbackResponse{Text: "跳转游戏", URL: "https://dev.us.jxo.me"})
 }
 
 func (h *hEvent) OnGameTextCommand(c telebot.IContext) error {
@@ -223,4 +228,34 @@ func (h *hEvent) OnContactTextCommand(c telebot.IContext) error {
 	contact := &telebot.Contact{PhoneNumber: "+19106353888", FirstName: "Mickey"}
 
 	return c.Send(contact, &telebot.SendOptions{})
+}
+
+func (h *hEvent) OnVenueTextCommand(c telebot.IContext) error {
+	//phone := c.Message().Text
+	_ = c.Send("OnVenueTextCommand")
+
+	venue := &telebot.Venue{
+		Location: telebot.Location{Lat: 1.3109116, Lng: 103.7536497},
+		Title:    "Fischerbell",
+		Address:  "79 Pandan Loop, Singapore 128282",
+	}
+	return c.Send(venue, &telebot.SendOptions{})
+}
+
+func (h *hEvent) OnMyChatMember(c telebot.IContext) error {
+	// 邀请bot加入channel
+	chatMember := c.ChatMember()
+	oldRole := chatMember.OldChatMember.Role
+	newRole := chatMember.NewChatMember.Role
+	if oldRole == "left" && newRole == "administrator" {
+		fmt.Println("加入Channel", chatMember.Chat.Title)
+	} else if oldRole == "administrator" && newRole == "left" {
+		fmt.Println("移除Channel", chatMember.Chat.Title)
+	}
+	if newRole == telebot.Administrator {
+		return c.Send(fmt.Sprintf("邀请bot 加入Channel:%s", chatMember.Chat.Title))
+	}
+	return nil
+	//fmt.Println("邀请bot 加入Channel:", chatMember.Chat.Title)
+	//return c.Send(fmt.Sprintf("邀请bot 加入Channel:%s", chatMember.Chat.Title))
 }

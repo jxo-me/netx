@@ -46,7 +46,7 @@ func NewBot(ctx context.Context, domain, token, pathPrefix string) (*api.TGBot, 
 		return nil, err
 	}
 	// Global-scoped middleware:
-	b.Use(middleware.Logger(ctx, logger))
+	//b.Use(middleware.Logger(ctx, logger))
 	b.Use(middleware.AutoRespond())
 
 	return &api.TGBot{
