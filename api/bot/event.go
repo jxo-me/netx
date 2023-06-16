@@ -213,8 +213,7 @@ func (h *hEvent) OnGameTextCommand(c telebot.IContext) error {
 	//cmd := c.Callback().Data
 	_ = c.Send("OnGameTextCommand")
 	btnPlayGame := &telebot.ReplyMarkup{
-		OneTimeKeyboard: true,
-		InlineKeyboard:  [][]telebot.InlineButton{{{Text: "开始游戏", CallbackGame: &telebot.CallbackGame{}}}},
+		InlineKeyboard: [][]telebot.InlineButton{{{Text: "开始游戏", CallbackGame: &telebot.CallbackGame{}}}},
 	}
 	game := &telebot.Game{Name: "HGsport"}
 
