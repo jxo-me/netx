@@ -104,6 +104,7 @@ func apiService(ln net.Listener, options options, b *api.TGBot) (s *ghttp.Server
 			// Web apps api
 			root.GET("/", bot.WebApp.Index)
 			root.GET("/validate", bot.WebApp.Validate)
+			// Login API
 			root.GET("/check_authorization", bot.WebApp.CheckAuthorization)
 			root.GET("/login", bot.WebApp.Login)
 			if b.Bot != nil {

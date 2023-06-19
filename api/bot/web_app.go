@@ -65,6 +65,8 @@ func (h *hWebApp) CheckAuthorization(r *ghttp.Request) {
 	}
 	if ok {
 		saveTelegramUserData(r)
+	} else {
+		r.Response.WriteExit("签名验证失败")
 	}
 	// 重定向
 	r.Response.RedirectTo("/login", http.StatusFound)
@@ -95,7 +97,7 @@ func saveTelegramUserData(r *ghttp.Request) {
 	if err != nil {
 		return
 	}
-
+	// As a passionate coding enthusiast, I, Mickey Ting, excel in Golang, Python and Rust. I eagerly participate in competitions and aspire to make an impact in the tech world.
 	fmt.Println("saveTelegramUserData result:", string(bytes))
 	r.Cookie.Set("tg_user", base64.StdEncoding.EncodeToString(bytes))
 }
