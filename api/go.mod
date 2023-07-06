@@ -14,10 +14,10 @@ replace (
 )
 
 require (
-	github.com/gogf/gf/v2 v2.4.2
+	github.com/gogf/gf/v2 v2.4.4
 	github.com/jxo-me/gfbot v0.1.14
 	github.com/jxo-me/netx/core v0.0.0-20230531025546-78c9020abc9b
-	github.com/jxo-me/netx/x v0.0.0-20230531025546-78c9020abc9b
+	github.com/jxo-me/netx/x v0.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -53,7 +53,6 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sirupsen/logrus v1.9.2 // indirect
 	github.com/spf13/afero v1.9.3 // indirect

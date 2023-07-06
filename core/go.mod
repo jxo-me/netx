@@ -2,13 +2,13 @@ module github.com/jxo-me/netx/core
 
 go 1.20
 
-require (
-	github.com/gogf/gf/v2 v2.4.2
-	github.com/jxo-me/gfbot v0.1.14
-	golang.org/x/sys v0.8.0
-)
-
 replace github.com/jxo-me/gfbot => ../../gfbot
+
+require (
+	github.com/gogf/gf/v2 v2.4.4
+	github.com/jxo-me/gfbot v0.0.0-00010101000000-000000000000
+	golang.org/x/sys v0.10.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
