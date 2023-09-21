@@ -39,7 +39,7 @@ func mwBasicAuth(auther auth.IAuthenticator) ghttp.HandlerFunc {
 			return
 		}
 		u, p, _ := r.Request.BasicAuth()
-		if !auther.Authenticate(r.GetCtx(), u, p) {
+		if _, ok := auther.Authenticate(r.GetCtx(), u, p); !ok {
 			JsonExit(r, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 		}
 		r.Middleware.Next()

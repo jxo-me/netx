@@ -19,11 +19,11 @@ import (
 type grpcPluginRecorder struct {
 	conn   grpc.ClientConnInterface
 	client proto.RecorderClient
-	log    logger.Logger
+	log    logger.ILogger
 }
 
 // NewGRPCPluginRecorder creates a Recorder plugin based on gRPC.
-func NewGRPCPluginRecorder(name string, addr string, opts ...plugin.Option) recorder.Recorder {
+func NewGRPCPluginRecorder(name string, addr string, opts ...plugin.Option) recorder.IRecorder {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
@@ -83,11 +83,11 @@ type httpPluginRecorder struct {
 	url    string
 	client *http.Client
 	header http.Header
-	log    logger.Logger
+	log    logger.ILogger
 }
 
 // NewHTTPPluginRecorder creates an Recorder plugin based on HTTP.
-func NewHTTPPluginRecorder(name string, url string, opts ...plugin.Option) recorder.Recorder {
+func NewHTTPPluginRecorder(name string, url string, opts ...plugin.Option) recorder.IRecorder {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
@@ -98,7 +98,7 @@ func NewHTTPPluginRecorder(name string, url string, opts ...plugin.Option) recor
 		client: plugin.NewHTTPClient(&options),
 		header: options.Header,
 		log: logger.Default().WithFields(map[string]any{
-			"kind":    "recorder",
+			"kind":     "recorder",
 			"recorder": name,
 		}),
 	}
