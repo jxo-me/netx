@@ -14,7 +14,7 @@ type Selector interface {
 	// select method
 	Select(methods ...uint8) (method uint8)
 	// on method selected
-	OnSelected(method uint8, conn net.Conn) (net.Conn, error)
+	OnSelected(method uint8, conn net.Conn) (string, net.Conn, error)
 }
 
 type Conn struct {
@@ -22,6 +22,7 @@ type Conn struct {
 	selector       Selector
 	method         uint8
 	isClient       bool
+	clientID       string
 	handshaked     bool
 	handshakeMutex sync.Mutex
 	handshakeErr   error
@@ -92,7 +93,7 @@ func (conn *Conn) clientHandshake() error {
 	}
 
 	if conn.selector != nil {
-		c, err := conn.selector.OnSelected(b[1], conn.c)
+		_, c, err := conn.selector.OnSelected(b[1], conn.c)
 		if err != nil {
 			return err
 		}
@@ -120,16 +121,24 @@ func (conn *Conn) serverHandshake() error {
 	}
 
 	if conn.selector != nil {
-		c, err := conn.selector.OnSelected(method, conn.c)
+		id, c, err := conn.selector.OnSelected(method, conn.c)
 		if err != nil {
 			return err
 		}
 		conn.c = c
+		conn.clientID = id
 	}
 	conn.method = method
 	//log.Println("method:", method)
 	conn.handshaked = true
 	return nil
+}
+
+func (conn *Conn) ID() string {
+	conn.handshakeMutex.Lock()
+	defer conn.handshakeMutex.Unlock()
+
+	return conn.clientID
 }
 
 func (conn *Conn) Read(b []byte) (n int, err error) {

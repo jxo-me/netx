@@ -35,7 +35,7 @@ func mwBasicAuth(auther auth.IAuthenticator) gin.HandlerFunc {
 			return
 		}
 		u, p, _ := c.Request.BasicAuth()
-		if !auther.Authenticate(c, u, p) {
+		if _, ok := auther.Authenticate(c, u, p); !ok {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 	}

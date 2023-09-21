@@ -1,40 +1,56 @@
 package resolver
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net"
+	"net/http"
 
-	resolver_pkg "github.com/jxo-me/netx/core/resolver"
+	"github.com/jxo-me/netx/core/logger"
+	resolverpkg "github.com/jxo-me/netx/core/resolver"
 	"github.com/jxo-me/netx/plugin/resolver/proto"
-	xlogger "github.com/jxo-me/netx/x/logger"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
+	"github.com/jxo-me/netx/x/internal/util/plugin"
+	"google.golang.org/grpc"
 )
 
-type pluginResolver struct {
-	client  proto.ResolverClient
-	options options
+type grpcPluginResolver struct {
+	conn   grpc.ClientConnInterface
+	client proto.ResolverClient
+	log    logger.ILogger
 }
 
-// NewPluginResolver creates a plugin IResolver.
-func NewPluginResolver(opts ...Option) (resolver_pkg.IResolver, error) {
-	var options options
+// NewGRPCPluginResolver creates a Resolver plugin based on gRPC.
+func NewGRPCPluginResolver(name string, addr string, opts ...plugin.Option) (resolverpkg.IResolver, error) {
+	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
 	}
-	if options.logger == nil {
-		options.logger = xlogger.Nop()
-	}
 
-	p := &pluginResolver{
-		options: options,
+	log := logger.Default().WithFields(map[string]any{
+		"kind":      "resolver",
+		"resolover": name,
+	})
+	conn, err := plugin.NewGRPCConn(addr, &options)
+	if err != nil {
+		log.Error(err)
 	}
-	if options.client != nil {
-		p.client = proto.NewResolverClient(options.client)
+	p := &grpcPluginResolver{
+		conn: conn,
+		log:  log,
+	}
+	if conn != nil {
+		p.client = proto.NewResolverClient(conn)
 	}
 	return p, nil
 }
 
-func (p *pluginResolver) Resolve(ctx context.Context, network, host string) (ips []net.IP, err error) {
-	p.options.logger.Debugf("resolve %s/%s", host, network)
+func (p *grpcPluginResolver) Resolve(ctx context.Context, network, host string) (ips []net.IP, err error) {
+	p.log.Debugf("resolve %s/%s", host, network)
 
 	if p.client == nil {
 		return
@@ -44,9 +60,10 @@ func (p *pluginResolver) Resolve(ctx context.Context, network, host string) (ips
 		&proto.ResolveRequest{
 			Network: network,
 			Host:    host,
+			Client:  string(auth_util.IDFromContext(ctx)),
 		})
 	if err != nil {
-		p.options.logger.Error(err)
+		p.log.Error(err)
 		return
 	}
 	for _, s := range r.Ips {
@@ -57,9 +74,99 @@ func (p *pluginResolver) Resolve(ctx context.Context, network, host string) (ips
 	return
 }
 
-func (p *pluginResolver) Close() error {
-	if p.options.client != nil {
-		return p.options.client.Close()
+func (p *grpcPluginResolver) Close() error {
+	if closer, ok := p.conn.(io.Closer); ok {
+		return closer.Close()
 	}
 	return nil
+}
+
+type httpResolverRequest struct {
+	Network string `json:"network"`
+	Host    string `json:"host"`
+	Client  string `json:"client"`
+}
+
+type httpResolverResponse struct {
+	IPs []string `json:"ips"`
+	OK  bool     `json:"ok"`
+}
+
+type httpPluginResolver struct {
+	url    string
+	client *http.Client
+	header http.Header
+	log    logger.ILogger
+}
+
+// NewHTTPPluginResolver creates an Resolver plugin based on HTTP.
+func NewHTTPPluginResolver(name string, url string, opts ...plugin.Option) resolverpkg.IResolver {
+	var options plugin.Options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &httpPluginResolver{
+		url:    url,
+		client: plugin.NewHTTPClient(&options),
+		header: options.Header,
+		log: logger.Default().WithFields(map[string]any{
+			"kind":     "resolver",
+			"resolver": name,
+		}),
+	}
+}
+
+func (p *httpPluginResolver) Resolve(ctx context.Context, network, host string) (ips []net.IP, err error) {
+	p.log.Debugf("resolve %s/%s", host, network)
+
+	if p.client == nil {
+		return
+	}
+
+	rb := httpResolverRequest{
+		Network: network,
+		Host:    host,
+		Client:  string(auth_util.IDFromContext(ctx)),
+	}
+	v, err := json.Marshal(&rb)
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, p.url, bytes.NewReader(v))
+	if err != nil {
+		return
+	}
+
+	if p.header != nil {
+		req.Header = p.header.Clone()
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("%s", resp.Status)
+		return
+	}
+
+	res := httpResolverResponse{}
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return
+	}
+
+	if !res.OK {
+		return nil, errors.New("resolve failed")
+	}
+
+	for _, s := range res.IPs {
+		if ip := net.ParseIP(s); ip != nil {
+			ips = append(ips, ip)
+		}
+	}
+	return ips, nil
 }

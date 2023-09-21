@@ -22,6 +22,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
 )
 
@@ -140,6 +141,12 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		resp.Header = http.Header{}
 	}
 
+	id, ok := h.authenticate(ctx, conn, req, resp, log)
+	if !ok {
+		return nil
+	}
+	ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
+
 	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr) {
 		resp.StatusCode = http.StatusForbidden
 
@@ -150,10 +157,6 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		log.Debug("bypass: ", addr)
 
 		return resp.Write(conn)
-	}
-
-	if !h.authenticate(ctx, conn, req, resp, log) {
-		return nil
 	}
 
 	if network == "udp" {
@@ -261,10 +264,13 @@ func (h *httpHandler) basicProxyAuth(proxyAuth string, log logger.ILogger) (user
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *httpHandler) authenticate(ctx context.Context, conn net.Conn, req *http.Request, resp *http.Response, log logger.ILogger) (ok bool) {
+func (h *httpHandler) authenticate(ctx context.Context, conn net.Conn, req *http.Request, resp *http.Response, log logger.ILogger) (id string, ok bool) {
 	u, p, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization"), log)
-	if h.options.Auther == nil || h.options.Auther.Authenticate(ctx, u, p) {
-		return true
+	if h.options.Auther == nil {
+		return "", true
+	}
+	if id, ok = h.options.Auther.Authenticate(ctx, u, p); ok {
+		return
 	}
 
 	pr := h.md.probeResistance

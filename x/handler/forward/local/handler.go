@@ -18,6 +18,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	"github.com/jxo-me/netx/x/internal/util/forward"
 )
 
@@ -201,12 +202,14 @@ func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log l
 
 			if auther := target.Options().Auther; auther != nil {
 				username, password, _ := req.BasicAuth()
-				if !auther.Authenticate(ctx, username, password) {
+				id, ok := auther.Authenticate(ctx, username, password)
+				if !ok {
 					resp.StatusCode = http.StatusUnauthorized
 					resp.Header.Set("WWW-Authenticate", "Basic")
 					log.Warnf("node %s(%s) 401 unauthorized", target.Name, target.Addr)
 					return resp.Write(rw)
 				}
+				ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
 			}
 
 			var cc net.Conn

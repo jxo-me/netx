@@ -18,11 +18,13 @@ import (
 	dialerObfsTls "github.com/jxo-me/netx/x/dialer/obfs/tls"
 	"github.com/jxo-me/netx/x/dialer/pht"
 	dialerQuic "github.com/jxo-me/netx/x/dialer/quic"
+	dialerSerial "github.com/jxo-me/netx/x/dialer/serial"
 	"github.com/jxo-me/netx/x/dialer/ssh"
 	dialerSshd "github.com/jxo-me/netx/x/dialer/sshd"
 	dialerTcp "github.com/jxo-me/netx/x/dialer/tcp"
 	dialerTls "github.com/jxo-me/netx/x/dialer/tls"
 	dialerUdp "github.com/jxo-me/netx/x/dialer/udp"
+	dialerUnix "github.com/jxo-me/netx/x/dialer/unix"
 	"github.com/jxo-me/netx/x/dialer/ws"
 )
 
@@ -47,11 +49,13 @@ var Dialers = map[string]dialer.NewDialer{
 	consts.Pht:     pht.NewDialer,
 	consts.Phts:    pht.NewTLSDialer,
 	consts.Quic:    dialerQuic.NewDialer,
+	consts.Serial:  dialerSerial.NewDialer,
 	consts.Ssh:     ssh.NewDialer,
 	consts.Sshd:    dialerSshd.NewDialer,
 	consts.Tcp:     dialerTcp.NewDialer,
 	consts.Tls:     dialerTls.NewDialer,
 	consts.Udp:     dialerUdp.NewDialer,
+	consts.Unix:    dialerUnix.NewDialer,
 	consts.Ws:      ws.NewDialer,
 	consts.Wss:     ws.NewTLSDialer,
 }

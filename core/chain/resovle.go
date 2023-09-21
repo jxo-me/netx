@@ -15,10 +15,7 @@ func Resolve(ctx context.Context, network, addr string, r resolver.IResolver, ho
 		return addr, nil
 	}
 
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return "", err
-	}
+	host, port, _ := net.SplitHostPort(addr)
 	if host == "" {
 		return addr, nil
 	}

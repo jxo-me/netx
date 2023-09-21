@@ -66,9 +66,11 @@ type TLSConfig struct {
 }
 
 type PluginConfig struct {
-	Addr  string     `json:"addr"`
-	TLS   *TLSConfig `yaml:",omitempty" json:"tls,omitempty"`
-	Token string     `yaml:",omitempty" json:"token,omitempty"`
+	Type    string        `json:"type"`
+	Addr    string        `json:"addr"`
+	TLS     *TLSConfig    `yaml:",omitempty" json:"tls,omitempty"`
+	Timeout time.Duration `yaml:",omitempty" json:"timeout,omitempty"`
+	Token   string        `yaml:",omitempty" json:"token,omitempty"`
 }
 
 type AutherConfig struct {
@@ -185,6 +187,8 @@ type IngressConfig struct {
 type RecorderConfig struct {
 	Name   string         `json:"name"`
 	File   *FileRecorder  `yaml:",omitempty" json:"file,omitempty"`
+	TCP    *TCPRecorder   `yaml:"tcp,omitempty" json:"tcp,omitempty"`
+	HTTP   *HTTPRecorder  `yaml:"http,omitempty" json:"http,omitempty"`
 	Redis  *RedisRecorder `yaml:",omitempty" json:"redis,omitempty"`
 	Plugin *PluginConfig  `yaml:",omitempty" json:"plugin,omitempty"`
 }
@@ -192,6 +196,16 @@ type RecorderConfig struct {
 type FileRecorder struct {
 	Path string `json:"path"`
 	Sep  string `yaml:",omitempty" json:"sep,omitempty"`
+}
+
+type TCPRecorder struct {
+	Addr    string        `json:"addr"`
+	Timeout time.Duration `json:"timeout"`
+}
+
+type HTTPRecorder struct {
+	URL     string        `json:"url" yaml:"url"`
+	Timeout time.Duration `json:"timeout"`
 }
 
 type RedisRecorder struct {
@@ -203,8 +217,9 @@ type RedisRecorder struct {
 }
 
 type RecorderObject struct {
-	Name   string `json:"name"`
-	Record string `json:"record"`
+	Name     string `json:"name"`
+	Record   string `json:"record"`
+	Metadata map[string]any
 }
 
 type LimiterConfig struct {

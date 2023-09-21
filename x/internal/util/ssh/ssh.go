@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/jxo-me/netx/core/auth"
 	"golang.org/x/crypto/ssh"
@@ -27,7 +27,7 @@ func PasswordCallback(au auth.IAuthenticator) PasswordCallbackFunc {
 		return nil
 	}
 	return func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
-		if au.Authenticate(context.Background(), conn.User(), string(password)) {
+		if _, ok := au.Authenticate(context.Background(), conn.User(), string(password)); ok {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("password rejected for %s", conn.User())
@@ -58,7 +58,7 @@ func PublicKeyCallback(keys map[string]bool) PublicKeyCallbackFunc {
 
 // ParseSSHAuthorizedKeysFile parses ssh authorized keys file.
 func ParseAuthorizedKeysFile(name string) (map[string]bool, error) {
-	authorizedKeysBytes, err := ioutil.ReadFile(name)
+	authorizedKeysBytes, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}

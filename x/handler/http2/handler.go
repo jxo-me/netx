@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -25,6 +24,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	sx "github.com/jxo-me/netx/x/internal/util/selector"
 )
 
@@ -134,20 +134,22 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		w.Header().Set(k, h.md.header.Get(k))
 	}
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr) {
-		w.WriteHeader(http.StatusForbidden)
-		log.Debug("bypass: ", addr)
-		return nil
-	}
-
 	resp := &http.Response{
 		ProtoMajor: 2,
 		ProtoMinor: 0,
 		Header:     http.Header{},
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+		Body:       io.NopCloser(bytes.NewReader([]byte{})),
 	}
 
-	if !h.authenticate(ctx, w, req, resp, log) {
+	id, ok := h.authenticate(ctx, w, req, resp, log)
+	if !ok {
+		return nil
+	}
+	ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
+
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr) {
+		w.WriteHeader(http.StatusForbidden)
+		log.Debug("bypass: ", addr)
 		return nil
 	}
 
@@ -247,10 +249,13 @@ func (h *http2Handler) basicProxyAuth(proxyAuth string) (username, password stri
 	return cs[:s], cs[s+1:], true
 }
 
-func (h *http2Handler) authenticate(ctx context.Context, w http.ResponseWriter, r *http.Request, resp *http.Response, log logger.ILogger) (ok bool) {
+func (h *http2Handler) authenticate(ctx context.Context, w http.ResponseWriter, r *http.Request, resp *http.Response, log logger.ILogger) (id string, ok bool) {
 	u, p, _ := h.basicProxyAuth(r.Header.Get("Proxy-Authorization"))
-	if h.options.Auther == nil || h.options.Auther.Authenticate(ctx, u, p) {
-		return true
+	if h.options.Auther == nil {
+		return "", true
+	}
+	if id, ok = h.options.Auther.Authenticate(ctx, u, p); ok {
+		return
 	}
 
 	pr := h.md.probeResistance

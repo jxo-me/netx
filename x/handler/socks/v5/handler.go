@@ -10,6 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks5"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
@@ -80,13 +81,17 @@ func (h *socks5Handler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 		conn.SetReadDeadline(time.Now().Add(h.md.readTimeout))
 	}
 
-	conn = gosocks5.ServerConn(conn, h.selector)
-	req, err := gosocks5.ReadRequest(conn)
+	sc := gosocks5.ServerConn(conn, h.selector)
+	req, err := gosocks5.ReadRequest(sc)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 	log.Trace(req)
+
+	ctx = auth_util.ContextWithID(ctx, auth_util.ID(sc.ID()))
+
+	conn = sc
 	conn.SetReadDeadline(time.Time{})
 
 	address := req.Addr.String()

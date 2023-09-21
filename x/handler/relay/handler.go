@@ -15,6 +15,7 @@ import (
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -168,6 +169,7 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 
 	var user, pass string
 	var address string
+	var networkID relay.NetworkID
 	var tunnelID relay.TunnelID
 	for _, f := range req.Features {
 		switch f.Type() {
@@ -183,6 +185,10 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 			if feature, _ := f.(*relay.TunnelFeature); feature != nil {
 				tunnelID = relay.NewTunnelID(feature.ID[:])
 			}
+		case relay.FeatureNetwork:
+			if feature, _ := f.(*relay.NetworkFeature); feature != nil {
+				networkID = feature.Network
+			}
 		}
 	}
 
@@ -190,14 +196,17 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 		log = log.WithFields(map[string]any{"user": user})
 	}
 
-	if h.options.Auther != nil &&
-		!h.options.Auther.Authenticate(ctx, user, pass) {
-		resp.Status = relay.StatusUnauthorized
-		resp.WriteTo(conn)
-		return ErrUnauthorized
+	if h.options.Auther != nil {
+		id, ok := h.options.Auther.Authenticate(ctx, user, pass)
+		if !ok {
+			resp.Status = relay.StatusUnauthorized
+			resp.WriteTo(conn)
+			return ErrUnauthorized
+		}
+		ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
 	}
 
-	network := "tcp"
+	network := networkID.String()
 	if (req.Cmd & relay.FUDP) == relay.FUDP {
 		network = "udp"
 	}

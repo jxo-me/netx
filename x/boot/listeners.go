@@ -23,6 +23,7 @@ import (
 	listenerRedirectUdp "github.com/jxo-me/netx/x/listener/redirect/udp"
 	listenerRtcp "github.com/jxo-me/netx/x/listener/rtcp"
 	listenerRudp "github.com/jxo-me/netx/x/listener/rudp"
+	listenerSerial "github.com/jxo-me/netx/x/listener/serial"
 	listenerSsh "github.com/jxo-me/netx/x/listener/ssh"
 	listenerSshd "github.com/jxo-me/netx/x/listener/sshd"
 	listenerTap "github.com/jxo-me/netx/x/listener/tap"
@@ -30,6 +31,7 @@ import (
 	listenerTls "github.com/jxo-me/netx/x/listener/tls"
 	listenerTun "github.com/jxo-me/netx/x/listener/tun"
 	listenerUdp "github.com/jxo-me/netx/x/listener/udp"
+	listenerUnix "github.com/jxo-me/netx/x/listener/unix"
 	listenerWs "github.com/jxo-me/netx/x/listener/ws"
 )
 
@@ -59,6 +61,7 @@ var Listeners = map[string]listener.NewListener{
 	consts.Redu:     listenerRedirectUdp.NewListener,
 	consts.Rtcp:     listenerRtcp.NewListener,
 	consts.Rudp:     listenerRudp.NewListener,
+	consts.Serial:   listenerSerial.NewListener,
 	consts.Ssh:      listenerSsh.NewListener,
 	consts.Sshd:     listenerSshd.NewListener,
 	consts.Tap:      listenerTap.NewListener,
@@ -66,6 +69,7 @@ var Listeners = map[string]listener.NewListener{
 	consts.Tls:      listenerTls.NewListener,
 	consts.Tun:      listenerTun.NewListener,
 	consts.Udp:      listenerUdp.NewListener,
+	consts.Unix:     listenerUnix.NewListener,
 	consts.Ws:       listenerWs.NewListener,
 	consts.Wss:      listenerWs.NewTLSListener,
 }

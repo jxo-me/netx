@@ -8,6 +8,7 @@ const (
 	Http    = "http"
 	Http2   = "http2"
 	Relay   = "relay"
+	Serial  = "serial"
 	Sni     = "sni"
 	Socks4  = "socks4"
 	Socks4a = "socks4a"
@@ -16,6 +17,7 @@ const (
 	Ss      = "ss"
 	Ssu     = "ssu"
 	Sshd    = "sshd"
+	Unix    = "unix"
 	// dialer
 	Dtls  = "dtls"
 	Ftcp  = "ftcp"

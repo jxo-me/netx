@@ -5,11 +5,13 @@ import (
 	"net"
 
 	"github.com/jxo-me/netx/core/admission"
+	"github.com/jxo-me/netx/core/logger"
 )
 
 type listener struct {
 	net.Listener
 	admission admission.IAdmission
+	log       logger.ILogger
 }
 
 func WrapListener(admission admission.IAdmission, ln net.Listener) net.Listener {

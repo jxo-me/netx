@@ -1,56 +1,146 @@
 package bypass
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 
-	bypass_pkg "github.com/jxo-me/netx/core/bypass"
+	"github.com/jxo-me/netx/core/bypass"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/plugin/bypass/proto"
-	xlogger "github.com/jxo-me/netx/x/logger"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
+	"github.com/jxo-me/netx/x/internal/util/plugin"
+	"google.golang.org/grpc"
 )
 
-type pluginBypass struct {
-	client  proto.BypassClient
-	options options
+type grpcPluginBypass struct {
+	conn   grpc.ClientConnInterface
+	client proto.BypassClient
+	log    logger.ILogger
 }
 
-// NewPluginBypass creates a plugin bypass.
-func NewPluginBypass(opts ...Option) bypass_pkg.IBypass {
-	var options options
+// NewGRPCPluginBypass creates a Bypass plugin based on gRPC.
+func NewGRPCPluginBypass(name string, addr string, opts ...plugin.Option) bypass.IBypass {
+	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
 	}
-	if options.logger == nil {
-		options.logger = xlogger.Nop()
+
+	log := logger.Default().WithFields(map[string]any{
+		"kind":   "bypass",
+		"bypass": name,
+	})
+	conn, err := plugin.NewGRPCConn(addr, &options)
+	if err != nil {
+		log.Error(err)
 	}
 
-	p := &pluginBypass{
-		options: options,
+	p := &grpcPluginBypass{
+		conn: conn,
+		log:  log,
 	}
-	if options.client != nil {
-		p.client = proto.NewBypassClient(options.client)
+	if conn != nil {
+		p.client = proto.NewBypassClient(conn)
 	}
 	return p
 }
 
-func (p *pluginBypass) Contains(ctx context.Context, addr string) bool {
+func (p *grpcPluginBypass) Contains(ctx context.Context, addr string) bool {
 	if p.client == nil {
-		return false
+		return true
 	}
 
 	r, err := p.client.Bypass(ctx,
 		&proto.BypassRequest{
-			Addr: addr,
+			Addr:   addr,
+			Client: string(auth_util.IDFromContext(ctx)),
 		})
 	if err != nil {
-		p.options.logger.Error(err)
-		return false
+		p.log.Error(err)
+		return true
 	}
 	return r.Ok
 }
 
-func (p *pluginBypass) Close() error {
-	if p.options.client != nil {
-		return p.options.client.Close()
+func (p *grpcPluginBypass) Close() error {
+	if closer, ok := p.conn.(io.Closer); ok {
+		return closer.Close()
 	}
 	return nil
+}
+
+type httpBypassRequest struct {
+	Addr   string `json:"addr"`
+	Client string `json:"client"`
+}
+
+type httpBypassResponse struct {
+	OK bool `json:"ok"`
+}
+
+type httpPluginBypass struct {
+	url    string
+	client *http.Client
+	header http.Header
+	log    logger.ILogger
+}
+
+// NewHTTPPluginBypass creates an Bypass plugin based on HTTP.
+func NewHTTPPluginBypass(name string, url string, opts ...plugin.Option) bypass.IBypass {
+	var options plugin.Options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &httpPluginBypass{
+		url:    url,
+		client: plugin.NewHTTPClient(&options),
+		header: options.Header,
+		log: logger.Default().WithFields(map[string]any{
+			"kind":   "bypass",
+			"bypass": name,
+		}),
+	}
+}
+
+func (p *httpPluginBypass) Contains(ctx context.Context, addr string) (ok bool) {
+	if p.client == nil {
+		return
+	}
+
+	rb := httpBypassRequest{
+		Addr:   addr,
+		Client: string(auth_util.IDFromContext(ctx)),
+	}
+	v, err := json.Marshal(&rb)
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, p.url, bytes.NewReader(v))
+	if err != nil {
+		return
+	}
+
+	if p.header != nil {
+		req.Header = p.header.Clone()
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	res := httpBypassResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return
+	}
+	return res.OK
 }

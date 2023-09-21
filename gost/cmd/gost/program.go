@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ type program struct {
 }
 
 func (p *program) Init(env svc.Environment) error {
+	fmt.Println("init", env.IsWindowsService())
 	cfg := &config.Config{}
 	if cfgFile != "" {
 		if err := cfg.ReadFile(cfgFile); err != nil {

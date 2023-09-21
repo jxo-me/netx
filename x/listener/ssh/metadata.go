@@ -1,7 +1,7 @@
 package ssh
 
 import (
-	"io/ioutil"
+	"os"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
@@ -28,7 +28,7 @@ func (l *sshListener) parseMetadata(md mdata.IMetaData) (err error) {
 	)
 
 	if key := mdutil.GetString(md, privateKeyFile); key != "" {
-		data, err := ioutil.ReadFile(key)
+		data, err := os.ReadFile(key)
 		if err != nil {
 			return err
 		}

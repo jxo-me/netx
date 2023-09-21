@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"github.com/jxo-me/netx/x/app"
 	"net"
+	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/jxo-me/netx/core/admission"
 	"github.com/jxo-me/netx/core/auth"
@@ -26,6 +28,7 @@ import (
 	xhosts "github.com/jxo-me/netx/x/hosts"
 	xingress "github.com/jxo-me/netx/x/ingress"
 	"github.com/jxo-me/netx/x/internal/loader"
+	"github.com/jxo-me/netx/x/internal/util/plugin"
 	xconn "github.com/jxo-me/netx/x/limiter/conn"
 	xrate "github.com/jxo-me/netx/x/limiter/rate"
 	xtraffic "github.com/jxo-me/netx/x/limiter/traffic"
@@ -48,6 +51,10 @@ const (
 	mdKeyPostUp        = "postUp"
 	mdKeyPostDown      = "postDown"
 	mdKeyIgnoreChain   = "ignoreChain"
+
+	mdKeyRecorderDirection       = "direction"
+	mdKeyRecorderTimestampFormat = "timeStampFormat"
+	mdKeyRecorderHexdump         = "hexdump"
 )
 
 func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
@@ -56,17 +63,27 @@ func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return auth_impl.NewPluginAuthenticator(
-			auth_impl.PluginConnOption(c),
-			auth_impl.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":   "auther",
-				"auther": cfg.Name,
-			})),
-		)
+		switch cfg.Plugin.Type {
+		case "http":
+			return auth_impl.NewHTTPPluginAuthenticator(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			)
+		default:
+			return auth_impl.NewGRPCPluginAuthenticator(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	m := make(map[string]string)
@@ -190,17 +207,27 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return admission_impl.NewPluginAdmission(
-			admission_impl.PluginConnOption(c),
-			admission_impl.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":      "admission",
-				"admission": cfg.Name,
-			})),
-		)
+		switch strings.ToLower(cfg.Plugin.Type) {
+		case "http":
+			return admission_impl.NewHTTPPluginAdmission(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			)
+		default:
+			return admission_impl.NewGRPCPluginAdmission(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	opts := []admission_impl.Option{
@@ -239,17 +266,27 @@ func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return bypass_impl.NewPluginBypass(
-			bypass_impl.PluginConnOption(c),
-			bypass_impl.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":   "bypass",
-				"bypass": cfg.Name,
-			})),
-		)
+		switch strings.ToLower(cfg.Plugin.Type) {
+		case "http":
+			return bypass_impl.NewHTTPPluginBypass(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			)
+		default:
+			return bypass_impl.NewGRPCPluginBypass(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	opts := []bypass_impl.Option{
@@ -288,18 +325,27 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
-			return nil, err
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return resolver_impl.NewPluginResolver(
-			resolver_impl.PluginConnOption(c),
-			resolver_impl.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":     "resolver",
-				"resolver": cfg.Name,
-			})),
-		)
+		switch strings.ToLower(cfg.Plugin.Type) {
+		case "http":
+			return resolver_impl.NewHTTPPluginResolver(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			), nil
+		default:
+			return resolver_impl.NewGRPCPluginResolver(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	var nameservers []resolver_impl.NameServer
@@ -332,17 +378,27 @@ func ParseHosts(cfg *config.HostsConfig) hosts.IHostMapper {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return xhosts.NewPluginHostMapper(
-			xhosts.PluginConnOption(c),
-			xhosts.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":  "hosts",
-				"hosts": cfg.Name,
-			})),
-		)
+		switch strings.ToLower(cfg.Plugin.Type) {
+		case "http":
+			return xhosts.NewHTTPPluginHostMapper(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			)
+		default:
+			return xhosts.NewGRPCPluginHostMapper(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	var mappings []xhosts.Mapping
@@ -404,17 +460,27 @@ func ParseIngress(cfg *config.IngressConfig) ingress.IIngress {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return xingress.NewPluginIngress(
-			xingress.PluginConnOption(c),
-			xingress.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":    "ingress",
-				"ingress": cfg.Name,
-			})),
-		)
+		switch strings.ToLower(cfg.Plugin.Type) {
+		case "http":
+			return xingress.NewHTTPPluginIngress(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			)
+		default:
+			return xingress.NewGRPCPluginIngress(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	var rules []xingress.Rule
@@ -472,23 +538,41 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	}
 
 	if cfg.Plugin != nil {
-		c, err := newPluginConn(cfg.Plugin)
-		if err != nil {
-			logger.Default().Error(err)
+		var tlsCfg *tls.Config
+		if cfg.Plugin.TLS != nil {
+			tlsCfg = &tls.Config{
+				ServerName:         cfg.Plugin.TLS.ServerName,
+				InsecureSkipVerify: !cfg.Plugin.TLS.Secure,
+			}
 		}
-		return xrecorder.NewPluginRecorder(
-			xrecorder.PluginConnOption(c),
-			xrecorder.LoggerOption(logger.Default().WithFields(map[string]any{
-				"kind":     "recorder",
-				"recorder": cfg.Name,
-			})),
-		)
+		switch strings.ToLower(cfg.Plugin.Type) {
+		case "http":
+			return xrecorder.NewHTTPPluginRecorder(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TLSConfigOption(tlsCfg),
+				plugin.TimeoutOption(cfg.Plugin.Timeout),
+			)
+		default:
+			return xrecorder.NewGRPCPluginRecorder(
+				cfg.Name, cfg.Plugin.Addr,
+				plugin.TokenOption(cfg.Plugin.Token),
+				plugin.TLSConfigOption(tlsCfg),
+			)
+		}
 	}
 
 	if cfg.File != nil && cfg.File.Path != "" {
 		return xrecorder.FileRecorder(cfg.File.Path,
 			xrecorder.SepRecorderOption(cfg.File.Sep),
 		)
+	}
+
+	if cfg.TCP != nil && cfg.TCP.Addr != "" {
+		return xrecorder.TCPRecorder(cfg.TCP.Addr, xrecorder.TimeoutTCPRecorderOption(cfg.TCP.Timeout))
+	}
+
+	if cfg.HTTP != nil && cfg.HTTP.URL != "" {
+		return xrecorder.HTTPRecorder(cfg.HTTP.URL, xrecorder.TimeoutHTTPRecorderOption(cfg.HTTP.Timeout))
 	}
 
 	if cfg.Redis != nil &&
@@ -673,7 +757,7 @@ func ParseRateLimiter(cfg *config.LimiterConfig) (lim rate.IRateLimiter) {
 	return xrate.NewRateLimiter(opts...)
 }
 
-func newPluginConn(cfg *config.PluginConfig) (*grpc.ClientConn, error) {
+func newGRPCPluginConn(cfg *config.PluginConfig) (*grpc.ClientConn, error) {
 	grpcOpts := []grpc.DialOption{
 		// grpc.WithBlock(),
 		grpc.WithConnectParams(grpc.ConnectParams{
@@ -695,4 +779,27 @@ func newPluginConn(cfg *config.PluginConfig) (*grpc.ClientConn, error) {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(&rpcCredentials{token: cfg.Token}))
 	}
 	return grpc.Dial(cfg.Addr, grpcOpts...)
+}
+
+func newHTTPPluginClient(cfg *config.PluginConfig) *http.Client {
+	if cfg == nil {
+		return nil
+	}
+
+	tr := &http.Transport{}
+	if cfg.TLS != nil {
+		if cfg.TLS.Secure {
+			tr.TLSClientConfig = &tls.Config{
+				ServerName: cfg.TLS.ServerName,
+			}
+		} else {
+			tr.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+		}
+	}
+	return &http.Client{
+		Timeout:   cfg.Timeout,
+		Transport: tr,
+	}
 }

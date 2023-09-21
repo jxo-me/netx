@@ -14,6 +14,8 @@
 - [x] [TCP/UDP透明代理](https://gost.run/tutorials/redirect/)
 - [x] DNS[解析](https://gost.run/concepts/resolver/)和[代理](https://gost.run/tutorials/dns/)
 - [x] [TUN/TAP设备](https://gost.run/tutorials/tuntap/)
+- [x] [Unix域套接字重定向](https://gost.run/tutorials/unix/)
+- [x] [串口重定向](https://gost.run/tutorials/serial/)
 - [x] [负载均衡](https://gost.run/concepts/selector/)
 - [x] [路由控制](https://gost.run/concepts/bypass/)
 - [x] [准入控制](https://gost.run/concepts/admission/)
@@ -38,6 +40,19 @@ Google讨论组：[https://groups.google.com/d/forum/go-gost](https://groups.goo
 ### 二进制文件
 
 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
+
+### 安装脚本
+
+
+```bash
+# 安装最新版本 [https://github.com/go-gost/gost/releases](https://github.com/go-gost/gost/releases)
+bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh) --install
+```
+```bash
+# 选择要安装的版本
+bash <(curl -fsSL https://github.com/go-gost/gost/raw/master/install.sh)
+```
+
 
 ### 源码编译
 

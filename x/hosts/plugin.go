@@ -1,40 +1,54 @@
 package hosts
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"net"
+	"net/http"
 
 	"github.com/jxo-me/netx/core/hosts"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/plugin/hosts/proto"
-	xlogger "github.com/jxo-me/netx/x/logger"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
+	"github.com/jxo-me/netx/x/internal/util/plugin"
+	"google.golang.org/grpc"
 )
 
-type pluginHostMapper struct {
-	client  proto.HostMapperClient
-	options options
+type grpcPluginHostMapper struct {
+	conn   grpc.ClientConnInterface
+	client proto.HostMapperClient
+	log    logger.ILogger
 }
 
-// NewPluginHostMapper creates a plugin IHostMapper.
-func NewPluginHostMapper(opts ...Option) hosts.IHostMapper {
-	var options options
+// NewGRPCPluginHostMapper creates a HostMapper plugin based on gRPC.
+func NewGRPCPluginHostMapper(name string, addr string, opts ...plugin.Option) hosts.IHostMapper {
+	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
 	}
-	if options.logger == nil {
-		options.logger = xlogger.Nop()
-	}
 
-	p := &pluginHostMapper{
-		options: options,
+	log := logger.Default().WithFields(map[string]any{
+		"kind":  "hosts",
+		"hosts": name,
+	})
+	conn, err := plugin.NewGRPCConn(addr, &options)
+	if err != nil {
+		log.Error(err)
 	}
-	if options.client != nil {
-		p.client = proto.NewHostMapperClient(options.client)
+	p := &grpcPluginHostMapper{
+		conn: conn,
+		log:  log,
+	}
+	if conn != nil {
+		p.client = proto.NewHostMapperClient(conn)
 	}
 	return p
 }
 
-func (p *pluginHostMapper) Lookup(ctx context.Context, network, host string) (ips []net.IP, ok bool) {
-	p.options.logger.Debugf("lookup %s/%s", host, network)
+func (p *grpcPluginHostMapper) Lookup(ctx context.Context, network, host string) (ips []net.IP, ok bool) {
+	p.log.Debugf("lookup %s/%s", host, network)
 
 	if p.client == nil {
 		return
@@ -44,9 +58,10 @@ func (p *pluginHostMapper) Lookup(ctx context.Context, network, host string) (ip
 		&proto.LookupRequest{
 			Network: network,
 			Host:    host,
+			Client:  string(auth_util.IDFromContext(ctx)),
 		})
 	if err != nil {
-		p.options.logger.Error(err)
+		p.log.Error(err)
 		return
 	}
 	for _, s := range r.Ips {
@@ -58,9 +73,94 @@ func (p *pluginHostMapper) Lookup(ctx context.Context, network, host string) (ip
 	return
 }
 
-func (p *pluginHostMapper) Close() error {
-	if p.options.client != nil {
-		return p.options.client.Close()
+func (p *grpcPluginHostMapper) Close() error {
+	if closer, ok := p.conn.(io.Closer); ok {
+		return closer.Close()
 	}
 	return nil
+}
+
+type httpHostMapperRequest struct {
+	Network string `json:"network"`
+	Host    string `json:"host"`
+	Client  string `json:"client"`
+}
+
+type httpHostMapperResponse struct {
+	IPs []string `json:"ips"`
+	OK  bool     `json:"ok"`
+}
+
+type httpPluginHostMapper struct {
+	url    string
+	client *http.Client
+	header http.Header
+	log    logger.ILogger
+}
+
+// NewHTTPPluginHostMapper creates an HostMapper plugin based on HTTP.
+func NewHTTPPluginHostMapper(name string, url string, opts ...plugin.Option) hosts.IHostMapper {
+	var options plugin.Options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &httpPluginHostMapper{
+		url:    url,
+		client: plugin.NewHTTPClient(&options),
+		header: options.Header,
+		log: logger.Default().WithFields(map[string]any{
+			"kind":  "hosts",
+			"hosts": name,
+		}),
+	}
+}
+
+func (p *httpPluginHostMapper) Lookup(ctx context.Context, network, host string) (ips []net.IP, ok bool) {
+	p.log.Debugf("lookup %s/%s", host, network)
+
+	if p.client == nil {
+		return
+	}
+
+	rb := httpHostMapperRequest{
+		Network: network,
+		Host:    host,
+		Client:  string(auth_util.IDFromContext(ctx)),
+	}
+	v, err := json.Marshal(&rb)
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, p.url, bytes.NewReader(v))
+	if err != nil {
+		return
+	}
+
+	if p.header != nil {
+		req.Header = p.header.Clone()
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	res := httpHostMapperResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return
+	}
+
+	for _, s := range res.IPs {
+		if ip := net.ParseIP(s); ip != nil {
+			ips = append(ips, ip)
+		}
+	}
+	return ips, res.OK
 }

@@ -3,7 +3,6 @@ package ss
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net"
 	"time"
 
@@ -87,7 +86,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.H
 	addr := &gosocks5.Addr{}
 	if _, err := addr.ReadFrom(conn); err != nil {
 		log.Error(err)
-		io.Copy(ioutil.Discard, conn)
+		io.Copy(io.Discard, conn)
 		return err
 	}
 
