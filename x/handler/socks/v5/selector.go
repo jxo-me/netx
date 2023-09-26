@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
+	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
@@ -68,7 +69,8 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (string, net.Co
 		var id string
 		if s.Authenticator != nil {
 			var ok bool
-			id, ok = s.Authenticator.Authenticate(context.Background(), req.Username, req.Password)
+			ctx := auth_util.ContextWithClientAddr(context.Background(), auth_util.ClientAddr(conn.RemoteAddr().String()))
+			id, ok = s.Authenticator.Authenticate(ctx, req.Username, req.Password)
 			if !ok {
 				resp := gosocks5.NewUserPassResponse(gosocks5.UserPassVer, gosocks5.Failure)
 				if err := resp.Write(conn); err != nil {

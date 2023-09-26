@@ -8,7 +8,7 @@ import (
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/logger"
-	resolverpkg "github.com/jxo-me/netx/core/resolver"
+	"github.com/jxo-me/netx/core/resolver"
 	resolver_util "github.com/jxo-me/netx/x/internal/util/resolver"
 	"github.com/jxo-me/netx/x/resolver/exchanger"
 	"github.com/miekg/dns"
@@ -52,13 +52,13 @@ func LoggerOption(logger logger.ILogger) Option {
 	}
 }
 
-type resolver struct {
+type localResolver struct {
 	servers []NameServer
 	cache   *resolver_util.Cache
 	options options
 }
 
-func NewResolver(nameservers []NameServer, opts ...Option) (resolverpkg.IResolver, error) {
+func NewResolver(nameservers []NameServer, opts ...Option) (resolver.IResolver, error) {
 	options := options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -92,14 +92,14 @@ func NewResolver(nameservers []NameServer, opts ...Option) (resolverpkg.IResolve
 	cache := resolver_util.NewCache().
 		WithLogger(options.logger)
 
-	return &resolver{
+	return &localResolver{
 		servers: servers,
 		cache:   cache,
 		options: options,
 	}, nil
 }
 
-func (r *resolver) Resolve(ctx context.Context, network, host string) (ips []net.IP, err error) {
+func (r *localResolver) Resolve(ctx context.Context, network, host string) (ips []net.IP, err error) {
 	if ip := net.ParseIP(host); ip != nil {
 		return []net.IP{ip}, nil
 	}
@@ -126,7 +126,7 @@ func (r *resolver) Resolve(ctx context.Context, network, host string) (ips []net
 	return
 }
 
-func (r *resolver) resolve(ctx context.Context, server *NameServer, host string) (ips []net.IP, err error) {
+func (r *localResolver) resolve(ctx context.Context, server *NameServer, host string) (ips []net.IP, err error) {
 	if server == nil {
 		return
 	}
@@ -144,19 +144,19 @@ func (r *resolver) resolve(ctx context.Context, server *NameServer, host string)
 	return r.resolve6(ctx, server, host)
 }
 
-func (r *resolver) resolve4(ctx context.Context, server *NameServer, host string) (ips []net.IP, err error) {
+func (r *localResolver) resolve4(ctx context.Context, server *NameServer, host string) (ips []net.IP, err error) {
 	mq := dns.Msg{}
 	mq.SetQuestion(dns.Fqdn(host), dns.TypeA)
 	return r.resolveIPs(ctx, server, &mq)
 }
 
-func (r *resolver) resolve6(ctx context.Context, server *NameServer, host string) (ips []net.IP, err error) {
+func (r *localResolver) resolve6(ctx context.Context, server *NameServer, host string) (ips []net.IP, err error) {
 	mq := dns.Msg{}
 	mq.SetQuestion(dns.Fqdn(host), dns.TypeAAAA)
 	return r.resolveIPs(ctx, server, &mq)
 }
 
-func (r *resolver) resolveIPs(ctx context.Context, server *NameServer, mq *dns.Msg) (ips []net.IP, err error) {
+func (r *localResolver) resolveIPs(ctx context.Context, server *NameServer, mq *dns.Msg) (ips []net.IP, err error) {
 	key := resolver_util.NewCacheKey(&mq.Question[0])
 	mr, ttl := r.cache.Load(key)
 	if ttl <= 0 {
@@ -180,7 +180,7 @@ func (r *resolver) resolveIPs(ctx context.Context, server *NameServer, mq *dns.M
 	return
 }
 
-func (r *resolver) exchange(ctx context.Context, ex exchanger.Exchanger, mq *dns.Msg) (mr *dns.Msg, err error) {
+func (r *localResolver) exchange(ctx context.Context, ex exchanger.Exchanger, mq *dns.Msg) (mr *dns.Msg, err error) {
 	query, err := mq.Pack()
 	if err != nil {
 		return
