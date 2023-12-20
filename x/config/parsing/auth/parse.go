@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/tls"
+	"github.com/jxo-me/netx/x/app"
 	"net/url"
 
 	"github.com/jxo-me/netx/core/auth"
@@ -10,7 +11,6 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
@@ -108,11 +108,11 @@ func Info(cfg *config.AuthConfig) *url.Userinfo {
 
 func List(name string, names ...string) []auth.IAuthenticator {
 	var authers []auth.IAuthenticator
-	if auther := registry.AutherRegistry().Get(name); auther != nil {
+	if auther := app.Runtime.AutherRegistry().Get(name); auther != nil {
 		authers = append(authers, auther)
 	}
 	for _, s := range names {
-		if auther := registry.AutherRegistry().Get(s); auther != nil {
+		if auther := app.Runtime.AutherRegistry().Get(s); auther != nil {
 			authers = append(authers, auther)
 		}
 	}

@@ -7,22 +7,22 @@ import (
 	"github.com/jxo-me/netx/core/hop"
 )
 
-type hopRegistry struct {
+type HopRegistry struct {
 	registry[hop.IHop]
 }
 
-func (r *hopRegistry) Register(name string, v hop.IHop) error {
+func (r *HopRegistry) Register(name string, v hop.IHop) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *hopRegistry) Get(name string) hop.IHop {
+func (r *HopRegistry) Get(name string) hop.IHop {
 	if name != "" {
 		return &hopWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *hopRegistry) get(name string) hop.IHop {
+func (r *HopRegistry) get(name string) hop.IHop {
 	return r.registry.Get(name)
 }
 

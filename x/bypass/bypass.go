@@ -13,7 +13,6 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/matcher"
-	"google.golang.org/grpc"
 )
 
 type options struct {
@@ -22,7 +21,6 @@ type options struct {
 	fileLoader  loader.Loader
 	redisLoader loader.Loader
 	httpLoader  loader.Loader
-	client      *grpc.ClientConn
 	period      time.Duration
 	logger      logger.ILogger
 }
@@ -65,12 +63,6 @@ func HTTPLoaderOption(httpLoader loader.Loader) Option {
 	}
 }
 
-func PluginConnOption(c *grpc.ClientConn) Option {
-	return func(opts *options) {
-		opts.client = c
-	}
-}
-
 func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *options) {
 		opts.logger = logger
@@ -78,16 +70,15 @@ func LoggerOption(logger logger.ILogger) Option {
 }
 
 type localBypass struct {
-	ipMatcher       matcher.Matcher
 	cidrMatcher     matcher.Matcher
-	domainMatcher   matcher.Matcher
+	addrMatcher     matcher.Matcher
 	wildcardMatcher matcher.Matcher
 	cancelFunc      context.CancelFunc
 	options         options
 	mu              sync.RWMutex
 }
 
-// NewBypass creates and initializes a new IBypass.
+// NewBypass creates and initializes a new Bypass.
 // The rules will be reversed if the reverse option is true.
 func NewBypass(opts ...Option) bypass.IBypass {
 	var options options
@@ -139,16 +130,12 @@ func (bp *localBypass) reload(ctx context.Context) error {
 		return err
 	}
 	patterns := append(bp.options.matchers, v...)
+	bp.options.logger.Debugf("load items %d", len(patterns))
 
-	var ips []net.IP
+	var addrs []string
 	var inets []*net.IPNet
-	var domains []string
 	var wildcards []string
 	for _, pattern := range patterns {
-		if ip := net.ParseIP(pattern); ip != nil {
-			ips = append(ips, ip)
-			continue
-		}
 		if _, inet, err := net.ParseCIDR(pattern); err == nil {
 			inets = append(inets, inet)
 			continue
@@ -157,15 +144,14 @@ func (bp *localBypass) reload(ctx context.Context) error {
 			wildcards = append(wildcards, pattern)
 			continue
 		}
-		domains = append(domains, pattern)
+		addrs = append(addrs, pattern)
 	}
 
 	bp.mu.Lock()
 	defer bp.mu.Unlock()
 
-	bp.ipMatcher = matcher.IPMatcher(ips)
 	bp.cidrMatcher = matcher.CIDRMatcher(inets)
-	bp.domainMatcher = matcher.DomainMatcher(domains)
+	bp.addrMatcher = matcher.AddrMatcher(addrs)
 	bp.wildcardMatcher = matcher.WildcardMatcher(wildcards)
 
 	return nil
@@ -220,7 +206,6 @@ func (bp *localBypass) load(ctx context.Context) (patterns []string, err error) 
 		}
 	}
 
-	bp.options.logger.Debugf("load items %d", len(patterns))
 	return
 }
 
@@ -240,14 +225,9 @@ func (bp *localBypass) parsePatterns(r io.Reader) (patterns []string, err error)
 	return
 }
 
-func (bp *localBypass) Contains(ctx context.Context, addr string) bool {
+func (bp *localBypass) Contains(ctx context.Context, network, addr string, opts ...bypass.Option) bool {
 	if addr == "" || bp == nil {
 		return false
-	}
-
-	// try to strip the port
-	if host, _, _ := net.SplitHostPort(addr); host != "" {
-		addr = host
 	}
 
 	matched := bp.matched(addr)
@@ -271,13 +251,20 @@ func (bp *localBypass) matched(addr string) bool {
 	bp.mu.RLock()
 	defer bp.mu.RUnlock()
 
-	if ip := net.ParseIP(addr); ip != nil {
-		return bp.ipMatcher.Match(addr) ||
-			bp.cidrMatcher.Match(addr)
+	if bp.addrMatcher.Match(addr) {
+		return true
 	}
 
-	return bp.domainMatcher.Match(addr) ||
-		bp.wildcardMatcher.Match(addr)
+	host, _, _ := net.SplitHostPort(addr)
+	if host == "" {
+		host = addr
+	}
+
+	if ip := net.ParseIP(host); ip != nil {
+		return bp.cidrMatcher.Match(host)
+	}
+
+	return bp.wildcardMatcher.Match(addr)
 }
 
 func (bp *localBypass) Close() error {

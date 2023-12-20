@@ -10,7 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/admission"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/plugin/admission/proto"
-	"github.com/jxo-me/netx/x/internal/util/plugin"
+	"github.com/jxo-me/netx/x/internal/plugin"
 	"google.golang.org/grpc"
 )
 

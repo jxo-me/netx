@@ -2,6 +2,7 @@ package bypass
 
 import (
 	"crypto/tls"
+	"github.com/jxo-me/netx/x/app"
 	"strings"
 
 	"github.com/jxo-me/netx/core/bypass"
@@ -10,7 +11,6 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
@@ -74,11 +74,11 @@ func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
 
 func List(name string, names ...string) []bypass.IBypass {
 	var bypasses []bypass.IBypass
-	if bp := registry.BypassRegistry().Get(name); bp != nil {
+	if bp := app.Runtime.BypassRegistry().Get(name); bp != nil {
 		bypasses = append(bypasses, bp)
 	}
 	for _, s := range names {
-		if bp := registry.BypassRegistry().Get(s); bp != nil {
+		if bp := app.Runtime.BypassRegistry().Get(s); bp != nil {
 			bypasses = append(bypasses, bp)
 		}
 	}

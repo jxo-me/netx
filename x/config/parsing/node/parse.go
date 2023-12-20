@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+	"github.com/jxo-me/netx/x/app"
 	"net"
 	"strings"
 	"time"
@@ -20,7 +21,6 @@ import (
 	bypass_parser "github.com/jxo-me/netx/x/config/parsing/bypass"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	mdx "github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.Node, error) {
@@ -72,7 +72,7 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		"kind": "connector",
 	})
 	var cr connector.IConnector
-	if rf := registry.ConnectorRegistry().Get(cfg.Connector.Type); rf != nil {
+	if rf := app.Runtime.ConnectorRegistry().Get(cfg.Connector.Type); rf != nil {
 		cr = rf(
 			connector.AuthOption(auth_parser.Info(cfg.Connector.Auth)),
 			connector.TLSConfigOption(tlsConfig),
@@ -112,8 +112,8 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		"kind": "dialer",
 	})
 
-	var d dialer.Dialer
-	if rf := registry.DialerRegistry().Get(cfg.Dialer.Type); rf != nil {
+	var d dialer.IDialer
+	if rf := app.Runtime.DialerRegistry().Get(cfg.Dialer.Type); rf != nil {
 		d = rf(
 			dialer.AuthOption(auth_parser.Info(cfg.Dialer.Auth)),
 			dialer.TLSConfigOption(tlsConfig),
@@ -159,8 +159,8 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 	opts := []chain.NodeOption{
 		chain.TransportNodeOption(tr),
 		chain.BypassNodeOption(bypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
-		chain.ResoloverNodeOption(registry.ResolverRegistry().Get(cfg.Resolver)),
-		chain.HostMapperNodeOption(registry.HostsRegistry().Get(cfg.Hosts)),
+		chain.ResoloverNodeOption(app.Runtime.ResolverRegistry().Get(cfg.Resolver)),
+		chain.HostMapperNodeOption(app.Runtime.HostsRegistry().Get(cfg.Hosts)),
 		chain.MetadataNodeOption(nm),
 		chain.HostNodeOption(host),
 		chain.ProtocolNodeOption(cfg.Protocol),

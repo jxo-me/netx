@@ -10,19 +10,19 @@ import (
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/plugin/bypass/proto"
-	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
-	"github.com/jxo-me/netx/x/internal/util/plugin"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	"github.com/jxo-me/netx/x/internal/plugin"
 	"google.golang.org/grpc"
 )
 
-type grpcPluginBypass struct {
+type grpcPlugin struct {
 	conn   grpc.ClientConnInterface
 	client proto.BypassClient
 	log    logger.ILogger
 }
 
-// NewGRPCPluginBypass creates a Bypass plugin based on gRPC.
-func NewGRPCPluginBypass(name string, addr string, opts ...plugin.Option) bypass.IBypass {
+// NewGRPCPlugin creates a Bypass plugin based on gRPC.
+func NewGRPCPlugin(name string, addr string, opts ...plugin.Option) bypass.IBypass {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
@@ -37,7 +37,7 @@ func NewGRPCPluginBypass(name string, addr string, opts ...plugin.Option) bypass
 		log.Error(err)
 	}
 
-	p := &grpcPluginBypass{
+	p := &grpcPlugin{
 		conn: conn,
 		log:  log,
 	}
@@ -47,15 +47,23 @@ func NewGRPCPluginBypass(name string, addr string, opts ...plugin.Option) bypass
 	return p
 }
 
-func (p *grpcPluginBypass) Contains(ctx context.Context, addr string) bool {
+func (p *grpcPlugin) Contains(ctx context.Context, network, addr string, opts ...bypass.Option) bool {
 	if p.client == nil {
 		return true
 	}
 
+	var options bypass.Options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	r, err := p.client.Bypass(ctx,
 		&proto.BypassRequest{
-			Addr:   addr,
-			Client: string(auth_util.IDFromContext(ctx)),
+			Network: network,
+			Addr:    addr,
+			Client:  string(ctxvalue.ClientIDFromContext(ctx)),
+			Host:    options.Host,
+			Path:    options.Path,
 		})
 	if err != nil {
 		p.log.Error(err)
@@ -64,37 +72,40 @@ func (p *grpcPluginBypass) Contains(ctx context.Context, addr string) bool {
 	return r.Ok
 }
 
-func (p *grpcPluginBypass) Close() error {
+func (p *grpcPlugin) Close() error {
 	if closer, ok := p.conn.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
 }
 
-type httpBypassRequest struct {
-	Addr   string `json:"addr"`
-	Client string `json:"client"`
+type httpPluginRequest struct {
+	Network string `json:"network"`
+	Addr    string `json:"addr"`
+	Client  string `json:"client"`
+	Host    string `json:"host"`
+	Path    string `json:"path"`
 }
 
-type httpBypassResponse struct {
+type httpPluginResponse struct {
 	OK bool `json:"ok"`
 }
 
-type httpPluginBypass struct {
+type httpPlugin struct {
 	url    string
 	client *http.Client
 	header http.Header
 	log    logger.ILogger
 }
 
-// NewHTTPPluginBypass creates an Bypass plugin based on HTTP.
-func NewHTTPPluginBypass(name string, url string, opts ...plugin.Option) bypass.IBypass {
+// NewHTTPPlugin creates an Bypass plugin based on HTTP.
+func NewHTTPPlugin(name string, url string, opts ...plugin.Option) bypass.IBypass {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	return &httpPluginBypass{
+	return &httpPlugin{
 		url:    url,
 		client: plugin.NewHTTPClient(&options),
 		header: options.Header,
@@ -105,21 +116,29 @@ func NewHTTPPluginBypass(name string, url string, opts ...plugin.Option) bypass.
 	}
 }
 
-func (p *httpPluginBypass) Contains(ctx context.Context, addr string) (ok bool) {
+func (p *httpPlugin) Contains(ctx context.Context, network, addr string, opts ...bypass.Option) (ok bool) {
 	if p.client == nil {
 		return
 	}
 
-	rb := httpBypassRequest{
-		Addr:   addr,
-		Client: string(auth_util.IDFromContext(ctx)),
+	var options bypass.Options
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	rb := httpPluginRequest{
+		Network: network,
+		Addr:    addr,
+		Client:  string(ctxvalue.ClientIDFromContext(ctx)),
+		Host:    options.Host,
+		Path:    options.Path,
 	}
 	v, err := json.Marshal(&rb)
 	if err != nil {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, p.url, bytes.NewReader(v))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.url, bytes.NewReader(v))
 	if err != nil {
 		return
 	}
@@ -138,7 +157,7 @@ func (p *httpPluginBypass) Contains(ctx context.Context, addr string) (ok bool) 
 		return
 	}
 
-	res := httpBypassResponse{}
+	res := httpPluginResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return
 	}

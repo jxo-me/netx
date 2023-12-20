@@ -10,15 +10,19 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/hosts"
 	"github.com/jxo-me/netx/core/ingress"
 	"github.com/jxo-me/netx/core/limiter/conn"
 	"github.com/jxo-me/netx/core/limiter/rate"
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/listener"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/recorder"
 	reg "github.com/jxo-me/netx/core/registry"
 	"github.com/jxo-me/netx/core/resolver"
+	"github.com/jxo-me/netx/core/router"
+	"github.com/jxo-me/netx/core/sd"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/registry"
 )
@@ -37,14 +41,17 @@ type Application struct {
 	connLimiterReg    reg.IRegistry[conn.IConnLimiter]
 	dialerReg         reg.IRegistry[dialer.NewDialer]
 	handlerReg        reg.IRegistry[handler.NewHandler]
-	hopReg            reg.IRegistry[chain.IHop]
+	hopReg            reg.IRegistry[hop.IHop]
 	hostsReg          reg.IRegistry[hosts.IHostMapper]
 	ingressReg        reg.IRegistry[ingress.IIngress]
 	listenerReg       reg.IRegistry[listener.NewListener]
 	rateLimiterReg    reg.IRegistry[rate.IRateLimiter]
 	recorderReg       reg.IRegistry[recorder.IRecorder]
 	resolverReg       reg.IRegistry[resolver.IResolver]
+	routerReg         reg.IRegistry[router.IRouter]
+	sdReg             reg.IRegistry[sd.ISD]
 	serviceReg        reg.IRegistry[service.IService]
+	loggerReg         reg.IRegistry[logger.ILogger]
 	trafficLimiterReg reg.IRegistry[traffic.ITrafficLimiter]
 }
 
@@ -65,7 +72,10 @@ func NewConfig() *Application {
 		rateLimiterReg:    new(registry.RateLimiterRegistry),
 		recorderReg:       new(registry.RecorderRegistry),
 		resolverReg:       new(registry.ResolverRegistry),
+		routerReg:         new(registry.RouterRegistry),
+		sdReg:             new(registry.SdRegistry),
 		serviceReg:        new(registry.ServiceRegistry),
+		loggerReg:         new(registry.LoggerRegistry),
 		trafficLimiterReg: new(registry.TrafficLimiterRegistry),
 	}
 
@@ -109,7 +119,7 @@ func (a *Application) HandlerRegistry() reg.IRegistry[handler.NewHandler] {
 	return a.handlerReg
 }
 
-func (a *Application) HopRegistry() reg.IRegistry[chain.IHop] {
+func (a *Application) HopRegistry() reg.IRegistry[hop.IHop] {
 	return a.hopReg
 }
 
@@ -137,8 +147,20 @@ func (a *Application) ResolverRegistry() reg.IRegistry[resolver.IResolver] {
 	return a.resolverReg
 }
 
+func (a *Application) RouterRegistry() reg.IRegistry[router.IRouter] {
+	return a.routerReg
+}
+
+func (a *Application) SDRegistry() reg.IRegistry[sd.ISD] {
+	return a.sdReg
+}
+
 func (a *Application) ServiceRegistry() reg.IRegistry[service.IService] {
 	return a.serviceReg
+}
+
+func (a *Application) LoggerRegistry() reg.IRegistry[logger.ILogger] {
+	return a.loggerReg
 }
 
 func (a *Application) TrafficLimiterRegistry() reg.IRegistry[traffic.ITrafficLimiter] {

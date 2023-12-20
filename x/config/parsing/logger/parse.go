@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"io"
 	"os"
 	"path/filepath"
@@ -8,7 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
 	xlogger "github.com/jxo-me/netx/x/logger"
-	"github.com/jxo-me/netx/x/registry"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func ParseLogger(cfg *config.LoggerConfig) logger.ILogger {
@@ -56,11 +57,11 @@ func ParseLogger(cfg *config.LoggerConfig) logger.ILogger {
 
 func List(name string, names ...string) []logger.ILogger {
 	var loggers []logger.ILogger
-	if adm := registry.LoggerRegistry().Get(name); adm != nil {
+	if adm := app.Runtime.LoggerRegistry().Get(name); adm != nil {
 		loggers = append(loggers, adm)
 	}
 	for _, s := range names {
-		if lg := registry.LoggerRegistry().Get(s); lg != nil {
+		if lg := app.Runtime.LoggerRegistry().Get(s); lg != nil {
 			loggers = append(loggers, lg)
 		}
 	}

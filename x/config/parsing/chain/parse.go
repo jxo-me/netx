@@ -5,11 +5,11 @@ import (
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/x/app"
 	xchain "github.com/jxo-me/netx/x/chain"
 	"github.com/jxo-me/netx/x/config"
 	hop_parser "github.com/jxo-me/netx/x/config/parsing/hop"
 	mdx "github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 func ParseChain(cfg *config.ChainConfig, log logger.ILogger) (chain.IChainer, error) {
@@ -41,7 +41,7 @@ func ParseChain(cfg *config.ChainConfig, log logger.ILogger) (chain.IChainer, er
 				return nil, err
 			}
 		} else {
-			hop = registry.HopRegistry().Get(ch.Name)
+			hop = app.Runtime.HopRegistry().Get(ch.Name)
 		}
 		if hop != nil {
 			c.AddHop(hop)

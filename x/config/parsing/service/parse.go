@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/jxo-me/netx/x/app"
 
 	"github.com/jxo-me/netx/core/admission"
 	"github.com/jxo-me/netx/core/auth"
@@ -27,7 +28,6 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	"github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -120,8 +120,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		listener.AuthOption(auth_parser.Info(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
 		listener.AdmissionOption(admission.AdmissionGroup(admissions...)),
-		listener.TrafficLimiterOption(registry.TrafficLimiterRegistry().Get(cfg.Limiter)),
-		listener.ConnLimiterOption(registry.ConnLimiterRegistry().Get(cfg.CLimiter)),
+		listener.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Limiter)),
+		listener.ConnLimiterOption(app.Runtime.ConnLimiterRegistry().Get(cfg.CLimiter)),
 		listener.LoggerOption(listenerLogger),
 		listener.ServiceOption(cfg.Name),
 		listener.ProxyProtocolOption(ppv),
@@ -133,7 +133,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 
 	var ln listener.IListener
-	if rf := registry.ListenerRegistry().Get(cfg.Listener.Type); rf != nil {
+	if rf := app.Runtime.ListenerRegistry().Get(cfg.Listener.Type); rf != nil {
 		ln = rf(listenOpts...)
 	} else {
 		return nil, fmt.Errorf("unregistered listener: %s", cfg.Listener.Type)
@@ -181,7 +181,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	for _, r := range cfg.Recorders {
 		md := metadata.NewMetadata(r.Metadata)
 		recorders = append(recorders, recorder.RecorderObject{
-			Recorder: registry.RecorderRegistry().Get(r.Name),
+			Recorder: app.Runtime.RecorderRegistry().Get(r.Name),
 			Record:   r.Record,
 			Options: &recorder.Options{
 				Direction:       mdutil.GetBool(md, parsing.MDKeyRecorderDirection),
@@ -196,8 +196,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		// chain.TimeoutRouterOption(10*time.Second),
 		chain.InterfaceRouterOption(ifce),
 		chain.SockOptsRouterOption(sockOpts),
-		chain.ResolverRouterOption(registry.ResolverRegistry().Get(cfg.Resolver)),
-		chain.HostMapperRouterOption(registry.HostsRegistry().Get(cfg.Hosts)),
+		chain.ResolverRouterOption(app.Runtime.ResolverRegistry().Get(cfg.Resolver)),
+		chain.HostMapperRouterOption(app.Runtime.HostsRegistry().Get(cfg.Hosts)),
 		chain.RecordersRouterOption(recorders...),
 		chain.LoggerRouterOption(handlerLogger),
 	}
@@ -208,16 +208,16 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 	router := chain.NewRouter(routerOpts...)
 
-	var h handler.Handler
-	if rf := registry.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
+	var h handler.IHandler
+	if rf := app.Runtime.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
 		h = rf(
 			handler.RouterOption(router),
 			handler.AutherOption(auther),
 			handler.AuthOption(auth_parser.Info(cfg.Handler.Auth)),
 			handler.BypassOption(bypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
 			handler.TLSConfigOption(tlsConfig),
-			handler.RateLimiterOption(registry.RateLimiterRegistry().Get(cfg.RLimiter)),
-			handler.TrafficLimiterOption(registry.TrafficLimiterRegistry().Get(cfg.Handler.Limiter)),
+			handler.RateLimiterOption(app.Runtime.RateLimiterRegistry().Get(cfg.RLimiter)),
+			handler.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Handler.Limiter)),
 			handler.LoggerOption(handlerLogger),
 			handler.ServiceOption(cfg.Name),
 		)
@@ -225,7 +225,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		return nil, fmt.Errorf("unregistered handler: %s", cfg.Handler.Type)
 	}
 
-	if forwarder, ok := h.(handler.Forwarder); ok {
+	if forwarder, ok := h.(handler.IForwarder); ok {
 		hop, err := parseForwarder(cfg.Forwarder)
 		if err != nil {
 			return nil, err
@@ -256,7 +256,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	return s, nil
 }
 
-func parseForwarder(cfg *config.ForwarderConfig) (hop.Hop, error) {
+func parseForwarder(cfg *config.ForwarderConfig) (hop.IHop, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -295,19 +295,19 @@ func parseForwarder(cfg *config.ForwarderConfig) (hop.Hop, error) {
 	if len(hc.Nodes) > 0 {
 		return hop_parser.ParseHop(&hc, logger.Default())
 	}
-	return registry.HopRegistry().Get(hc.Name), nil
+	return app.Runtime.HopRegistry().Get(hc.Name), nil
 }
 
 func chainGroup(name string, group *config.ChainGroupConfig) chain.IChainer {
 	var chains []chain.IChainer
-	var sel selector.Selector[chain.IChainer]
+	var sel selector.ISelector[chain.IChainer]
 
-	if c := registry.ChainRegistry().Get(name); c != nil {
+	if c := app.Runtime.ChainRegistry().Get(name); c != nil {
 		chains = append(chains, c)
 	}
 	if group != nil {
 		for _, s := range group.Chains {
-			if c := registry.ChainRegistry().Get(s); c != nil {
+			if c := app.Runtime.ChainRegistry().Get(s); c != nil {
 				chains = append(chains, c)
 			}
 		}

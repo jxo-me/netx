@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"crypto/tls"
+	"github.com/jxo-me/netx/x/app"
 	"net"
 	"strings"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/jxo-me/netx/core/resolver"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/plugin"
-	"github.com/jxo-me/netx/x/registry"
 	xresolver "github.com/jxo-me/netx/x/resolver"
 )
 
@@ -46,7 +46,7 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 	for _, server := range cfg.Nameservers {
 		nameservers = append(nameservers, xresolver.NameServer{
 			Addr:     server.Addr,
-			Chain:    registry.ChainRegistry().Get(server.Chain),
+			Chain:    app.Runtime.ChainRegistry().Get(server.Chain),
 			TTL:      server.TTL,
 			Timeout:  server.Timeout,
 			ClientIP: net.ParseIP(server.ClientIP),

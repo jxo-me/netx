@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jxo-me/netx/core/chain"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/selector"
@@ -38,7 +39,7 @@ type chainNamer interface {
 
 type Chain struct {
 	name     string
-	hops     []chain.IHop
+	hops     []hop.IHop
 	marker   selector.IMarker
 	metadata metadata.IMetaData
 	logger   logger.ILogger
@@ -60,16 +61,16 @@ func NewChain(name string, opts ...ChainOption) *Chain {
 	}
 }
 
-func (c *Chain) AddHop(hop chain.IHop) {
+func (c *Chain) AddHop(hop hop.IHop) {
 	c.hops = append(c.hops, hop)
 }
 
-// Metadata implements metadata.IMetaDatable interface.
+// Metadata implements metadata.Metadatable interface.
 func (c *Chain) Metadata() metadata.IMetaData {
 	return c.metadata
 }
 
-// Marker implements selector.IMarkable interface.
+// Marker implements selector.Markable interface.
 func (c *Chain) Marker() selector.IMarker {
 	return c.marker
 }
@@ -78,14 +79,23 @@ func (c *Chain) Name() string {
 	return c.name
 }
 
-func (c *Chain) Route(ctx context.Context, network, address string) chain.IRoute {
+func (c *Chain) Route(ctx context.Context, network, address string, opts ...chain.RouteOption) chain.IRoute {
 	if c == nil || len(c.hops) == 0 {
 		return nil
 	}
 
+	var options chain.RouteOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	rt := NewRoute(ChainRouteOption(c))
-	for _, hop := range c.hops {
-		node := hop.Select(ctx, chain.AddrSelectOption(address))
+	for _, h := range c.hops {
+		node := h.Select(ctx,
+			hop.NetworkSelectOption(network),
+			hop.AddrSelectOption(address),
+			hop.HostSelectOption(options.Host),
+		)
 		if node == nil {
 			return rt
 		}
@@ -116,9 +126,9 @@ func (p *chainGroup) WithSelector(s selector.ISelector[chain.IChainer]) *chainGr
 	return p
 }
 
-func (p *chainGroup) Route(ctx context.Context, network, address string) chain.IRoute {
+func (p *chainGroup) Route(ctx context.Context, network, address string, opts ...chain.RouteOption) chain.IRoute {
 	if chain := p.next(ctx); chain != nil {
-		return chain.Route(ctx, network, address)
+		return chain.Route(ctx, network, address, opts...)
 	}
 	return nil
 }

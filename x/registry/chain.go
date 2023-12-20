@@ -55,7 +55,7 @@ func (w *chainWrapper) Metadata() metadata.IMetaData {
 	return nil
 }
 
-func (w *chainWrapper) Route(ctx context.Context, network, address string, opts ...chain.RouteOption) chain.Route {
+func (w *chainWrapper) Route(ctx context.Context, network, address string, opts ...chain.RouteOption) chain.IRoute {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil

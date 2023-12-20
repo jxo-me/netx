@@ -10,7 +10,7 @@ import (
 	xsd "github.com/jxo-me/netx/x/sd"
 )
 
-func ParseSD(cfg *config.SDConfig) sd.SD {
+func ParseSD(cfg *config.SDConfig) sd.ISD {
 	if cfg == nil || cfg.Plugin == nil {
 		return nil
 	}

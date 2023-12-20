@@ -1,17 +1,17 @@
 package parsing
 
 const (
-	mdKeyProxyProtocol = "proxyProtocol"
-	mdKeyInterface     = "interface"
-	mdKeySoMark        = "so_mark"
-	mdKeyHash          = "hash"
-	mdKeyPreUp         = "preUp"
-	mdKeyPreDown       = "preDown"
-	mdKeyPostUp        = "postUp"
-	mdKeyPostDown      = "postDown"
-	mdKeyIgnoreChain   = "ignoreChain"
+	MDKeyProxyProtocol = "proxyProtocol"
+	MDKeyInterface     = "interface"
+	MDKeySoMark        = "so_mark"
+	MDKeyHash          = "hash"
+	MDKeyPreUp         = "preUp"
+	MDKeyPreDown       = "preDown"
+	MDKeyPostUp        = "postUp"
+	MDKeyPostDown      = "postDown"
+	MDKeyIgnoreChain   = "ignoreChain"
 
-	mdKeyRecorderDirection       = "direction"
-	mdKeyRecorderTimestampFormat = "timeStampFormat"
-	mdKeyRecorderHexdump         = "hexdump"
+	MDKeyRecorderDirection       = "direction"
+	MDKeyRecorderTimestampFormat = "timeStampFormat"
+	MDKeyRecorderHexdump         = "hexdump"
 )

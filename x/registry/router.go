@@ -7,28 +7,28 @@ import (
 	"github.com/jxo-me/netx/core/router"
 )
 
-type routerRegistry struct {
+type RouterRegistry struct {
 	registry[router.IRouter]
 }
 
-func (r *routerRegistry) Register(name string, v router.IRouter) error {
+func (r *RouterRegistry) Register(name string, v router.IRouter) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *routerRegistry) Get(name string) router.IRouter {
+func (r *RouterRegistry) Get(name string) router.IRouter {
 	if name != "" {
 		return &routerWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *routerRegistry) get(name string) router.IRouter {
+func (r *RouterRegistry) get(name string) router.IRouter {
 	return r.registry.Get(name)
 }
 
 type routerWrapper struct {
 	name string
-	r    *routerRegistry
+	r    *RouterRegistry
 }
 
 func (w *routerWrapper) GetRoute(ctx context.Context, dst net.IP, opts ...router.Option) *router.Route {

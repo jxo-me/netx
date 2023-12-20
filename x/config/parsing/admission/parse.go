@@ -2,6 +2,7 @@ package admission
 
 import (
 	"crypto/tls"
+	"github.com/jxo-me/netx/x/app"
 	"strings"
 
 	"github.com/jxo-me/netx/core/admission"
@@ -10,7 +11,6 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
@@ -74,11 +74,11 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 
 func List(name string, names ...string) []admission.IAdmission {
 	var admissions []admission.IAdmission
-	if adm := registry.AdmissionRegistry().Get(name); adm != nil {
+	if adm := app.Runtime.AdmissionRegistry().Get(name); adm != nil {
 		admissions = append(admissions, adm)
 	}
 	for _, s := range names {
-		if adm := registry.AdmissionRegistry().Get(s); adm != nil {
+		if adm := app.Runtime.AdmissionRegistry().Get(s); adm != nil {
 			admissions = append(admissions, adm)
 		}
 	}
