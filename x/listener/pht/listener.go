@@ -68,6 +68,7 @@ func (l *phtListener) Init(md md.IMetaData) (err error) {
 		pht_util.BacklogServerOption(l.md.backlog),
 		pht_util.PathServerOption(l.md.authorizePath, l.md.pushPath, l.md.pullPath),
 		pht_util.LoggerServerOption(l.options.Logger),
+		pht_util.MPTCPServerOption(l.md.mptcp),
 	)
 
 	go func() {

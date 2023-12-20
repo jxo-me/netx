@@ -11,8 +11,10 @@ import (
 	listenerHttpH2 "github.com/jxo-me/netx/x/listener/http2/h2"
 	listenerHttp3 "github.com/jxo-me/netx/x/listener/http3"
 	listenerHttpH3 "github.com/jxo-me/netx/x/listener/http3/h3"
+	listenerHttpWt "github.com/jxo-me/netx/x/listener/http3/wt"
 	listenerIcmp "github.com/jxo-me/netx/x/listener/icmp"
 	listenerKcp "github.com/jxo-me/netx/x/listener/kcp"
+	listenerMtcp "github.com/jxo-me/netx/x/listener/mtcp"
 	listenerMtls "github.com/jxo-me/netx/x/listener/mtls"
 	listenerMws "github.com/jxo-me/netx/x/listener/mws"
 	listenerObfsHttp "github.com/jxo-me/netx/x/listener/obfs/http"
@@ -45,8 +47,10 @@ var Listeners = map[string]listener.NewListener{
 	consts.H2:       listenerHttpH2.NewTLSListener,
 	consts.Http3:    listenerHttp3.NewListener,
 	consts.H3:       listenerHttpH3.NewListener,
+	consts.Wt:       listenerHttpWt.NewListener,
 	consts.Icmp:     listenerIcmp.NewListener,
 	consts.Kcp:      listenerKcp.NewListener,
+	consts.Mtcp:     listenerMtcp.NewListener,
 	consts.Mtls:     listenerMtls.NewListener,
 	consts.Mws:      listenerMws.NewListener,
 	consts.Mwss:     listenerMws.NewTLSListener,

@@ -21,6 +21,7 @@ type tunListener struct {
 	logger  logger.ILogger
 	md      metadata
 	options listener.Options
+	routes []*router.Route
 }
 
 func NewListener(opts ...listener.Option) listener.IListener {

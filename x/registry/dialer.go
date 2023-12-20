@@ -5,11 +5,13 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type DialerRegistry struct {
-	registry[dialer.NewDialer]
+type NewDialer func(opts ...dialer.Option) dialer.Dialer
+
+type dialerRegistry struct {
+	registry[NewDialer]
 }
 
-func (r *DialerRegistry) Register(name string, v dialer.NewDialer) error {
+func (r *dialerRegistry) Register(name string, v NewDialer) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

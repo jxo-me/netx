@@ -53,7 +53,7 @@ func (d *phtDialer) Init(md md.IMetaData) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.IMultiplexer interface.
+// Multiplex implements dialer.Multiplexer interface.
 // NOTE: PHT is not a real multiplexed tunnel.
 func (d *phtDialer) Multiplex() bool {
 	return true

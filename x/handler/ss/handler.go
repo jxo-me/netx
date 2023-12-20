@@ -10,8 +10,8 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks5"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
 	"github.com/jxo-me/netx/x/internal/util/ss"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
@@ -96,14 +96,14 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.H
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), addr)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr.String()) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", addr.String()) {
 		log.Debug("bypass: ", addr.String())
 		return nil
 	}
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: addr.String()})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr.String()})
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", addr.String())

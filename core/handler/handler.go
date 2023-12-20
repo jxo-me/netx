@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/jxo-me/netx/core/chain"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/metadata"
 )
 
@@ -14,7 +14,5 @@ type IHandler interface {
 }
 
 type IForwarder interface {
-	Forward(chain.IHop)
+	Forward(hop.IHop)
 }
-
-type NewHandler func(opts ...Option) IHandler

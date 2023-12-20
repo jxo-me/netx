@@ -6,10 +6,12 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
+	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 )
 
 func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
@@ -19,7 +21,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, networ
 	})
 	log.Debugf("%s >> %s", conn.RemoteAddr(), address)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, address) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, network, address) {
 		resp := gosocks5.NewReply(gosocks5.NotAllowed, nil)
 		log.Trace(resp)
 		log.Debug("bypass: ", address)
@@ -28,7 +30,7 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, networ
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: address})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: address})
 	}
 
 	cc, err := h.router.Dial(ctx, network, address)
@@ -48,9 +50,16 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, networ
 		return err
 	}
 
+	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, conn.RemoteAddr().String(),
+		traffic.NetworkOption(network),
+		traffic.AddrOption(address),
+		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),
+		traffic.SrcOption(conn.RemoteAddr().String()),
+	)
+
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
-	netpkg.Transport(conn, cc)
+	netpkg.Transport(rw, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), address)

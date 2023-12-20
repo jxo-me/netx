@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -95,12 +96,6 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 		req.Features = append(req.Features, af)
 	}
 
-	if !c.md.tunnelID.IsZero() {
-		req.Features = append(req.Features, &relay.TunnelFeature{
-			ID: c.md.tunnelID.ID(),
-		})
-	}
-
 	if c.md.noDelay {
 		if _, err := req.WriteTo(conn); err != nil {
 			return nil, err
@@ -116,8 +111,9 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 		if !c.md.noDelay {
 			cc := &tcpConn{
 				Conn: conn,
+				wbuf: &bytes.Buffer{},
 			}
-			if _, err := req.WriteTo(&cc.wbuf); err != nil {
+			if _, err := req.WriteTo(cc.wbuf); err != nil {
 				return nil, err
 			}
 			conn = cc
@@ -127,7 +123,8 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 			Conn: conn,
 		}
 		if !c.md.noDelay {
-			if _, err := req.WriteTo(&cc.wbuf); err != nil {
+			cc.wbuf = &bytes.Buffer{}
+			if _, err := req.WriteTo(cc.wbuf); err != nil {
 				return nil, err
 			}
 		}

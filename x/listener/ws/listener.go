@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"net/http"
@@ -83,7 +84,13 @@ func (l *wsListener) Init(md md.IMetaData) (err error) {
 	if xnet.IsIPv4(l.options.Addr) {
 		network = "tcp4"
 	}
-	ln, err := net.Listen(network, l.options.Addr)
+
+	lc := net.ListenConfig{}
+	if l.md.mptcp {
+		lc.SetMultipathTCP(true)
+		l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+	}
+	ln, err := lc.Listen(context.Background(), network, l.options.Addr)
 	if err != nil {
 		return
 	}
@@ -143,6 +150,7 @@ func (l *wsListener) upgrade(w http.ResponseWriter, r *http.Request) {
 	conn, err := l.upgrader.Upgrade(w, r, l.md.header)
 	if err != nil {
 		l.logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

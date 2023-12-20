@@ -1,6 +1,7 @@
 package mtls
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"time"
@@ -11,10 +12,10 @@ import (
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
+	"github.com/jxo-me/netx/x/internal/util/mux"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/xtaci/smux"
 )
 
 type mtlsListener struct {
@@ -46,7 +47,13 @@ func (l *mtlsListener) Init(md md.IMetaData) (err error) {
 	if xnet.IsIPv4(l.options.Addr) {
 		network = "tcp4"
 	}
-	ln, err := net.Listen(network, l.options.Addr)
+
+	lc := net.ListenConfig{}
+	if l.md.mptcp {
+		lc.SetMultipathTCP(true)
+		l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+	}
+	ln, err := lc.Listen(context.Background(), network, l.options.Addr)
 	if err != nil {
 		return
 	}
@@ -93,24 +100,7 @@ func (l *mtlsListener) listenLoop() {
 func (l *mtlsListener) mux(conn net.Conn) {
 	defer conn.Close()
 
-	smuxConfig := smux.DefaultConfig()
-	smuxConfig.KeepAliveDisabled = l.md.muxKeepAliveDisabled
-	if l.md.muxKeepAliveInterval > 0 {
-		smuxConfig.KeepAliveInterval = l.md.muxKeepAliveInterval
-	}
-	if l.md.muxKeepAliveTimeout > 0 {
-		smuxConfig.KeepAliveTimeout = l.md.muxKeepAliveTimeout
-	}
-	if l.md.muxMaxFrameSize > 0 {
-		smuxConfig.MaxFrameSize = l.md.muxMaxFrameSize
-	}
-	if l.md.muxMaxReceiveBuffer > 0 {
-		smuxConfig.MaxReceiveBuffer = l.md.muxMaxReceiveBuffer
-	}
-	if l.md.muxMaxStreamBuffer > 0 {
-		smuxConfig.MaxStreamBuffer = l.md.muxMaxStreamBuffer
-	}
-	session, err := smux.Server(conn, smuxConfig)
+	session, err := mux.ServerSession(conn, l.md.muxCfg)
 	if err != nil {
 		l.logger.Error(err)
 		return
@@ -118,7 +108,7 @@ func (l *mtlsListener) mux(conn net.Conn) {
 	defer session.Close()
 
 	for {
-		stream, err := session.AcceptStream()
+		stream, err := session.Accept()
 		if err != nil {
 			l.logger.Error("accept stream: ", err)
 			return
@@ -126,8 +116,6 @@ func (l *mtlsListener) mux(conn net.Conn) {
 
 		select {
 		case l.cqueue <- stream:
-		case <-stream.GetDieCh():
-			stream.Close()
 		default:
 			stream.Close()
 			l.logger.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())

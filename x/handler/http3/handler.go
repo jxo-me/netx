@@ -11,13 +11,14 @@ import (
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 )
 
 type http3Handler struct {
-	hop     chain.IHop
+	hop     hop.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options
@@ -47,8 +48,8 @@ func (h *http3Handler) Init(md md.IMetaData) error {
 	return nil
 }
 
-// Forward implements handler.IForwarder.
-func (h *http3Handler) Forward(hop chain.IHop) {
+// Forward implements handler.Forwarder.
+func (h *http3Handler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
@@ -100,7 +101,7 @@ func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		w.Header().Set(k, h.md.header.Get(k))
 	}
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "udp", addr) {
 		w.WriteHeader(http.StatusForbidden)
 		log.Debug("bypass: ", addr)
 		return nil
@@ -108,12 +109,12 @@ func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: addr})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr})
 	}
 
 	var target *chain.Node
 	if h.hop != nil {
-		target = h.hop.Select(ctx, chain.HostSelectOption(addr))
+		target = h.hop.Select(ctx, hop.HostSelectOption(addr))
 	}
 	if target == nil {
 		err := errors.New("target not available")

@@ -3,20 +3,17 @@ package relay
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"strconv"
 	"time"
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
-	"github.com/jxo-me/netx/core/listener"
+	"github.com/jxo-me/netx/core/hop"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
-	xnet "github.com/jxo-me/netx/x/internal/net"
-	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
-	xservice "github.com/jxo-me/netx/x/service"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 )
 
 var (
@@ -27,12 +24,11 @@ var (
 )
 
 type relayHandler struct {
-	hop     chain.IHop
+	hop     hop.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options
 	ep      service.IService
-	pool    *ConnectorPool
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -43,7 +39,6 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &relayHandler{
 		options: options,
-		pool:    NewConnectorPool(),
 	}
 }
 
@@ -57,69 +52,11 @@ func (h *relayHandler) Init(md md.IMetaData) (err error) {
 		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
 	}
 
-	if err = h.initEntryPoint(); err != nil {
-		return
-	}
 	return nil
 }
 
-func (h *relayHandler) initEntryPoint() (err error) {
-	if h.md.entryPoint == "" {
-		return
-	}
-
-	network := "tcp"
-	if xnet.IsIPv4(h.md.entryPoint) {
-		network = "tcp4"
-	}
-
-	ln, err := net.Listen(network, h.md.entryPoint)
-	if err != nil {
-		h.options.Logger.Error(err)
-		return
-	}
-
-	serviceName := fmt.Sprintf("%s-ep-%s", h.options.Service, ln.Addr())
-	log := h.options.Logger.WithFields(map[string]any{
-		"service":  serviceName,
-		"listener": "tcp",
-		"handler":  "ep-tunnel",
-		"kind":     "service",
-	})
-	epListener := newTCPListener(ln,
-		listener.AddrOption(h.md.entryPoint),
-		listener.ServiceOption(serviceName),
-		listener.LoggerOption(log.WithFields(map[string]any{
-			"kind": "listener",
-		})),
-	)
-	if err = epListener.Init(nil); err != nil {
-		return
-	}
-	epHandler := newTunnelHandler(
-		h.pool,
-		h.md.ingress,
-		handler.ServiceOption(serviceName),
-		handler.LoggerOption(log.WithFields(map[string]any{
-			"kind": "handler",
-		})),
-	)
-	if err = epHandler.Init(nil); err != nil {
-		return
-	}
-
-	h.ep = xservice.NewService(
-		serviceName, epListener, epHandler,
-		xservice.LoggerOption(log),
-	)
-	go h.ep.Serve()
-	log.Infof("entrypoint: %s", h.ep.Addr())
-
-	return
-}
-
-// Forward implements handler.IForwarder.
-func (h *relayHandler) Forward(hop chain.IHop) {
+// Forward implements handler.Forwarder.
+func (h *relayHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
@@ -140,8 +77,6 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
-
-	ctx = auth_util.ContextWithClientAddr(ctx, auth_util.ClientAddr(conn.RemoteAddr().String()))
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
 		return ErrRateLimit
@@ -172,7 +107,6 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 	var user, pass string
 	var address string
 	var networkID relay.NetworkID
-	var tunnelID relay.TunnelID
 	for _, f := range req.Features {
 		switch f.Type() {
 		case relay.FeatureUserAuth:
@@ -182,10 +116,6 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 		case relay.FeatureAddr:
 			if feature, _ := f.(*relay.AddrFeature); feature != nil {
 				address = net.JoinHostPort(feature.Host, strconv.Itoa(int(feature.Port)))
-			}
-		case relay.FeatureTunnel:
-			if feature, _ := f.(*relay.TunnelFeature); feature != nil {
-				tunnelID = relay.NewTunnelID(feature.ID[:])
 			}
 		case relay.FeatureNetwork:
 			if feature, _ := f.(*relay.NetworkFeature); feature != nil {
@@ -199,13 +129,13 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 	}
 
 	if h.options.Auther != nil {
-		id, ok := h.options.Auther.Authenticate(ctx, user, pass)
+		clientID, ok := h.options.Auther.Authenticate(ctx, user, pass)
 		if !ok {
 			resp.Status = relay.StatusUnauthorized
 			resp.WriteTo(conn)
 			return ErrUnauthorized
 		}
-		ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
+		ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(clientID))
 	}
 
 	network := networkID.String()
@@ -223,16 +153,10 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 	case 0, relay.CmdConnect:
 		defer conn.Close()
 
-		if !tunnelID.IsZero() {
-			return h.handleConnectTunnel(ctx, conn, network, address, tunnelID, log)
-		}
 		return h.handleConnect(ctx, conn, network, address, log)
 	case relay.CmdBind:
-		if !tunnelID.IsZero() {
-			return h.handleBindTunnel(ctx, conn, network, tunnelID, log)
-		}
-
 		defer conn.Close()
+
 		return h.handleBind(ctx, conn, network, address, log)
 	default:
 		resp.Status = relay.StatusBadRequest

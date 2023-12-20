@@ -33,12 +33,14 @@ func NewListener(conn net.PacketConn, cfg *ListenConfig) net.Listener {
 	}
 
 	ln := &listener{
-		conn:     conn,
-		cqueue:   make(chan net.Conn, cfg.Backlog),
-		connPool: newConnPool(cfg.TTL).WithLogger(cfg.Logger),
-		closed:   make(chan struct{}),
-		errChan:  make(chan error, 1),
-		config:   cfg,
+		conn:    conn,
+		cqueue:  make(chan net.Conn, cfg.Backlog),
+		closed:  make(chan struct{}),
+		errChan: make(chan error, 1),
+		config:  cfg,
+	}
+	if cfg.KeepAlive {
+		ln.connPool = newConnPool(cfg.TTL).WithLogger(cfg.Logger)
 	}
 	go ln.listenLoop()
 
@@ -69,7 +71,7 @@ func (ln *listener) listenLoop() {
 
 		b := bufpool.Get(ln.config.ReadBufferSize)
 
-		n, raddr, err := ln.conn.ReadFrom(*b)
+		n, raddr, err := ln.conn.ReadFrom(b)
 		if err != nil {
 			ln.errChan <- err
 			close(ln.errChan)
@@ -82,7 +84,7 @@ func (ln *listener) listenLoop() {
 			continue
 		}
 
-		if err := c.WriteQueue((*b)[:n]); err != nil {
+		if err := c.WriteQueue(b[:n]); err != nil {
 			ln.config.Logger.Warn("data discarded: ", err)
 		}
 	}

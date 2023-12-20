@@ -3,6 +3,7 @@ package auto
 import (
 	"bufio"
 	"context"
+	"github.com/jxo-me/netx/x/registry"
 	"net"
 	"time"
 
@@ -14,39 +15,43 @@ import (
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 )
 
-type AutoHandler struct {
+type autoHandler struct {
 	httpHandler   handler.IHandler
 	socks4Handler handler.IHandler
 	socks5Handler handler.IHandler
 	options       handler.Options
 }
 
-func NewHandler(opts ...handler.Option) *AutoHandler {
+func NewHandler(opts ...handler.Option) handler.IHandler {
 	options := handler.Options{}
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	h := &AutoHandler{
+	h := &autoHandler{
 		options: options,
+	}
+
+	if f := registry.HandlerRegistry().Get("http"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": "http"})))
+		h.httpHandler = f(v...)
+	}
+	if f := registry.HandlerRegistry().Get("socks4"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": "socks4"})))
+		h.socks4Handler = f(v...)
+	}
+	if f := registry.HandlerRegistry().Get("socks5"); f != nil {
+		v := append(opts,
+			handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": "socks5"})))
+		h.socks5Handler = f(v...)
 	}
 
 	return h
 }
 
-func (h *AutoHandler) SetHttpHandler(handle handler.IHandler) {
-	h.httpHandler = handle
-}
-
-func (h *AutoHandler) SetSocks4Handler(handle handler.IHandler) {
-	h.socks4Handler = handle
-}
-
-func (h *AutoHandler) SetSocks5Handler(handle handler.IHandler) {
-	h.socks5Handler = handle
-}
-
-func (h *AutoHandler) Init(md md.IMetaData) error {
+func (h *autoHandler) Init(md md.IMetaData) error {
 	if h.httpHandler != nil {
 		if err := h.httpHandler.Init(md); err != nil {
 			return err
@@ -66,7 +71,7 @@ func (h *AutoHandler) Init(md md.IMetaData) error {
 	return nil
 }
 
-func (h *AutoHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *autoHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),

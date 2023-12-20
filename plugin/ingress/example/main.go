@@ -19,10 +19,17 @@ type server struct {
 	proto.UnimplementedIngressServer
 }
 
-func (s *server) Get(ctx context.Context, in *proto.GetRequest) (*proto.GetReply, error) {
-	reply := &proto.GetReply{}
-	log.Printf("ingress: %s", in.GetHost())
+func (s *server) GetRule(ctx context.Context, in *proto.GetRuleRequest) (*proto.GetRuleReply, error) {
+	reply := &proto.GetRuleReply{}
+	log.Printf("ingress get: %s", in.GetHost())
 	return reply, nil
+}
+
+func (s *server) SetRule(ctx context.Context, in *proto.SetRuleRequest) (*proto.SetRuleReply, error) {
+	reply := &proto.SetRuleReply{}
+	log.Printf("ingress set: %s -> %s", in.GetHost(), in.GetEndpoint())
+	return reply, nil
+
 }
 
 func main() {

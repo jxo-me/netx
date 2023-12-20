@@ -2,6 +2,17 @@ package config
 
 import "time"
 
+type LoggerConfig struct {
+	Name string     `json:"name"`
+	Log  *LogConfig `yaml:",omitempty" json:"log,omitempty"`
+}
+
+type TLSOptions struct {
+	MinVersion   string   `yaml:"minVersion,omitempty" json:"minVersion,omitempty"`
+	MaxVersion   string   `yaml:"maxVersion,omitempty" json:"maxVersion,omitempty"`
+	CipherSuites []string `yaml:"cipherSuites,omitempty" json:"cipherSuites,omitempty"`
+}
+
 type LogConfig struct {
 	Output   string             `yaml:",omitempty" json:"output,omitempty"`
 	Level    string             `yaml:",omitempty" json:"level,omitempty"`
@@ -48,16 +59,19 @@ type APIConfig struct {
 }
 
 type MetricsConfig struct {
-	Addr string `json:"addr"`
-	Path string `yaml:",omitempty" json:"path,omitempty"`
+	Addr   string      `json:"addr"`
+	Path   string      `yaml:",omitempty" json:"path,omitempty"`
+	Auth   *AuthConfig `yaml:",omitempty" json:"auth,omitempty"`
+	Auther string      `yaml:",omitempty" json:"auther,omitempty"`
 }
 
 type TLSConfig struct {
-	CertFile   string `yaml:"certFile,omitempty" json:"certFile,omitempty"`
-	KeyFile    string `yaml:"keyFile,omitempty" json:"keyFile,omitempty"`
-	CAFile     string `yaml:"caFile,omitempty" json:"caFile,omitempty"`
-	Secure     bool   `yaml:",omitempty" json:"secure,omitempty"`
-	ServerName string `yaml:"serverName,omitempty" json:"serverName,omitempty"`
+	CertFile   string      `yaml:"certFile,omitempty" json:"certFile,omitempty"`
+	KeyFile    string      `yaml:"keyFile,omitempty" json:"keyFile,omitempty"`
+	CAFile     string      `yaml:"caFile,omitempty" json:"caFile,omitempty"`
+	Secure     bool        `yaml:",omitempty" json:"secure,omitempty"`
+	ServerName string      `yaml:"serverName,omitempty" json:"serverName,omitempty"`
+	Options    *TLSOptions `yaml:",omitempty" json:"options,omitempty"`
 
 	// for auto-generated default certificate.
 	Validity     time.Duration `yaml:",omitempty" json:"validity,omitempty"`
@@ -145,6 +159,8 @@ type NameserverConfig struct {
 	Hostname string        `yaml:",omitempty" json:"hostname,omitempty"`
 	TTL      time.Duration `yaml:",omitempty" json:"ttl,omitempty"`
 	Timeout  time.Duration `yaml:",omitempty" json:"timeout,omitempty"`
+	Async    bool          `yaml:",omitempty" json:"async,omitempty"`
+	Only     string        `yaml:",omitempty" json:"only,omitempty"`
 }
 
 type ResolverConfig struct {
@@ -177,6 +193,26 @@ type IngressRuleConfig struct {
 type IngressConfig struct {
 	Name   string               `json:"name"`
 	Rules  []*IngressRuleConfig `yaml:",omitempty" json:"rules,omitempty"`
+	Reload time.Duration        `yaml:",omitempty" json:"reload,omitempty"`
+	File   *FileLoader          `yaml:",omitempty" json:"file,omitempty"`
+	Redis  *RedisLoader         `yaml:",omitempty" json:"redis,omitempty"`
+	HTTP   *HTTPLoader          `yaml:"http,omitempty" json:"http,omitempty"`
+	Plugin *PluginConfig        `yaml:",omitempty" json:"plugin,omitempty"`
+}
+
+type SDConfig struct {
+	Name   string        `json:"name"`
+	Plugin *PluginConfig `yaml:",omitempty" json:"plugin,omitempty"`
+}
+
+type RouterRouteConfig struct {
+	Net     string `json:"net"`
+	Gateway string `json:"gateway"`
+}
+
+type RouterConfig struct {
+	Name   string               `json:"name"`
+	Routes []*RouterRouteConfig `yaml:",omitempty" json:"routes,omitempty"`
 	Reload time.Duration        `yaml:",omitempty" json:"reload,omitempty"`
 	File   *FileLoader          `yaml:",omitempty" json:"file,omitempty"`
 	Redis  *RedisLoader         `yaml:",omitempty" json:"redis,omitempty"`
@@ -229,6 +265,7 @@ type LimiterConfig struct {
 	File   *FileLoader   `yaml:",omitempty" json:"file,omitempty"`
 	Redis  *RedisLoader  `yaml:",omitempty" json:"redis,omitempty"`
 	HTTP   *HTTPLoader   `yaml:"http,omitempty" json:"http,omitempty"`
+	Plugin *PluginConfig `yaml:",omitempty" json:"plugin,omitempty"`
 }
 
 type ListenerConfig struct {
@@ -251,7 +288,7 @@ type HandlerConfig struct {
 	Authers    []string          `yaml:",omitempty" json:"authers,omitempty"`
 	Auth       *AuthConfig       `yaml:",omitempty" json:"auth,omitempty"`
 	TLS        *TLSConfig        `yaml:",omitempty" json:"tls,omitempty"`
-	Ingress    string            `yaml:",omitempty" json:"ingress,omitempty"`
+	Limiter    string            `yaml:",omitempty" json:"limiter,omitempty"`
 	Metadata   map[string]any    `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
@@ -259,15 +296,15 @@ type ForwarderConfig struct {
 	Name     string               `yaml:",omitempty" json:"name,omitempty"`
 	Selector *SelectorConfig      `yaml:",omitempty" json:"selector,omitempty"`
 	Nodes    []*ForwardNodeConfig `json:"nodes"`
-	// DEPRECATED by nodes since beta.4
-	Targets []string `yaml:",omitempty" json:"targets,omitempty"`
 }
 
 type ForwardNodeConfig struct {
 	Name     string          `yaml:",omitempty" json:"name,omitempty"`
 	Addr     string          `yaml:",omitempty" json:"addr,omitempty"`
 	Host     string          `yaml:",omitempty" json:"host,omitempty"`
+	Network  string          `yaml:",omitempty" json:"network,omitempty"`
 	Protocol string          `yaml:",omitempty" json:"protocol,omitempty"`
+	Path     string          `yaml:",omitempty" json:"path,omitempty"`
 	Bypass   string          `yaml:",omitempty" json:"bypass,omitempty"`
 	Bypasses []string        `yaml:",omitempty" json:"bypasses,omitempty"`
 	HTTP     *HTTPNodeConfig `yaml:",omitempty" json:"http,omitempty"`
@@ -281,8 +318,9 @@ type HTTPNodeConfig struct {
 }
 
 type TLSNodeConfig struct {
-	ServerName string `yaml:"serverName,omitempty" json:"serverName,omitempty"`
-	Secure     bool   `yaml:",omitempty" json:"secure,omitempty"`
+	ServerName string      `yaml:"serverName,omitempty" json:"serverName,omitempty"`
+	Secure     bool        `yaml:",omitempty" json:"secure,omitempty"`
+	Options    *TLSOptions `yaml:",omitempty" json:"options,omitempty"`
 }
 
 type DialerConfig struct {
@@ -319,6 +357,8 @@ type ServiceConfig struct {
 	Limiter    string            `yaml:",omitempty" json:"limiter,omitempty"`
 	CLimiter   string            `yaml:"climiter,omitempty" json:"climiter,omitempty"`
 	RLimiter   string            `yaml:"rlimiter,omitempty" json:"rlimiter,omitempty"`
+	Logger     string            `yaml:",omitempty" json:"logger,omitempty"`
+	Loggers    []string          `yaml:",omitempty" json:"loggers,omitempty"`
 	Recorders  []*RecorderObject `yaml:",omitempty" json:"recorders,omitempty"`
 	Handler    *HandlerConfig    `yaml:",omitempty" json:"handler,omitempty"`
 	Listener   *ListenerConfig   `yaml:",omitempty" json:"listener,omitempty"`
@@ -327,9 +367,7 @@ type ServiceConfig struct {
 }
 
 type ChainConfig struct {
-	Name string `json:"name"`
-	// REMOVED since beta.6
-	// Selector *SelectorConfig `yaml:",omitempty" json:"selector,omitempty"`
+	Name     string         `json:"name"`
 	Hops     []*HopConfig   `json:"hops"`
 	Metadata map[string]any `yaml:",omitempty" json:"metadata,omitempty"`
 }
@@ -349,13 +387,20 @@ type HopConfig struct {
 	Resolver  string          `yaml:",omitempty" json:"resolver,omitempty"`
 	Hosts     string          `yaml:",omitempty" json:"hosts,omitempty"`
 	Nodes     []*NodeConfig   `yaml:",omitempty" json:"nodes,omitempty"`
+	Reload    time.Duration   `yaml:",omitempty" json:"reload,omitempty"`
+	File      *FileLoader     `yaml:",omitempty" json:"file,omitempty"`
+	Redis     *RedisLoader    `yaml:",omitempty" json:"redis,omitempty"`
+	HTTP      *HTTPLoader     `yaml:"http,omitempty" json:"http,omitempty"`
+	Plugin    *PluginConfig   `yaml:",omitempty" json:"plugin,omitempty"`
 }
 
 type NodeConfig struct {
 	Name      string           `json:"name"`
 	Addr      string           `yaml:",omitempty" json:"addr,omitempty"`
 	Host      string           `yaml:",omitempty" json:"host,omitempty"`
+	Network   string           `yaml:",omitempty" json:"network,omitempty"`
 	Protocol  string           `yaml:",omitempty" json:"protocol,omitempty"`
+	Path      string           `yaml:",omitempty" json:"path,omitempty"`
 	Interface string           `yaml:",omitempty" json:"interface,omitempty"`
 	SockOpts  *SockOptsConfig  `yaml:"sockopts,omitempty" json:"sockopts,omitempty"`
 	Bypass    string           `yaml:",omitempty" json:"bypass,omitempty"`

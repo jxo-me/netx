@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
-	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
@@ -34,7 +34,7 @@ func (s *serverSelector) Select(methods ...uint8) (method uint8) {
 		}
 	}
 
-	// when IAuthenticator is set, auth is mandatory
+	// when Authenticator is set, auth is mandatory
 	if s.Authenticator != nil {
 		if method == gosocks5.MethodNoAuth {
 			method = gosocks5.MethodUserPass
@@ -50,9 +50,10 @@ func (s *serverSelector) Select(methods ...uint8) (method uint8) {
 func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (string, net.Conn, error) {
 	s.logger.Debugf("%d %d", gosocks5.Ver5, method)
 	switch method {
+	case gosocks5.MethodNoAuth:
+
 	case socks.MethodTLS:
 		conn = tls.Server(conn, s.TLSConfig)
-		return "", conn, nil
 
 	case gosocks5.MethodUserPass, socks.MethodTLSAuth:
 		if method == socks.MethodTLSAuth {
@@ -69,7 +70,7 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (string, net.Co
 		var id string
 		if s.Authenticator != nil {
 			var ok bool
-			ctx := auth_util.ContextWithClientAddr(context.Background(), auth_util.ClientAddr(conn.RemoteAddr().String()))
+			ctx := ctxvalue.ContextWithClientAddr(context.Background(), ctxvalue.ClientAddr(conn.RemoteAddr().String()))
 			id, ok = s.Authenticator.Authenticate(ctx, req.Username, req.Password)
 			if !ok {
 				resp := gosocks5.NewUserPassResponse(gosocks5.UserPassVer, gosocks5.Failure)
@@ -96,4 +97,5 @@ func (s *serverSelector) OnSelected(method uint8, conn net.Conn) (string, net.Co
 	default:
 		return "", nil, gosocks5.ErrBadFormat
 	}
+	return "", conn, nil
 }

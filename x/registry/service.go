@@ -4,6 +4,6 @@ import (
 	"github.com/jxo-me/netx/core/service"
 )
 
-type ServiceRegistry struct {
+type serviceRegistry struct {
 	registry[service.IService]
 }

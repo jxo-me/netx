@@ -10,7 +10,9 @@ import (
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/router"
 	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
 	"github.com/songgao/water/waterutil"
 )
@@ -21,7 +23,7 @@ var (
 )
 
 type tunHandler struct {
-	hop     chain.IHop
+	hop     hop.IHop
 	routes  sync.Map
 	router  *chain.Router
 	md      metadata
@@ -52,8 +54,8 @@ func (h *tunHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.IForwarder.
-func (h *tunHandler) Forward(hop chain.IHop) {
+// Forward implements handler.Forwarder.
+func (h *tunHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
@@ -102,15 +104,18 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	return h.handleServer(ctx, conn, config, log)
 }
 
-func (h *tunHandler) findRouteFor(dst net.IP, routes ...tun_util.Route) net.Addr {
+func (h *tunHandler) findRouteFor(ctx context.Context, dst net.IP, router router.IRouter) net.Addr {
 	if v, ok := h.routes.Load(ipToTunRouteKey(dst)); ok {
 		return v.(net.Addr)
 	}
-	for _, route := range routes {
-		if route.Net.Contains(dst) && route.Gateway != nil {
-			if v, ok := h.routes.Load(ipToTunRouteKey(route.Gateway)); ok {
-				return v.(net.Addr)
-			}
+
+	if router == nil {
+		return nil
+	}
+
+	if route := router.GetRoute(ctx, dst); route != nil && route.Gateway != nil {
+		if v, ok := h.routes.Load(ipToTunRouteKey(route.Gateway)); ok {
+			return v.(net.Addr)
 		}
 	}
 	return nil
@@ -123,7 +128,7 @@ var mIPProts = map[waterutil.IPProtocol]string{
 	waterutil.GGP:        "GGP",
 	waterutil.TCP:        "TCP",
 	waterutil.UDP:        "UDP",
-	waterutil.IPv6_Route: "IPv6-IRoute",
+	waterutil.IPv6_Route: "IPv6-Route",
 	waterutil.IPv6_Frag:  "IPv6-Frag",
 	waterutil.IPv6_ICMP:  "IPv6-ICMP",
 }

@@ -1,6 +1,7 @@
 package mws
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"net/http"
@@ -14,11 +15,11 @@ import (
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
+	"github.com/jxo-me/netx/x/internal/util/mux"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	"github.com/xtaci/smux"
 )
 
 type mwsListener struct {
@@ -88,7 +89,13 @@ func (l *mwsListener) Init(md md.IMetaData) (err error) {
 	if xnet.IsIPv4(l.options.Addr) {
 		network = "tcp4"
 	}
-	ln, err := net.Listen(network, l.options.Addr)
+
+	lc := net.ListenConfig{}
+	if l.md.mptcp {
+		lc.SetMultipathTCP(true)
+		l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+	}
+	ln, err := lc.Listen(context.Background(), network, l.options.Addr)
 	if err != nil {
 		return
 	}
@@ -136,65 +143,47 @@ func (l *mwsListener) Addr() net.Addr {
 }
 
 func (l *mwsListener) upgrade(w http.ResponseWriter, r *http.Request) {
+	log := l.logger.WithFields(map[string]any{
+		"local":  l.addr.String(),
+		"remote": r.RemoteAddr,
+	})
 	if l.logger.IsLevelEnabled(logger.TraceLevel) {
-		log := l.logger.WithFields(map[string]any{
-			"local":  l.addr.String(),
-			"remote": r.RemoteAddr,
-		})
 		dump, _ := httputil.DumpRequest(r, false)
 		log.Trace(string(dump))
 	}
 
 	conn, err := l.upgrader.Upgrade(w, r, l.md.header)
 	if err != nil {
-		l.logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error(err)
 		return
 	}
 
-	l.mux(ws_util.Conn(conn))
+	l.mux(ws_util.Conn(conn), log)
 }
 
-func (l *mwsListener) mux(conn net.Conn) {
+func (l *mwsListener) mux(conn net.Conn, log logger.ILogger) {
 	defer conn.Close()
 
-	smuxConfig := smux.DefaultConfig()
-	smuxConfig.KeepAliveDisabled = l.md.muxKeepAliveDisabled
-	if l.md.muxKeepAliveInterval > 0 {
-		smuxConfig.KeepAliveInterval = l.md.muxKeepAliveInterval
-	}
-	if l.md.muxKeepAliveTimeout > 0 {
-		smuxConfig.KeepAliveTimeout = l.md.muxKeepAliveTimeout
-	}
-	if l.md.muxMaxFrameSize > 0 {
-		smuxConfig.MaxFrameSize = l.md.muxMaxFrameSize
-	}
-	if l.md.muxMaxReceiveBuffer > 0 {
-		smuxConfig.MaxReceiveBuffer = l.md.muxMaxReceiveBuffer
-	}
-	if l.md.muxMaxStreamBuffer > 0 {
-		smuxConfig.MaxStreamBuffer = l.md.muxMaxStreamBuffer
-	}
-	session, err := smux.Server(conn, smuxConfig)
+	session, err := mux.ServerSession(conn, l.md.muxCfg)
 	if err != nil {
-		l.logger.Error(err)
+		log.Error(err)
 		return
 	}
 	defer session.Close()
 
 	for {
-		stream, err := session.AcceptStream()
+		stream, err := session.Accept()
 		if err != nil {
-			l.logger.Error("accept stream: ", err)
+			log.Error("accept stream: ", err)
 			return
 		}
 
 		select {
 		case l.cqueue <- stream:
-		case <-stream.GetDieCh():
-			stream.Close()
 		default:
 			stream.Close()
-			l.logger.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())
+			log.Warnf("connection queue is full, client %s discarded", stream.RemoteAddr())
 		}
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/jxo-me/netx/x/limiter/conn"
 	"github.com/jxo-me/netx/x/limiter/traffic"
 	mdx "github.com/jxo-me/netx/x/metadata"
+	"github.com/jxo-me/netx/x/registry"
 )
 
 var (
@@ -501,7 +502,7 @@ func buildNodeConfig(url *url.URL) (*config.NodeConfig, error) {
 	delete(m, "secure")
 	delete(m, "serverName")
 
-	if !tlsConfig.Secure && tlsConfig.CertFile == "" && tlsConfig.CAFile == "" {
+	if !tlsConfig.Secure && tlsConfig.CertFile == "" && tlsConfig.CAFile == "" && tlsConfig.ServerName == "" {
 		tlsConfig = nil
 	}
 

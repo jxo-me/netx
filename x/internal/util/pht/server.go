@@ -2,6 +2,7 @@ package pht
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
@@ -38,6 +39,7 @@ type serverOptions struct {
 	tlsConfig      *tls.Config
 	readBufferSize int
 	readTimeout    time.Duration
+	mptcp          bool
 	logger         logger.ILogger
 }
 
@@ -81,7 +83,13 @@ func ReadTimeoutServerOption(timeout time.Duration) ServerOption {
 	}
 }
 
-func LoggerServerOption(logger logger.ILogger) ServerOption {
+func MPTCPServerOption(mptcp bool) ServerOption {
+	return func(opts *serverOptions) {
+		opts.mptcp = mptcp
+	}
+}
+
+func LoggerServerOption(logger logger.Logger) ServerOption {
 	return func(opts *serverOptions) {
 		opts.logger = logger
 	}
@@ -187,7 +195,13 @@ func (s *Server) ListenAndServe() error {
 	if xnet.IsIPv4(s.httpServer.Addr) {
 		network = "tcp4"
 	}
-	ln, err := net.Listen(network, s.httpServer.Addr)
+
+	lc := net.ListenConfig{}
+	if s.options.mptcp {
+		lc.SetMultipathTCP(true)
+		s.options.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+	}
+	ln, err := lc.Listen(context.Background(), network, s.httpServer.Addr)
 	if err != nil {
 		s.options.logger.Error(err)
 		return err
@@ -361,10 +375,10 @@ func (s *Server) handlePull(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		conn.SetReadDeadline(time.Now().Add(s.options.readTimeout))
-		n, err := conn.Read(*b)
+		n, err := conn.Read(b)
 		if n > 0 {
 			bw := bufio.NewWriter(w)
-			bw.WriteString(base64.StdEncoding.EncodeToString((*b)[:n]))
+			bw.WriteString(base64.StdEncoding.EncodeToString(b[:n]))
 			bw.WriteString("\n")
 			if err := bw.Flush(); err != nil {
 				return
@@ -375,8 +389,8 @@ func (s *Server) handlePull(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
-				(*b)[0] = '\n' // no data
-				w.Write((*b)[:1])
+				b[0] = '\n' // no data
+				w.Write(b[:1])
 			} else if errors.Is(err, io.EOF) {
 				// server connection closed
 			} else {

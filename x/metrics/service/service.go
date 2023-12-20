@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -13,7 +14,8 @@ const (
 )
 
 type options struct {
-	path string
+	path   string
+	auther auth.IAuthenticator
 }
 
 type Option func(*options)
@@ -24,9 +26,16 @@ func PathOption(path string) Option {
 	}
 }
 
+func AutherOption(auther auth.IAuthenticator) Option {
+	return func(o *options) {
+		o.auther = auther
+	}
+}
+
 type metricService struct {
-	s  *http.Server
-	ln net.Listener
+	s      *http.Server
+	ln     net.Listener
+	cclose chan struct{}
 }
 
 func NewService(addr string, opts ...Option) (service.IService, error) {
@@ -44,12 +53,22 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(options.path, promhttp.Handler())
+	mux.Handle(options.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if options.auther != nil {
+			u, p, _ := r.BasicAuth()
+			if _, ok := options.auther.Authenticate(r.Context(), u, p); !ok {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		}
+		promhttp.Handler().ServeHTTP(w, r)
+	}))
 	return &metricService{
 		s: &http.Server{
 			Handler: mux,
 		},
-		ln: ln,
+		ln:     ln,
+		cclose: make(chan struct{}),
 	}, nil
 }
 
@@ -63,4 +82,13 @@ func (s *metricService) Addr() net.Addr {
 
 func (s *metricService) Close() error {
 	return s.s.Close()
+}
+
+func (s *metricService) IsClosed() bool {
+	select {
+	case <-s.cclose:
+		return true
+	default:
+		return false
+	}
 }

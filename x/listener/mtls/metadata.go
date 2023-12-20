@@ -1,10 +1,9 @@
 package mtls
 
 import (
-	"time"
-
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	"github.com/jxo-me/netx/x/internal/util/mux"
 )
 
 const (
@@ -12,39 +11,27 @@ const (
 )
 
 type metadata struct {
-	muxKeepAliveDisabled bool
-	muxKeepAliveInterval time.Duration
-	muxKeepAliveTimeout  time.Duration
-	muxMaxFrameSize      int
-	muxMaxReceiveBuffer  int
-	muxMaxStreamBuffer   int
-
+	muxCfg  *mux.Config
 	backlog int
+	mptcp   bool
 }
 
 func (l *mtlsListener) parseMetadata(md mdata.IMetaData) (err error) {
-	const (
-		backlog = "backlog"
-
-		muxKeepAliveDisabled = "muxKeepAliveDisabled"
-		muxKeepAliveInterval = "muxKeepAliveInterval"
-		muxKeepAliveTimeout  = "muxKeepAliveTimeout"
-		muxMaxFrameSize      = "muxMaxFrameSize"
-		muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
-		muxMaxStreamBuffer   = "muxMaxStreamBuffer"
-	)
-
-	l.md.backlog = mdutil.GetInt(md, backlog)
+	l.md.backlog = mdutil.GetInt(md, "backlog")
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	l.md.muxKeepAliveDisabled = mdutil.GetBool(md, muxKeepAliveDisabled)
-	l.md.muxKeepAliveInterval = mdutil.GetDuration(md, muxKeepAliveInterval)
-	l.md.muxKeepAliveTimeout = mdutil.GetDuration(md, muxKeepAliveTimeout)
-	l.md.muxMaxFrameSize = mdutil.GetInt(md, muxMaxFrameSize)
-	l.md.muxMaxReceiveBuffer = mdutil.GetInt(md, muxMaxReceiveBuffer)
-	l.md.muxMaxStreamBuffer = mdutil.GetInt(md, muxMaxStreamBuffer)
+	l.md.muxCfg = &mux.Config{
+		Version:           mdutil.GetInt(md, "mux.version"),
+		KeepAliveInterval: mdutil.GetDuration(md, "mux.keepaliveInterval"),
+		KeepAliveDisabled: mdutil.GetBool(md, "mux.keepaliveDisabled"),
+		KeepAliveTimeout:  mdutil.GetDuration(md, "mux.keepaliveTimeout"),
+		MaxFrameSize:      mdutil.GetInt(md, "mux.maxFrameSize"),
+		MaxReceiveBuffer:  mdutil.GetInt(md, "mux.maxReceiveBuffer"),
+		MaxStreamBuffer:   mdutil.GetInt(md, "mux.maxStreamBuffer"),
+	}
+	l.md.mptcp = mdutil.GetBool(md, "mptcp")
 
 	return
 }

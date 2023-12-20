@@ -4,9 +4,12 @@ import (
 	"net"
 	"strings"
 
+	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	"github.com/jxo-me/netx/core/router"
 	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
+	xrouter "github.com/jxo-me/netx/x/router"
 )
 
 const (
@@ -36,9 +39,10 @@ func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 
 	config := &tun_util.Config{
-		Name: mdutil.GetString(md, name),
-		Peer: mdutil.GetString(md, peer),
-		MTU:  mdutil.GetInt(md, mtu),
+		Name:   mdutil.GetString(md, name),
+		Peer:   mdutil.GetString(md, peer),
+		MTU:    mdutil.GetInt(md, mtu),
+		Router: registry.RouterRegistry().Get(mdutil.GetString(md, "router")),
 	}
 	if config.MTU <= 0 {
 		config.MTU = defaultMTU
@@ -62,33 +66,46 @@ func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 
 	for _, s := range strings.Split(mdutil.GetString(md, route), ",") {
-		var route tun_util.Route
 		_, ipNet, _ := net.ParseCIDR(strings.TrimSpace(s))
 		if ipNet == nil {
 			continue
 		}
-		route.Net = *ipNet
-		route.Gateway = config.Gateway
 
-		config.Routes = append(config.Routes, route)
+		l.routes = append(l.routes, &router.Route{
+			Net:     ipNet,
+			Gateway: config.Gateway,
+		})
 	}
 
 	for _, s := range mdutil.GetStrings(md, routes) {
 		ss := strings.SplitN(s, " ", 2)
 		if len(ss) == 2 {
-			var route tun_util.Route
+			var route router.Route
 			_, ipNet, _ := net.ParseCIDR(strings.TrimSpace(ss[0]))
 			if ipNet == nil {
 				continue
 			}
-			route.Net = *ipNet
-			route.Gateway = net.ParseIP(ss[1])
-			if route.Gateway == nil {
-				route.Gateway = config.Gateway
+			route.Net = ipNet
+			gw := net.ParseIP(ss[1])
+			if gw == nil {
+				gw = config.Gateway
 			}
 
-			config.Routes = append(config.Routes, route)
+			l.routes = append(l.routes, &router.Route{
+				Net:     ipNet,
+				Gateway: gw,
+			})
 		}
+	}
+
+	if config.Router == nil && len(l.routes) > 0 {
+		config.Router = xrouter.NewRouter(
+			xrouter.RoutesOption(l.routes),
+			xrouter.LoggerOption(logger.Default().WithFields(map[string]any{
+				"kind":   "router",
+				"router": "@internal",
+			})),
+		)
 	}
 
 	l.md.config = config

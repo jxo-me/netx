@@ -11,7 +11,7 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/xtaci/smux"
+	"github.com/jxo-me/netx/x/internal/util/mux"
 )
 
 type mtlsDialer struct {
@@ -75,7 +75,7 @@ func (d *mtlsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 	return session.conn, err
 }
 
-// Handshake implements dialer.IHandshaker
+// Handshake implements dialer.Handshaker
 func (d *mtlsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {
@@ -125,25 +125,7 @@ func (d *mtlsDialer) initSession(ctx context.Context, conn net.Conn) (*muxSessio
 	conn = tlsConn
 
 	// stream multiplex
-	smuxConfig := smux.DefaultConfig()
-	smuxConfig.KeepAliveDisabled = d.md.muxKeepAliveDisabled
-	if d.md.muxKeepAliveInterval > 0 {
-		smuxConfig.KeepAliveInterval = d.md.muxKeepAliveInterval
-	}
-	if d.md.muxKeepAliveTimeout > 0 {
-		smuxConfig.KeepAliveTimeout = d.md.muxKeepAliveTimeout
-	}
-	if d.md.muxMaxFrameSize > 0 {
-		smuxConfig.MaxFrameSize = d.md.muxMaxFrameSize
-	}
-	if d.md.muxMaxReceiveBuffer > 0 {
-		smuxConfig.MaxReceiveBuffer = d.md.muxMaxReceiveBuffer
-	}
-	if d.md.muxMaxStreamBuffer > 0 {
-		smuxConfig.MaxStreamBuffer = d.md.muxMaxStreamBuffer
-	}
-
-	session, err := smux.Client(conn, smuxConfig)
+	session, err := mux.ClientSession(conn, d.md.muxCfg)
 	if err != nil {
 		return nil, err
 	}

@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
-	serial_util "github.com/jxo-me/netx/x/internal/util/serial"
-	goserial "github.com/tarm/serial"
+	serial "github.com/jxo-me/netx/x/internal/util/serial"
+	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 )
 
 func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) (err error) {
@@ -44,7 +44,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		return
 	}
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, address) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, network, address) {
 		log.Debug("bypass: ", address)
 		resp.Status = relay.StatusForbidden
 		_, err = resp.WriteTo(conn)
@@ -53,7 +53,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: address})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: address})
 	}
 
 	var cc io.ReadWriteCloser
@@ -62,7 +62,7 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	case "unix":
 		cc, err = (&net.Dialer{}).DialContext(ctx, "unix", address)
 	case "serial":
-		cc, err = goserial.OpenPort(serial_util.ParseConfigFromAddr(address))
+		cc, err = serial.OpenPort(serial.ParseConfigFromAddr(address))
 	default:
 		cc, err = h.router.Dial(ctx, network, address)
 	}
@@ -105,105 +105,19 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		}
 	}
 
+	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, conn.RemoteAddr().String(),
+		traffic.NetworkOption(network),
+		traffic.AddrOption(address),
+		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),
+		traffic.SrcOption(conn.RemoteAddr().String()),
+	)
+
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
-	xnet.Transport(conn, cc)
+	xnet.Transport(rw, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), address)
-
-	return nil
-}
-
-func (h *relayHandler) handleConnectTunnel(ctx context.Context, conn net.Conn, network, address string, tunnelID relay.TunnelID, log logger.ILogger) error {
-	log = log.WithFields(map[string]any{
-		"dst":    fmt.Sprintf("%s/%s", address, network),
-		"cmd":    "connect",
-		"tunnel": tunnelID.String(),
-	})
-
-	log.Debugf("%s >> %s/%s", conn.RemoteAddr(), address, network)
-
-	resp := relay.Response{
-		Version: relay.Version1,
-		Status:  relay.StatusOK,
-	}
-
-	host, sp, _ := net.SplitHostPort(address)
-
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, address) {
-		log.Debug("bypass: ", address)
-		resp.Status = relay.StatusForbidden
-		_, err := resp.WriteTo(conn)
-		return err
-	}
-
-	var tid relay.TunnelID
-	if ingress := h.md.ingress; ingress != nil {
-		tid = parseTunnelID(ingress.Get(ctx, host))
-	}
-	if !tid.Equal(tunnelID) && !h.md.directTunnel {
-		resp.Status = relay.StatusBadRequest
-		resp.WriteTo(conn)
-		err := fmt.Errorf("not route to host %s", host)
-		log.Error(err)
-		return err
-	}
-
-	cc, _, err := getTunnelConn(network, h.pool, tunnelID, 3, log)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer cc.Close()
-
-	log.Debugf("%s >> %s", conn.RemoteAddr(), cc.RemoteAddr())
-
-	if h.md.noDelay {
-		if _, err := resp.WriteTo(conn); err != nil {
-			log.Error(err)
-			return err
-		}
-	} else {
-		rc := &tcpConn{
-			Conn: conn,
-		}
-		// cache the header
-		if _, err := resp.WriteTo(&rc.wbuf); err != nil {
-			return err
-		}
-		conn = rc
-	}
-
-	var features []relay.Feature
-	af := &relay.AddrFeature{} // visitor address
-	af.ParseFrom(conn.RemoteAddr().String())
-	features = append(features, af)
-
-	if host != "" {
-		port, _ := strconv.Atoi(sp)
-		// target host
-		af = &relay.AddrFeature{
-			AType: relay.AddrDomain,
-			Host:  host,
-			Port:  uint16(port),
-		}
-		features = append(features, af)
-	}
-
-	resp = relay.Response{
-		Version:  relay.Version1,
-		Status:   relay.StatusOK,
-		Features: features,
-	}
-	resp.WriteTo(cc)
-
-	t := time.Now()
-	log.Debugf("%s <-> %s", conn.RemoteAddr(), cc.RemoteAddr())
-	xnet.Transport(conn, cc)
-	log.WithFields(map[string]any{
-		"duration": time.Since(t),
-	}).Debugf("%s >-< %s", conn.RemoteAddr(), cc.RemoteAddr())
 
 	return nil
 }

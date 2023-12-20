@@ -52,7 +52,7 @@ func (c *sshdConnector) Connect(ctx context.Context, conn net.Conn, network, add
 	return conn, nil
 }
 
-// Bind implements connector.IBinder.
+// Bind implements connector.Binder.
 func (c *sshdConnector) Bind(ctx context.Context, conn net.Conn, network, address string, opts ...connector.BindOption) (net.Listener, error) {
 	log := c.options.Logger.WithFields(map[string]any{
 		"remote":  conn.RemoteAddr().String(),

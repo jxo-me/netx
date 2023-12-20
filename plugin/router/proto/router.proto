@@ -1,0 +1,20 @@
+// protoc --go_out=. --go_opt=paths=source_relative \
+//	--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+//	router.proto
+
+syntax = "proto3";
+package proto;
+option go_package = "github.com/jxo-me/netx/plugin/router/proto";
+
+message GetRouteRequest {
+	string dst = 1;
+}
+
+message GetRouteReply {
+	string net = 1;
+	string gateway = 2;
+}
+
+service Router {
+	rpc GetRoute(GetRouteRequest) returns (GetRouteReply);
+}

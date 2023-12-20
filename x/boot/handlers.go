@@ -4,11 +4,13 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/x/consts"
 	"github.com/jxo-me/netx/x/handler/dns"
+	"github.com/jxo-me/netx/x/handler/file"
 	"github.com/jxo-me/netx/x/handler/forward/local"
 	"github.com/jxo-me/netx/x/handler/forward/remote"
 	handlerHttp "github.com/jxo-me/netx/x/handler/http"
 	handlerHttp2 "github.com/jxo-me/netx/x/handler/http2"
 	handlerHttp3 "github.com/jxo-me/netx/x/handler/http3"
+	"github.com/jxo-me/netx/x/handler/metrics"
 	redirect "github.com/jxo-me/netx/x/handler/redirect/tcp"
 	redirectUdp "github.com/jxo-me/netx/x/handler/redirect/udp"
 	handlerRelay "github.com/jxo-me/netx/x/handler/relay"
@@ -26,6 +28,7 @@ import (
 
 var Handlers = map[string]handler.NewHandler{
 	consts.Dns:      dns.NewHandler,
+	consts.File:     file.NewHandler,
 	consts.Tcp:      local.NewHandler,
 	consts.Udp:      local.NewHandler,
 	consts.Forward:  local.NewHandler,
@@ -34,6 +37,7 @@ var Handlers = map[string]handler.NewHandler{
 	consts.Http:     handlerHttp.NewHandler,
 	consts.Http2:    handlerHttp2.NewHandler,
 	consts.Http3:    handlerHttp3.NewHandler,
+	consts.Metrics:  metrics.NewHandler,
 	consts.Red:      redirect.NewHandler,
 	consts.Redir:    redirect.NewHandler,
 	consts.Redirect: redirect.NewHandler,

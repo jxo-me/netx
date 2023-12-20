@@ -9,13 +9,14 @@ import (
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 )
 
 type unixHandler struct {
-	hop     chain.IHop
+	hop     hop.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options
@@ -46,7 +47,7 @@ func (h *unixHandler) Init(md md.IMetaData) (err error) {
 }
 
 // Forward implements handler.Forwarder.
-func (h *unixHandler) Forward(hop chain.IHop) {
+func (h *unixHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 

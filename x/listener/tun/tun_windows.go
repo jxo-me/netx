@@ -6,8 +6,6 @@ import (
 	"net"
 	"os/exec"
 	"strings"
-
-	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
 )
 
 const (
@@ -38,15 +36,15 @@ func (l *tunListener) createTun() (ifce io.ReadWriteCloser, name string, ip net.
 		ip = ipNet.IP
 	}
 
-	if err = l.addRoutes(name, l.md.config.Gateway, l.md.config.Routes...); err != nil {
+	if err = l.addRoutes(name, l.md.config.Gateway); err != nil {
 		return
 	}
 
 	return
 }
 
-func (l *tunListener) addRoutes(ifName string, gw net.IP, routes ...tun_util.Route) error {
-	for _, route := range routes {
+func (l *tunListener) addRoutes(ifName string, gw net.IP) error {
+	for _, route := range l.routes {
 		l.deleteRoute(ifName, route.Net.String())
 
 		cmd := fmt.Sprintf("netsh interface ip add route prefix=%s interface=%s store=active",

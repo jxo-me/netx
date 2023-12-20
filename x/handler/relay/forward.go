@@ -7,9 +7,12 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
+	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 )
 
 func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.ILogger) error {
@@ -84,9 +87,16 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		conn = rc
 	}
 
+	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, conn.RemoteAddr().String(),
+		traffic.NetworkOption(network),
+		traffic.AddrOption(target.Addr),
+		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),
+		traffic.SrcOption(conn.RemoteAddr().String()),
+	)
+
 	t := time.Now()
 	log.Debugf("%s <-> %s", conn.RemoteAddr(), target.Addr)
-	netpkg.Transport(conn, cc)
+	netpkg.Transport(rw, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Debugf("%s >-< %s", conn.RemoteAddr(), target.Addr)

@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/limiter/rate"
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
 )
@@ -18,6 +19,7 @@ type Options struct {
 	Auth        *url.Userinfo
 	Auther      auth.IAuthenticator
 	RateLimiter rate.IRateLimiter
+	Limiter     traffic.ITrafficLimiter
 	TLSConfig   *tls.Config
 	Logger      logger.ILogger
 	Service     string
@@ -52,6 +54,12 @@ func AutherOption(auther auth.IAuthenticator) Option {
 func RateLimiterOption(limiter rate.IRateLimiter) Option {
 	return func(opts *Options) {
 		opts.RateLimiter = limiter
+	}
+}
+
+func TrafficLimiterOption(limiter traffic.ITrafficLimiter) Option {
+	return func(opts *Options) {
+		opts.Limiter = limiter
 	}
 }
 

@@ -6,14 +6,24 @@ syntax = "proto3";
 package proto;
 option go_package = "github.com/jxo-me/netx/plugin/ingress/proto";
 
-message GetRequest {
+message GetRuleRequest {
 	string host = 1;
 }
 
-message GetReply {
+message GetRuleReply {
 	string endpoint = 1;
 }
 
+message SetRuleRequest {
+	string host = 1;
+	string endpoint = 2;
+}
+
+message SetRuleReply {
+	bool ok = 1;
+}
+
 service Ingress {
-	rpc Get(GetRequest) returns (GetReply);
+	rpc GetRule(GetRuleRequest) returns (GetRuleReply);
+	rpc SetRule(SetRuleRequest) returns (SetRuleReply);
 }

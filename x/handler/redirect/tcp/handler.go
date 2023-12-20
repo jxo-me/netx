@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/logger"
@@ -109,13 +110,13 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 
 		// try to sniff HTTP traffic
 		if isHTTP(string(hdr[:])) {
-			return h.handleHTTP(ctx, rw, conn.RemoteAddr(), log)
+			return h.handleHTTP(ctx, rw, conn.RemoteAddr(), dstAddr, log)
 		}
 	}
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), dstAddr)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, dstAddr.String()) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, dstAddr.Network(), dstAddr.String()) {
 		log.Debug("bypass: ", dstAddr)
 		return nil
 	}
@@ -137,7 +138,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 	return nil
 }
 
-func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net.Addr, log logger.ILogger) error {
+func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr, dstAddr net.Addr, log logger.ILogger) error {
 	req, err := http.ReadRequest(bufio.NewReader(rw))
 	if err != nil {
 		return err
@@ -156,15 +157,22 @@ func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, radd
 		"host": host,
 	})
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, host) {
-		log.Debug("bypass: ", host)
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host, bypass.WithPathOption(req.RequestURI)) {
+		log.Debugf("bypass: %s %s", host, req.RequestURI)
 		return nil
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", host)
 	if err != nil {
 		log.Error(err)
-		return err
+	}
+
+	if cc == nil {
+		cc, err = h.router.Dial(ctx, "tcp", dstAddr.String())
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 	defer cc.Close()
 
@@ -209,9 +217,10 @@ func (h *redirectHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, rad
 		log.Error(err)
 		return err
 	}
-	if host == "" {
-		host = dstAddr.String()
-	} else {
+
+	var cc io.ReadWriteCloser
+
+	if host != "" {
 		if _, _, err := net.SplitHostPort(host); err != nil {
 			_, port, _ := net.SplitHostPort(dstAddr.String())
 			if port == "" {
@@ -219,21 +228,27 @@ func (h *redirectHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, rad
 			}
 			host = net.JoinHostPort(host, port)
 		}
+		log = log.WithFields(map[string]any{
+			"host": host,
+		})
+
+		if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host) {
+			log.Debug("bypass: ", host)
+			return nil
+		}
+
+		cc, err = h.router.Dial(ctx, "tcp", host)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
-	log = log.WithFields(map[string]any{
-		"host": host,
-	})
-
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, host) {
-		log.Debug("bypass: ", host)
-		return nil
-	}
-
-	cc, err := h.router.Dial(ctx, "tcp", host)
-	if err != nil {
-		log.Error(err)
-		return err
+	if cc == nil {
+		cc, err = h.router.Dial(ctx, "tcp", dstAddr.String())
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 	defer cc.Close()
 

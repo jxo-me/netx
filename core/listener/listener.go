@@ -19,8 +19,6 @@ type IListener interface {
 	Close() error
 }
 
-type NewListener func(opts ...Option) IListener
-
 type AcceptError struct {
 	err error
 }

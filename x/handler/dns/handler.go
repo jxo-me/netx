@@ -11,10 +11,11 @@ import (
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/common/bufpool"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/hosts"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	xchain "github.com/jxo-me/netx/x/chain"
+	xhop "github.com/jxo-me/netx/x/hop"
 	resolver_util "github.com/jxo-me/netx/x/internal/util/resolver"
 	"github.com/jxo-me/netx/x/resolver/exchanger"
 	"github.com/miekg/dns"
@@ -25,7 +26,7 @@ const (
 )
 
 type dnsHandler struct {
-	hop        chain.IHop
+	hop        hop.IHop
 	exchangers map[string]exchanger.Exchanger
 	cache      *resolver_util.Cache
 	router     *chain.Router
@@ -65,10 +66,14 @@ func (h *dnsHandler) Init(md md.IMetaData) (err error) {
 		for i, addr := range h.md.dns {
 			nodes = append(nodes, chain.NewNode(fmt.Sprintf("target-%d", i), addr))
 		}
-		h.hop = xchain.NewChainHop(nodes)
+		h.hop = xhop.NewHop(xhop.NodeOption(nodes...))
 	}
 
-	for _, node := range h.hop.Nodes() {
+	var nodes []*chain.Node
+	if nl, ok := h.hop.(hop.NodeList); ok {
+		nodes = nl.Nodes()
+	}
+	for _, node := range nodes {
 		addr := strings.TrimSpace(node.Addr)
 		if addr == "" {
 			continue
@@ -103,8 +108,8 @@ func (h *dnsHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.IForwarder.
-func (h *dnsHandler) Forward(hop chain.IHop) {
+// Forward implements handler.Forwarder.
+func (h *dnsHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
@@ -131,17 +136,17 @@ func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	b := bufpool.Get(h.md.bufferSize)
 	defer bufpool.Put(b)
 
-	n, err := conn.Read(*b)
+	n, err := conn.Read(b)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	reply, err := h.request(ctx, (*b)[:n], log)
+	reply, err := h.request(ctx, b[:n], log)
 	if err != nil {
 		return err
 	}
-	defer bufpool.Put(&reply)
+	defer bufpool.Put(reply)
 
 	if _, err = conn.Write(reply); err != nil {
 		log.Error(err)
@@ -189,18 +194,18 @@ func (h *dnsHandler) request(ctx context.Context, msg []byte, log logger.ILogger
 	}
 
 	if h.options.Bypass != nil && mq.Question[0].Qclass == dns.ClassINET {
-		if h.options.Bypass.Contains(context.Background(), strings.Trim(mq.Question[0].Name, ".")) {
+		if h.options.Bypass.Contains(context.Background(), "udp", strings.Trim(mq.Question[0].Name, ".")) {
 			log.Debug("bypass: ", mq.Question[0].Name)
 			mr = (&dns.Msg{}).SetReply(&mq)
 			b := bufpool.Get(h.md.bufferSize)
-			return mr.PackBuffer(*b)
+			return mr.PackBuffer(b)
 		}
 	}
 
 	mr = h.lookupHosts(ctx, &mq, log)
 	if mr != nil {
 		b := bufpool.Get(h.md.bufferSize)
-		return mr.PackBuffer(*b)
+		return mr.PackBuffer(b)
 	}
 
 	// only cache for single question message.
@@ -212,14 +217,14 @@ func (h *dnsHandler) request(ctx context.Context, msg []byte, log logger.ILogger
 			if int32(ttl.Seconds()) > 0 {
 				log.Debugf("message %d (cached): %s", mq.Id, mq.Question[0].String())
 				b := bufpool.Get(h.md.bufferSize)
-				return mr.PackBuffer(*b)
+				return mr.PackBuffer(b)
 			}
 		}
 	}
 
 	if mr != nil && h.md.async {
 		b := bufpool.Get(h.md.bufferSize)
-		reply, err := mr.PackBuffer(*b)
+		reply, err := mr.PackBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +243,7 @@ func (h *dnsHandler) exchange(ctx context.Context, mq *dns.Msg) ([]byte, error) 
 	b := bufpool.Get(h.md.bufferSize)
 	defer bufpool.Put(b)
 
-	query, err := mq.PackBuffer(*b)
+	query, err := mq.PackBuffer(b)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +325,7 @@ func (h *dnsHandler) selectExchanger(ctx context.Context, addr string) exchanger
 	if h.hop == nil {
 		return nil
 	}
-	node := h.hop.Select(ctx, chain.AddrSelectOption(addr))
+	node := h.hop.Select(ctx, hop.AddrSelectOption(addr))
 	if node == nil {
 		return nil
 	}

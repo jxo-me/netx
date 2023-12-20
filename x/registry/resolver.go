@@ -7,34 +7,34 @@ import (
 	"github.com/jxo-me/netx/core/resolver"
 )
 
-type ResolverRegistry struct {
+type resolverRegistry struct {
 	registry[resolver.IResolver]
 }
 
-func (r *ResolverRegistry) Register(name string, v resolver.IResolver) error {
+func (r *resolverRegistry) Register(name string, v resolver.IResolver) error {
 	return r.registry.Register(name, v)
 }
 
-func (r *ResolverRegistry) Get(name string) resolver.IResolver {
+func (r *resolverRegistry) Get(name string) resolver.IResolver {
 	if name != "" {
 		return &resolverWrapper{name: name, r: r}
 	}
 	return nil
 }
 
-func (r *ResolverRegistry) get(name string) resolver.IResolver {
+func (r *resolverRegistry) get(name string) resolver.IResolver {
 	return r.registry.Get(name)
 }
 
 type resolverWrapper struct {
 	name string
-	r    *ResolverRegistry
+	r    *resolverRegistry
 }
 
-func (w *resolverWrapper) Resolve(ctx context.Context, network, host string) ([]net.IP, error) {
+func (w *resolverWrapper) Resolve(ctx context.Context, network, host string, opts ...resolver.Option) ([]net.IP, error) {
 	r := w.r.get(w.name)
 	if r == nil {
 		return nil, resolver.ErrInvalid
 	}
-	return r.Resolve(ctx, network, host)
+	return r.Resolve(ctx, network, host, opts...)
 }

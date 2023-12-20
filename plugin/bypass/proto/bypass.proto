@@ -9,6 +9,9 @@ option go_package = "github.com/jxo-me/netx/plugin/bypass/proto";
 message BypassRequest {
 	string addr = 1;
 	string client = 2;
+	string network = 3;
+	string host = 4;
+	string path = 5;
 }
 
 message BypassReply {

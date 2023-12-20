@@ -30,11 +30,7 @@ type metadata struct {
 
 func (l *http3Listener) parseMetadata(md mdata.IMetaData) (err error) {
 	const (
-		authorizePath = "authorizePath"
-		pushPath      = "pushPath"
-		pullPath      = "pullPath"
-
-		keepAlive        = "keepAlive"
+		keepAlive        = "keepalive"
 		keepAlivePeriod  = "ttl"
 		handshakeTimeout = "handshakeTimeout"
 		maxIdleTimeout   = "maxIdleTimeout"
@@ -43,15 +39,15 @@ func (l *http3Listener) parseMetadata(md mdata.IMetaData) (err error) {
 		backlog = "backlog"
 	)
 
-	l.md.authorizePath = mdutil.GetString(md, authorizePath)
+	l.md.authorizePath = mdutil.GetString(md, "pht.authorizePath", "authorizePath")
 	if !strings.HasPrefix(l.md.authorizePath, "/") {
 		l.md.authorizePath = defaultAuthorizePath
 	}
-	l.md.pushPath = mdutil.GetString(md, pushPath)
+	l.md.pushPath = mdutil.GetString(md, "pht.pushPath", "pushPath")
 	if !strings.HasPrefix(l.md.pushPath, "/") {
 		l.md.pushPath = defaultPushPath
 	}
-	l.md.pullPath = mdutil.GetString(md, pullPath)
+	l.md.pullPath = mdutil.GetString(md, "pht.pullPath", "pullPath")
 	if !strings.HasPrefix(l.md.pullPath, "/") {
 		l.md.pullPath = defaultPullPath
 	}

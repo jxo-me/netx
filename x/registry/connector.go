@@ -5,11 +5,13 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type ConnectorRegistry struct {
-	registry[connector.NewConnector]
+type NewConnector func(opts ...connector.Option) connector.Connector
+
+type connectorRegistry struct {
+	registry[NewConnector]
 }
 
-func (r *ConnectorRegistry) Register(name string, v connector.NewConnector) error {
+func (r *connectorRegistry) Register(name string, v NewConnector) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

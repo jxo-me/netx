@@ -24,6 +24,14 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	log := logger.Default()
 
+	for _, loggerCfg := range cfg.Loggers {
+		if lg := logger_parser.ParseLogger(loggerCfg); lg != nil {
+			if err := registry.LoggerRegistry().Register(loggerCfg.Name, lg); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	for _, autherCfg := range cfg.Authers {
 		if auther := parsing.ParseAuther(autherCfg); auther != nil {
 			if err := app.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
@@ -71,6 +79,22 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	for _, ingressCfg := range cfg.Ingresses {
 		if h := parsing.ParseIngress(ingressCfg); h != nil {
 			if err := app.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, routerCfg := range cfg.Routers {
+		if h := router_parser.ParseRouter(routerCfg); h != nil {
+			if err := registry.RouterRegistry().Register(routerCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, sdCfg := range cfg.SDs {
+		if h := sd_parser.ParseSD(sdCfg); h != nil {
+			if err := registry.SDRegistry().Register(sdCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}

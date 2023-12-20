@@ -12,7 +12,7 @@ import (
 	"github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/core/selector"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 )
 
 type roundRobinStrategy[T any] struct {
@@ -102,7 +102,7 @@ func (s *hashStrategy[T]) Apply(ctx context.Context, vs ...T) (v T) {
 	if len(vs) == 0 {
 		return
 	}
-	if h := sx.HashFromContext(ctx); h != nil {
+	if h := ctxvalue.HashFromContext(ctx); h != nil {
 		value := uint64(crc32.ChecksumIEEE([]byte(h.Source)))
 		logger.Default().Tracef("hash %s %d", h.Source, value)
 		return vs[value%uint64(len(vs))]

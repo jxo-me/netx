@@ -15,7 +15,6 @@ import (
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 	xservice "github.com/jxo-me/netx/x/service"
-	"github.com/google/uuid"
 )
 
 func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
@@ -79,7 +78,7 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 	}
 
 	// Upgrade connection to multiplex session.
-	session, err := mux.ClientSession(conn)
+	session, err := mux.ClientSession(conn, h.md.muxCfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -174,54 +173,9 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 
 	t := time.Now()
 	log.Debugf("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
-	r.Run()
+	r.Run(ctx)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Debugf("%s >-< %s", conn.RemoteAddr(), pc.LocalAddr())
 	return nil
-}
-
-func (h *relayHandler) handleBindTunnel(ctx context.Context, conn net.Conn, network string, tunnelID relay.TunnelID, log logger.ILogger) (err error) {
-	resp := relay.Response{
-		Version: relay.Version1,
-		Status:  relay.StatusOK,
-	}
-
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		resp.Status = relay.StatusInternalServerError
-		resp.WriteTo(conn)
-		return
-	}
-	connectorID := relay.NewConnectorID(uuid[:])
-	if network == "udp" {
-		connectorID = relay.NewUDPConnectorID(uuid[:])
-	}
-
-	addr := ":0"
-	if h.ep != nil {
-		addr = h.ep.Addr().String()
-	}
-	af := &relay.AddrFeature{}
-	err = af.ParseFrom(addr)
-	if err != nil {
-		log.Warn(err)
-	}
-	resp.Features = append(resp.Features, af,
-		&relay.TunnelFeature{
-			ID: connectorID.ID(),
-		},
-	)
-	resp.WriteTo(conn)
-
-	// Upgrade connection to multiplex session.
-	session, err := mux.ClientSession(conn)
-	if err != nil {
-		return
-	}
-
-	h.pool.Add(tunnelID, NewConnector(connectorID, session))
-	log.Debugf("tunnel %s connector %s/%s established", tunnelID, connectorID, network)
-
-	return
 }

@@ -97,7 +97,7 @@ func NewAuthenticator(opts ...Option) auth.IAuthenticator {
 }
 
 // Authenticate checks the validity of the provided user-password pair.
-func (p *authenticator) Authenticate(ctx context.Context, user, password string) (string, bool) {
+func (p *authenticator) Authenticate(ctx context.Context, user, password string, opts ...auth.Option) (string, bool) {
 	if p == nil {
 		return "", true
 	}
@@ -144,6 +144,8 @@ func (p *authenticator) reload(ctx context.Context) (err error) {
 	for k, v := range m {
 		kvs[k] = v
 	}
+
+	p.options.logger.Debugf("load items %d", len(m))
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -206,7 +208,6 @@ func (p *authenticator) load(ctx context.Context) (m map[string]string, err erro
 		}
 	}
 
-	p.options.logger.Debugf("load items %d", len(m))
 	return
 }
 

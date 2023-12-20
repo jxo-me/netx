@@ -15,6 +15,7 @@ import (
 	ssu "github.com/jxo-me/netx/x/connector/ss/udp"
 	"github.com/jxo-me/netx/x/connector/sshd"
 	"github.com/jxo-me/netx/x/connector/tcp"
+	"github.com/jxo-me/netx/x/connector/tunnel"
 	"github.com/jxo-me/netx/x/connector/unix"
 	"github.com/jxo-me/netx/x/consts"
 )
@@ -36,5 +37,6 @@ var Connectors = map[string]connector.NewConnector{
 	consts.Ssu:     ssu.NewConnector,
 	consts.Sshd:    sshd.NewConnector,
 	consts.Tcp:     tcp.NewConnector,
+	consts.Tunnel:  tunnel.NewConnector,
 	consts.Unix:    unix.NewConnector,
 }

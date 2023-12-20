@@ -8,12 +8,13 @@ import (
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks4"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
+	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 )
 
 var (
@@ -76,8 +77,6 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 		conn.SetReadDeadline(time.Now().Add(h.md.readTimeout))
 	}
 
-	ctx = auth_util.ContextWithClientAddr(ctx, auth_util.ClientAddr(conn.RemoteAddr().String()))
-
 	req, err := gosocks4.ReadRequest(conn)
 	if err != nil {
 		log.Error(err)
@@ -94,7 +93,7 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 			log.Trace(resp)
 			return resp.Write(conn)
 		}
-		ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
+		ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(id))
 	}
 
 	switch req.Cmd {
@@ -117,7 +116,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	})
 	log.Debugf("%s >> %s", conn.RemoteAddr(), addr)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", addr) {
 		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
 		log.Trace(resp)
 		log.Debug("bypass: ", addr)
@@ -126,7 +125,7 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: addr})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr})
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", addr)
@@ -146,9 +145,16 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		return err
 	}
 
+	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, conn.RemoteAddr().String(),
+		traffic.NetworkOption("tcp"),
+		traffic.AddrOption(addr),
+		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),
+		traffic.SrcOption(conn.RemoteAddr().String()),
+	)
+
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	netpkg.Transport(conn, cc)
+	netpkg.Transport(rw, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)

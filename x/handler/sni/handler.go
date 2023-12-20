@@ -15,14 +15,15 @@ import (
 	"net/http/httputil"
 	"time"
 
+	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	dissector "github.com/jxo-me/netx/tls-dissector"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	sx "github.com/jxo-me/netx/x/internal/util/selector"
 )
 
 type sniHandler struct {
@@ -110,14 +111,14 @@ func (h *sniHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr net
 		"host": host,
 	})
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, host) {
-		log.Debug("bypass: ", host)
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host, bypass.WithPathOption(req.RequestURI)) {
+		log.Debugf("bypass: %s %s", host, req.RequestURI)
 		return nil
 	}
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: host})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: host})
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", host)
@@ -178,14 +179,14 @@ func (h *sniHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, raddr ne
 	})
 	log.Debugf("%s >> %s", raddr, host)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, host) {
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host) {
 		log.Debug("bypass: ", host)
 		return nil
 	}
 
 	switch h.md.hash {
 	case "host":
-		ctx = sx.ContextWithHash(ctx, &sx.Hash{Source: host})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: host})
 	}
 
 	cc, err := h.router.Dial(ctx, "tcp", host)

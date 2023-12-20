@@ -12,7 +12,6 @@ import (
 	"github.com/jxo-me/netx/core/hosts"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/internal/loader"
-	"google.golang.org/grpc"
 )
 
 type Mapping struct {
@@ -25,7 +24,6 @@ type options struct {
 	fileLoader  loader.Loader
 	redisLoader loader.Loader
 	httpLoader  loader.Loader
-	client      *grpc.ClientConn
 	period      time.Duration
 	logger      logger.ILogger
 }
@@ -59,12 +57,6 @@ func RedisLoaderOption(redisLoader loader.Loader) Option {
 func HTTPLoaderOption(httpLoader loader.Loader) Option {
 	return func(opts *options) {
 		opts.httpLoader = httpLoader
-	}
-}
-
-func PluginConnOption(c *grpc.ClientConn) Option {
-	return func(opts *options) {
-		opts.client = c
 	}
 }
 
@@ -112,7 +104,7 @@ func NewHostMapper(opts ...Option) hosts.IHostMapper {
 // Lookup searches the IP address corresponds to the given network and host from the host table.
 // The network should be 'ip', 'ip4' or 'ip6', default network is 'ip'.
 // the host should be a hostname (example.org) or a hostname with dot prefix (.example.org).
-func (h *hostMapper) Lookup(ctx context.Context, network, host string) (ips []net.IP, ok bool) {
+func (h *hostMapper) Lookup(ctx context.Context, network, host string, opts ...hosts.Option) (ips []net.IP, ok bool) {
 	h.options.logger.Debugf("lookup %s/%s", host, network)
 	ips = h.lookup(host)
 	if ips == nil {
@@ -223,6 +215,8 @@ func (h *hostMapper) reload(ctx context.Context) (err error) {
 		mapf(m[i].Hostname, m[i].IP)
 	}
 
+	h.options.logger.Debugf("load items %d", len(mappings))
+
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -279,7 +273,6 @@ func (h *hostMapper) load(ctx context.Context) (mappings []Mapping, err error) {
 		}
 	}
 
-	h.options.logger.Debugf("load items %d", len(mappings))
 	return
 }
 

@@ -10,8 +10,10 @@ import (
 	dialerHttp2 "github.com/jxo-me/netx/x/dialer/http2"
 	"github.com/jxo-me/netx/x/dialer/http2/h2"
 	"github.com/jxo-me/netx/x/dialer/http3"
+	"github.com/jxo-me/netx/x/dialer/http3/wt"
 	dialerIcmp "github.com/jxo-me/netx/x/dialer/icmp"
 	"github.com/jxo-me/netx/x/dialer/kcp"
+	"github.com/jxo-me/netx/x/dialer/mtcp"
 	"github.com/jxo-me/netx/x/dialer/mtls"
 	"github.com/jxo-me/netx/x/dialer/mws"
 	dialerObfsHttp "github.com/jxo-me/netx/x/dialer/obfs/http"
@@ -39,8 +41,10 @@ var Dialers = map[string]dialer.NewDialer{
 	consts.H2c:     h2.NewDialer,
 	consts.Http3:   http3.NewDialer,
 	consts.H3:      http3.NewDialer,
+	consts.Wt:      wt.NewDialer,
 	consts.Icmp:    dialerIcmp.NewDialer,
 	consts.Kcp:     kcp.NewDialer,
+	consts.Mtcp:    mtcp.NewDialer,
 	consts.Mtls:    mtls.NewDialer,
 	consts.Mws:     mws.NewDialer,
 	consts.Mwss:    mws.NewTLSDialer,

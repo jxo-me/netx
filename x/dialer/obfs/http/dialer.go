@@ -42,7 +42,7 @@ func (d *obfsHTTPDialer) Dial(ctx context.Context, addr string, opts ...dialer.D
 	return conn, err
 }
 
-// Handshake implements dialer.IHandshaker
+// Handshake implements dialer.Handshaker
 func (d *obfsHTTPDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {

@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-type grpcPluginAdmission struct {
+type grpcPlugin struct {
 	conn   grpc.ClientConnInterface
 	client proto.AdmissionClient
 	log    logger.ILogger
 }
 
-// NewGRPCPluginAdmission creates an Admission plugin based on gRPC.
-func NewGRPCPluginAdmission(name string, addr string, opts ...plugin.Option) admission.IAdmission {
+// NewGRPCPlugin creates an Admission plugin based on gRPC.
+func NewGRPCPlugin(name string, addr string, opts ...plugin.Option) admission.IAdmission {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
@@ -36,7 +36,7 @@ func NewGRPCPluginAdmission(name string, addr string, opts ...plugin.Option) adm
 		log.Error(err)
 	}
 
-	p := &grpcPluginAdmission{
+	p := &grpcPlugin{
 		conn: conn,
 		log:  log,
 	}
@@ -46,7 +46,7 @@ func NewGRPCPluginAdmission(name string, addr string, opts ...plugin.Option) adm
 	return p
 }
 
-func (p *grpcPluginAdmission) Admit(ctx context.Context, addr string) bool {
+func (p *grpcPlugin) Admit(ctx context.Context, addr string, opts ...admission.Option) bool {
 	if p.client == nil {
 		return false
 	}
@@ -62,36 +62,36 @@ func (p *grpcPluginAdmission) Admit(ctx context.Context, addr string) bool {
 	return r.Ok
 }
 
-func (p *grpcPluginAdmission) Close() error {
+func (p *grpcPlugin) Close() error {
 	if closer, ok := p.conn.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
 }
 
-type httpAdmissionRequest struct {
+type httpPluginRequest struct {
 	Addr string `json:"addr"`
 }
 
-type httpAdmissionResponse struct {
+type httpPluginResponse struct {
 	OK bool `json:"ok"`
 }
 
-type httpPluginAdmission struct {
+type httpPlugin struct {
 	url    string
 	client *http.Client
 	header http.Header
 	log    logger.ILogger
 }
 
-// NewHTTPPluginAdmission creates an Admission plugin based on HTTP.
-func NewHTTPPluginAdmission(name string, url string, opts ...plugin.Option) admission.IAdmission {
+// NewHTTPPlugin creates an Admission plugin based on HTTP.
+func NewHTTPPlugin(name string, url string, opts ...plugin.Option) admission.IAdmission {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	return &httpPluginAdmission{
+	return &httpPlugin{
 		url:    url,
 		client: plugin.NewHTTPClient(&options),
 		header: options.Header,
@@ -102,12 +102,12 @@ func NewHTTPPluginAdmission(name string, url string, opts ...plugin.Option) admi
 	}
 }
 
-func (p *httpPluginAdmission) Admit(ctx context.Context, addr string) (ok bool) {
+func (p *httpPlugin) Admit(ctx context.Context, addr string, opts ...admission.Option) (ok bool) {
 	if p.client == nil {
 		return
 	}
 
-	rb := httpAdmissionRequest{
+	rb := httpPluginRequest{
 		Addr: addr,
 	}
 	v, err := json.Marshal(&rb)
@@ -115,7 +115,7 @@ func (p *httpPluginAdmission) Admit(ctx context.Context, addr string) (ok bool) 
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, p.url, bytes.NewReader(v))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.url, bytes.NewReader(v))
 	if err != nil {
 		return
 	}
@@ -134,7 +134,7 @@ func (p *httpPluginAdmission) Admit(ctx context.Context, addr string) (ok bool) 
 		return
 	}
 
-	res := httpAdmissionResponse{}
+	res := httpPluginResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return
 	}

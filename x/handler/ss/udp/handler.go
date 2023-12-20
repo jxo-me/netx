@@ -125,17 +125,17 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.ILogger) (e
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, addr, err := pc1.ReadFrom(*b)
+				n, addr, err := pc1.ReadFrom(b)
 				if err != nil {
 					return err
 				}
 
-				if h.options.Bypass != nil && h.options.Bypass.Contains(context.Background(), addr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(context.Background(), addr.Network(), addr.String()) {
 					log.Warn("bypass: ", addr)
 					return nil
 				}
 
-				if _, err = pc2.WriteTo((*b)[:n], addr); err != nil {
+				if _, err = pc2.WriteTo(b[:n], addr); err != nil {
 					return err
 				}
 
@@ -157,17 +157,17 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.ILogger) (e
 				b := bufpool.Get(bufSize)
 				defer bufpool.Put(b)
 
-				n, raddr, err := pc2.ReadFrom(*b)
+				n, raddr, err := pc2.ReadFrom(b)
 				if err != nil {
 					return err
 				}
 
-				if h.options.Bypass != nil && h.options.Bypass.Contains(context.Background(), raddr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(context.Background(), raddr.Network(), raddr.String()) {
 					log.Warn("bypass: ", raddr)
 					return nil
 				}
 
-				if _, err = pc1.WriteTo((*b)[:n], raddr); err != nil {
+				if _, err = pc1.WriteTo(b[:n], raddr); err != nil {
 					return err
 				}
 

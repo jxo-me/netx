@@ -58,7 +58,12 @@ func (l *http2Listener) Init(md md.IMetaData) (err error) {
 	if xnet.IsIPv4(l.options.Addr) {
 		network = "tcp4"
 	}
-	ln, err := net.Listen(network, l.options.Addr)
+	lc := net.ListenConfig{}
+	if l.md.mptcp {
+		lc.SetMultipathTCP(true)
+		l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+	}
+	ln, err := lc.Listen(context.Background(), network, l.options.Addr)
 	if err != nil {
 		return err
 	}
@@ -107,10 +112,10 @@ func (l *http2Listener) Close() (err error) {
 	case <-l.errChan:
 	default:
 		err = l.server.Close()
-		l.errChan <- err
+		l.errChan <- http.ErrServerClosed
 		close(l.errChan)
 	}
-	return nil
+	return
 }
 
 func (l *http2Listener) handleFunc(w http.ResponseWriter, r *http.Request) {

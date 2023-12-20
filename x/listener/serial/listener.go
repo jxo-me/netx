@@ -8,10 +8,9 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	serial_util "github.com/jxo-me/netx/x/internal/util/serial"
+	serial "github.com/jxo-me/netx/x/internal/util/serial"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	goserial "github.com/tarm/serial"
 )
 
 type serialListener struct {
@@ -30,7 +29,7 @@ func NewListener(opts ...listener.Option) listener.IListener {
 	}
 
 	if options.Addr == "" {
-		options.Addr = serial_util.DefaultPort
+		options.Addr = serial.DefaultPort
 	}
 
 	return &serialListener{
@@ -44,7 +43,7 @@ func (l *serialListener) Init(md md.IMetaData) (err error) {
 		return
 	}
 
-	l.addr = &serial_util.Addr{Port: l.options.Addr}
+	l.addr = &serial.Addr{Port: l.options.Addr}
 
 	l.cqueue = make(chan net.Conn)
 	l.closed = make(chan struct{})
@@ -82,14 +81,14 @@ func (l *serialListener) listenLoop() {
 	for {
 		ctx, cancel := context.WithCancel(context.Background())
 		err := func() error {
-			cfg := serial_util.ParseConfigFromAddr(l.options.Addr)
+			cfg := serial.ParseConfigFromAddr(l.options.Addr)
 			cfg.ReadTimeout = l.md.timeout
-			port, err := goserial.OpenPort(cfg)
+			port, err := serial.OpenPort(cfg)
 			if err != nil {
 				return err
 			}
 
-			c := serial_util.NewConn(port, l.addr, cancel)
+			c := serial.NewConn(port, l.addr, cancel)
 			c = metrics.WrapConn(l.options.Service, c)
 			c = limiter.WrapConn(l.options.TrafficLimiter, c)
 

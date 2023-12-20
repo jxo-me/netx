@@ -3,6 +3,7 @@ package rudp
 import (
 	"context"
 	"net"
+	"sync"
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/listener"
@@ -22,6 +23,7 @@ type rudpListener struct {
 	logger  logger.ILogger
 	md      metadata
 	options listener.Options
+	mu      sync.Mutex
 }
 
 func NewListener(opts ...listener.Option) listener.IListener {
@@ -45,12 +47,13 @@ func (l *rudpListener) Init(md md.IMetaData) (err error) {
 	if xnet.IsIPv4(l.options.Addr) {
 		network = "udp4"
 	}
-	laddr, err := net.ResolveUDPAddr(network, l.options.Addr)
-	if err != nil {
-		return
+	if laddr, _ := net.ResolveUDPAddr(network, l.options.Addr); laddr != nil {
+		l.laddr = laddr
+	}
+	if l.laddr == nil {
+		l.laddr = &bindAddr{addr: l.options.Addr}
 	}
 
-	l.laddr = laddr
 	l.router = chain.NewRouter(
 		chain.ChainRouterOption(l.options.Chain),
 		chain.LoggerRouterOption(l.logger),
@@ -66,8 +69,9 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 	default:
 	}
 
-	if l.ln == nil {
-		l.ln, err = l.router.Bind(
+	ln := l.getListener()
+	if ln == nil {
+		ln, err = l.router.Bind(
 			context.Background(), "udp", l.laddr.String(),
 			chain.BacklogBindOption(l.md.backlog),
 			chain.UDPConnTTLBindOption(l.md.ttl),
@@ -77,11 +81,20 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 		if err != nil {
 			return nil, listener.NewAcceptError(err)
 		}
+		l.setListener(ln)
 	}
+
+	select {
+	case <-l.closed:
+		ln.Close()
+		return nil, net.ErrClosed
+	default:
+	}
+
 	conn, err = l.ln.Accept()
 	if err != nil {
 		l.ln.Close()
-		l.ln = nil
+		l.setListener(nil)
 		return nil, listener.NewAcceptError(err)
 	}
 
@@ -103,11 +116,34 @@ func (l *rudpListener) Close() error {
 	case <-l.closed:
 	default:
 		close(l.closed)
-		if l.ln != nil {
-			l.ln.Close()
-			// l.ln = nil
+		if ln := l.getListener(); ln != nil {
+			ln.Close()
 		}
 	}
 
 	return nil
+}
+
+func (l *rudpListener) setListener(ln net.Listener) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.ln = ln
+}
+
+func (l *rudpListener) getListener() net.Listener {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.ln
+}
+
+type bindAddr struct {
+	addr string
+}
+
+func (p *bindAddr) Network() string {
+	return "tcp"
+}
+
+func (p *bindAddr) String() string {
+	return p.addr
 }

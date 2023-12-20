@@ -9,17 +9,17 @@ import (
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/recorder"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	serial_util "github.com/jxo-me/netx/x/internal/util/serial"
+	serial "github.com/jxo-me/netx/x/internal/util/serial"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
-	goserial "github.com/tarm/serial"
 )
 
 type serialHandler struct {
-	hop      chain.IHop
+	hop      hop.IHop
 	router   *chain.Router
 	md       metadata
 	options  handler.Options
@@ -59,7 +59,7 @@ func (h *serialHandler) Init(md md.IMetaData) (err error) {
 }
 
 // Forward implements handler.Forwarder.
-func (h *serialHandler) Forward(hop chain.IHop) {
+func (h *serialHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
@@ -113,14 +113,14 @@ func (h *serialHandler) forwardSerial(ctx context.Context, conn net.Conn, target
 	log.Debugf("%s >> %s", conn.LocalAddr(), target.Addr)
 	var port io.ReadWriteCloser
 
-	cfg := serial_util.ParseConfigFromAddr(conn.LocalAddr().String())
+	cfg := serial.ParseConfigFromAddr(conn.LocalAddr().String())
 	cfg.Name = target.Addr
 
 	if opts := h.router.Options(); opts != nil && opts.Chain != nil {
-		port, err = h.router.Dial(ctx, "serial", serial_util.AddrFromConfig(cfg))
+		port, err = h.router.Dial(ctx, "serial", serial.AddrFromConfig(cfg))
 	} else {
 		cfg.ReadTimeout = h.md.timeout
-		port, err = goserial.OpenPort(cfg)
+		port, err = serial.OpenPort(cfg)
 	}
 	if err != nil {
 		log.Error(err)

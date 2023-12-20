@@ -7,8 +7,7 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	serial_util "github.com/jxo-me/netx/x/internal/util/serial"
-	goserial "github.com/tarm/serial"
+	serial "github.com/jxo-me/netx/x/internal/util/serial"
 )
 
 type serialDialer struct {
@@ -37,11 +36,11 @@ func (d *serialDialer) Dial(ctx context.Context, addr string, opts ...dialer.Dia
 		opt(&options)
 	}
 
-	cfg := serial_util.ParseConfigFromAddr(addr)
-	port, err := goserial.OpenPort(cfg)
+	cfg := serial.ParseConfigFromAddr(addr)
+	port, err := serial.OpenPort(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return serial_util.NewConn(port, &serial_util.Addr{Port: cfg.Name}, nil), nil
+	return serial.NewConn(port, &serial.Addr{Port: cfg.Name}, nil), nil
 }

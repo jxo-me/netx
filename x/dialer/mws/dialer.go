@@ -10,9 +10,10 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jxo-me/netx/core/dialer"
+	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/x/internal/util/mux"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
-	"github.com/xtaci/smux"
 )
 
 type mwsDialer struct {
@@ -55,7 +56,7 @@ func (d *mwsDialer) Init(md md.IMetaData) (err error) {
 	return nil
 }
 
-// Multiplex implements dialer.IMultiplexer interface.
+// Multiplex implements dialer.Multiplexer interface.
 func (d *mwsDialer) Multiplex() bool {
 	return true
 }
@@ -87,20 +88,27 @@ func (d *mwsDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 	return session.conn, err
 }
 
-// Handshake implements dialer.IHandshaker
+// Handshake implements dialer.Handshaker
 func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dialer.HandshakeOption) (net.Conn, error) {
 	opts := &dialer.HandshakeOptions{}
 	for _, option := range options {
 		option(opts)
 	}
 
+	log := d.options.Logger.WithFields(map[string]any{
+		"local":  conn.LocalAddr().String(),
+		"remote": conn.RemoteAddr().String(),
+	})
+
 	d.sessionMutex.Lock()
 	defer d.sessionMutex.Unlock()
 
 	session, ok := d.sessions[opts.Addr]
 	if session != nil && session.conn != conn {
+		err := errors.New("mws: unrecognized connection")
+		log.Error(err)
 		conn.Close()
-		return nil, errors.New("mtls: unrecognized connection")
+		return nil, err
 	}
 
 	if !ok || session.session == nil {
@@ -108,9 +116,9 @@ func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 		if host == "" {
 			host = opts.Addr
 		}
-		s, err := d.initSession(ctx, host, conn)
+		s, err := d.initSession(ctx, host, conn, log)
 		if err != nil {
-			d.options.Logger.Error(err)
+			log.Error(err)
 			conn.Close()
 			delete(d.sessions, opts.Addr)
 			return nil, err
@@ -120,6 +128,7 @@ func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	}
 	cc, err := session.GetConn()
 	if err != nil {
+		log.Error(err)
 		session.Close()
 		delete(d.sessions, opts.Addr)
 		return nil, err
@@ -128,7 +137,7 @@ func (d *mwsDialer) Handshake(ctx context.Context, conn net.Conn, options ...dia
 	return cc, nil
 }
 
-func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn) (*muxSession, error) {
+func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn, log logger.ILogger) (*muxSession, error) {
 	dialer := websocket.Dialer{
 		HandshakeTimeout:  d.md.handshakeTimeout,
 		ReadBufferSize:    d.md.readBufferSize,
@@ -162,7 +171,7 @@ func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn)
 	cc := ws_util.Conn(c)
 
 	if d.md.keepaliveInterval > 0 {
-		d.options.Logger.Debugf("keepalive is enabled, ttl: %v", d.md.keepaliveInterval)
+		log.Debugf("keepalive is enabled, ttl: %v", d.md.keepaliveInterval)
 		c.SetReadDeadline(time.Now().Add(d.md.keepaliveInterval * 2))
 		c.SetPongHandler(func(string) error {
 			c.SetReadDeadline(time.Now().Add(d.md.keepaliveInterval * 2))
@@ -172,26 +181,9 @@ func (d *mwsDialer) initSession(ctx context.Context, host string, conn net.Conn)
 	}
 
 	// stream multiplex
-	smuxConfig := smux.DefaultConfig()
-	smuxConfig.KeepAliveDisabled = d.md.muxKeepAliveDisabled
-	if d.md.muxKeepAliveInterval > 0 {
-		smuxConfig.KeepAliveInterval = d.md.muxKeepAliveInterval
-	}
-	if d.md.muxKeepAliveTimeout > 0 {
-		smuxConfig.KeepAliveTimeout = d.md.muxKeepAliveTimeout
-	}
-	if d.md.muxMaxFrameSize > 0 {
-		smuxConfig.MaxFrameSize = d.md.muxMaxFrameSize
-	}
-	if d.md.muxMaxReceiveBuffer > 0 {
-		smuxConfig.MaxReceiveBuffer = d.md.muxMaxReceiveBuffer
-	}
-	if d.md.muxMaxStreamBuffer > 0 {
-		smuxConfig.MaxStreamBuffer = d.md.muxMaxStreamBuffer
-	}
-
-	session, err := smux.Client(cc, smuxConfig)
+	session, err := mux.ClientSession(cc, d.md.muxCfg)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 	return &muxSession{conn: cc, session: session}, nil

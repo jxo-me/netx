@@ -6,6 +6,7 @@ import (
 
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	"github.com/jxo-me/netx/x/internal/util/mux"
 )
 
 const (
@@ -24,63 +25,47 @@ type metadata struct {
 	writeBufferSize   int
 	enableCompression bool
 
-	muxKeepAliveDisabled bool
-	muxKeepAliveInterval time.Duration
-	muxKeepAliveTimeout  time.Duration
-	muxMaxFrameSize      int
-	muxMaxReceiveBuffer  int
-	muxMaxStreamBuffer   int
+	muxCfg *mux.Config
+
+	mptcp bool
 }
 
 func (l *mwsListener) parseMetadata(md mdata.IMetaData) (err error) {
-	const (
-		path    = "path"
-		backlog = "backlog"
-		header  = "header"
-
-		handshakeTimeout  = "handshakeTimeout"
-		readHeaderTimeout = "readHeaderTimeout"
-		readBufferSize    = "readBufferSize"
-		writeBufferSize   = "writeBufferSize"
-		enableCompression = "enableCompression"
-
-		muxKeepAliveDisabled = "muxKeepAliveDisabled"
-		muxKeepAliveInterval = "muxKeepAliveInterval"
-		muxKeepAliveTimeout  = "muxKeepAliveTimeout"
-		muxMaxFrameSize      = "muxMaxFrameSize"
-		muxMaxReceiveBuffer  = "muxMaxReceiveBuffer"
-		muxMaxStreamBuffer   = "muxMaxStreamBuffer"
-	)
-
-	l.md.path = mdutil.GetString(md, path)
+	l.md.path = mdutil.GetString(md, "ws.path", "path")
 	if l.md.path == "" {
 		l.md.path = defaultPath
 	}
 
-	l.md.backlog = mdutil.GetInt(md, backlog)
+	l.md.backlog = mdutil.GetInt(md, "ws.backlog", "backlog")
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
 	}
 
-	l.md.handshakeTimeout = mdutil.GetDuration(md, handshakeTimeout)
-	l.md.readHeaderTimeout = mdutil.GetDuration(md, readHeaderTimeout)
-	l.md.readBufferSize = mdutil.GetInt(md, readBufferSize)
-	l.md.writeBufferSize = mdutil.GetInt(md, writeBufferSize)
-	l.md.enableCompression = mdutil.GetBool(md, enableCompression)
+	l.md.handshakeTimeout = mdutil.GetDuration(md, "ws.handshakeTimeout", "handshakeTimeout")
+	l.md.readHeaderTimeout = mdutil.GetDuration(md, "ws.readHeaderTimeout", "readHeaderTimeout")
+	l.md.readBufferSize = mdutil.GetInt(md, "ws.readBufferSize", "readBufferSize")
+	l.md.writeBufferSize = mdutil.GetInt(md, "ws.writeBufferSize", "writeBufferSize")
+	l.md.enableCompression = mdutil.GetBool(md, "ws.enableCompression", "enableCompression")
 
-	l.md.muxKeepAliveDisabled = mdutil.GetBool(md, muxKeepAliveDisabled)
-	l.md.muxKeepAliveInterval = mdutil.GetDuration(md, muxKeepAliveInterval)
-	l.md.muxKeepAliveTimeout = mdutil.GetDuration(md, muxKeepAliveTimeout)
-	l.md.muxMaxFrameSize = mdutil.GetInt(md, muxMaxFrameSize)
-	l.md.muxMaxReceiveBuffer = mdutil.GetInt(md, muxMaxReceiveBuffer)
-	l.md.muxMaxStreamBuffer = mdutil.GetInt(md, muxMaxStreamBuffer)
+	l.md.muxCfg = &mux.Config{
+		Version:           mdutil.GetInt(md, "mux.version"),
+		KeepAliveInterval: mdutil.GetDuration(md, "mux.keepaliveInterval"),
+		KeepAliveDisabled: mdutil.GetBool(md, "mux.keepaliveDisabled"),
+		KeepAliveTimeout:  mdutil.GetDuration(md, "mux.keepaliveTimeout"),
+		MaxFrameSize:      mdutil.GetInt(md, "mux.maxFrameSize"),
+		MaxReceiveBuffer:  mdutil.GetInt(md, "mux.maxReceiveBuffer"),
+		MaxStreamBuffer:   mdutil.GetInt(md, "mux.maxStreamBuffer"),
+	}
 
-	if mm := mdutil.GetStringMapString(md, header); len(mm) > 0 {
+	if mm := mdutil.GetStringMapString(md, "ws.header", "header"); len(mm) > 0 {
 		hd := http.Header{}
 		for k, v := range mm {
 			hd.Add(k, v)
 		}
 		l.md.header = hd
 	}
+
+	l.md.mptcp = mdutil.GetBool(md, "mptcp")
+
 	return
 }

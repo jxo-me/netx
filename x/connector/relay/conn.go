@@ -13,17 +13,21 @@ import (
 	"github.com/jxo-me/netx/core/common/bufpool"
 	mdata "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/relay"
+	xrelay "github.com/jxo-me/netx/x/internal/util/relay"
 )
 
 type tcpConn struct {
 	net.Conn
-	wbuf bytes.Buffer
+	wbuf *bytes.Buffer
 	once sync.Once
+	mu   sync.Mutex
 }
 
 func (c *tcpConn) Read(b []byte) (n int, err error) {
 	c.once.Do(func() {
-		err = readResponse(c.Conn)
+		if c.wbuf != nil {
+			err = readResponse(c.Conn)
+		}
 	})
 
 	if err != nil {
@@ -34,7 +38,11 @@ func (c *tcpConn) Read(b []byte) (n int, err error) {
 
 func (c *tcpConn) Write(b []byte) (n int, err error) {
 	n = len(b) // force byte length consistent
-	if c.wbuf.Len() > 0 {
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.wbuf != nil && c.wbuf.Len() > 0 {
 		c.wbuf.Write(b) // append the data to the cached header
 		_, err = c.Conn.Write(c.wbuf.Bytes())
 		c.wbuf.Reset()
@@ -46,13 +54,16 @@ func (c *tcpConn) Write(b []byte) (n int, err error) {
 
 type udpConn struct {
 	net.Conn
-	wbuf bytes.Buffer
+	wbuf *bytes.Buffer
 	once sync.Once
+	mu   sync.Mutex
 }
 
 func (c *udpConn) Read(b []byte) (n int, err error) {
 	c.once.Do(func() {
-		err = readResponse(c.Conn)
+		if c.wbuf != nil {
+			err = readResponse(c.Conn)
+		}
 	})
 	if err != nil {
 		return
@@ -71,8 +82,8 @@ func (c *udpConn) Read(b []byte) (n int, err error) {
 
 	buf := bufpool.Get(dlen)
 	defer bufpool.Put(buf)
-	_, err = io.ReadFull(c.Conn, *buf)
-	n = copy(b, *buf)
+	_, err = io.ReadFull(c.Conn, buf)
+	n = copy(b, buf)
 
 	return
 }
@@ -84,7 +95,11 @@ func (c *udpConn) Write(b []byte) (n int, err error) {
 	}
 
 	n = len(b)
-	if c.wbuf.Len() > 0 {
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.wbuf != nil && c.wbuf.Len() > 0 {
 		var bb [2]byte
 		binary.BigEndian.PutUint16(bb[:], uint16(len(b)))
 		c.wbuf.Write(bb[:])
@@ -115,7 +130,7 @@ func readResponse(r io.Reader) (err error) {
 	}
 
 	if resp.Status != relay.StatusOK {
-		err = fmt.Errorf("status %d", resp.Status)
+		err = fmt.Errorf("%d %s", resp.Status, xrelay.StatusText(resp.Status))
 		return
 	}
 	return nil
@@ -136,7 +151,7 @@ func (c *bindConn) RemoteAddr() net.Addr {
 	return c.remoteAddr
 }
 
-// Metadata implements metadata.IMetaDatable interface.
+// Metadata implements metadata.Metadatable interface.
 func (c *bindConn) Metadata() mdata.IMetaData {
 	return c.md
 }
@@ -165,8 +180,8 @@ func (c *bindUDPConn) Read(b []byte) (n int, err error) {
 	buf := bufpool.Get(dlen)
 	defer bufpool.Put(buf)
 
-	_, err = io.ReadFull(c.Conn, *buf)
-	n = copy(b, *buf)
+	_, err = io.ReadFull(c.Conn, buf)
+	n = copy(b, buf)
 
 	return
 }

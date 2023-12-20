@@ -30,10 +30,19 @@ type ingressWrapper struct {
 	r    *IngressRegistry
 }
 
-func (w *ingressWrapper) Get(ctx context.Context, host string) string {
+func (w *ingressWrapper) GetRule(ctx context.Context, host string, opts ...ingress.Option) *ingress.Rule {
 	v := w.r.get(w.name)
 	if v == nil {
-		return ""
+		return nil
 	}
-	return v.Get(ctx, host)
+	return v.GetRule(ctx, host, opts...)
+}
+
+func (w *ingressWrapper) SetRule(ctx context.Context, rule *ingress.Rule, opts ...ingress.Option) bool {
+	v := w.r.get(w.name)
+	if v == nil {
+		return false
+	}
+
+	return v.SetRule(ctx, rule, opts...)
 }

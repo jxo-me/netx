@@ -10,20 +10,26 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"sync"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/x/config"
+	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	xio "github.com/jxo-me/netx/x/internal/io"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	auth_util "github.com/jxo-me/netx/x/internal/util/auth"
 	"github.com/jxo-me/netx/x/internal/util/forward"
+	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 )
 
 type forwardHandler struct {
-	hop     chain.IHop
+	hop     hop.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options
@@ -53,8 +59,8 @@ func (h *forwardHandler) Init(md md.IMetaData) (err error) {
 	return
 }
 
-// Forward implements handler.IForwarder.
-func (h *forwardHandler) Forward(hop chain.IHop) {
+// Forward implements handler.Forwarder.
+func (h *forwardHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
@@ -83,8 +89,6 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 		network = "udp"
 	}
 
-	ctx = auth_util.ContextWithClientAddr(ctx, auth_util.ClientAddr(conn.RemoteAddr().String()))
-
 	var rw io.ReadWriter = conn
 	var host string
 	var protocol string
@@ -100,7 +104,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	}
 
 	if protocol == forward.ProtoHTTP {
-		h.handleHTTP(ctx, rw, log)
+		h.handleHTTP(ctx, rw, conn.RemoteAddr(), log)
 		return nil
 	}
 
@@ -116,8 +120,8 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	}
 	if h.hop != nil {
 		target = h.hop.Select(ctx,
-			chain.HostSelectOption(host),
-			chain.ProtocolSelectOption(protocol),
+			hop.HostSelectOption(host),
+			hop.ProtocolSelectOption(protocol),
 		)
 	}
 	if target == nil {
@@ -126,18 +130,26 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 		return err
 	}
 
+	addr := target.Addr
+	if opts := target.Options(); opts != nil {
+		switch opts.Network {
+		case "unix":
+			network = opts.Network
+		default:
+			if _, _, err := net.SplitHostPort(addr); err != nil {
+				addr += ":0"
+			}
+		}
+	}
+
 	log = log.WithFields(map[string]any{
 		"host": host,
 		"node": target.Name,
-		"dst":  fmt.Sprintf("%s/%s", target.Addr, network),
+		"dst":  fmt.Sprintf("%s/%s", addr, network),
 	})
 
-	log.Debugf("%s >> %s", conn.RemoteAddr(), target.Addr)
+	log.Debugf("%s >> %s", conn.RemoteAddr(), addr)
 
-	addr := target.Addr
-	if _, _, err := net.SplitHostPort(addr); err != nil {
-		addr += ":0"
-	}
 	cc, err := h.router.Dial(ctx, network, addr)
 	if err != nil {
 		log.Error(err)
@@ -163,21 +175,46 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	return nil
 }
 
-func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log logger.ILogger) (err error) {
+func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, remoteAddr net.Addr, log logger.ILogger) (err error) {
 	br := bufio.NewReader(rw)
-	var connPool sync.Map
 
+	var cc net.Conn
 	for {
 		resp := &http.Response{
 			ProtoMajor: 1,
 			ProtoMinor: 1,
+			Header:     http.Header{},
 			StatusCode: http.StatusServiceUnavailable,
 		}
 
 		err = func() error {
 			req, err := http.ReadRequest(br)
 			if err != nil {
+				// log.Errorf("read http request: %v", err)
 				return err
+			}
+
+			if log.IsLevelEnabled(logger.TraceLevel) {
+				dump, _ := httputil.DumpRequest(req, false)
+				log.Trace(string(dump))
+			}
+
+			host := req.Host
+			if _, _, err := net.SplitHostPort(host); err != nil {
+				host = net.JoinHostPort(host, "80")
+			}
+			if bp := h.options.Bypass; bp != nil && bp.Contains(ctx, "tcp", host, bypass.WithPathOption(req.RequestURI)) {
+				log.Debugf("bypass: %s %s", host, req.RequestURI)
+				resp.StatusCode = http.StatusForbidden
+				return resp.Write(rw)
+			}
+
+			if addr := getRealClientAddr(req, remoteAddr); addr != remoteAddr {
+				log = log.WithFields(map[string]any{
+					"src": addr.String(),
+				})
+				remoteAddr = addr
+				ctx = ctxvalue.ContextWithClientAddr(ctx, ctxvalue.ClientAddr(remoteAddr.String()))
 			}
 
 			target := &chain.Node{
@@ -185,8 +222,9 @@ func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log l
 			}
 			if h.hop != nil {
 				target = h.hop.Select(ctx,
-					chain.HostSelectOption(req.Host),
-					chain.ProtocolSelectOption(forward.ProtoHTTP),
+					hop.HostSelectOption(req.Host),
+					hop.ProtocolSelectOption(forward.ProtoHTTP),
+					hop.PathSelectOption(req.URL.Path),
 				)
 			}
 			if target == nil {
@@ -211,50 +249,8 @@ func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log l
 					log.Warnf("node %s(%s) 401 unauthorized", target.Name, target.Addr)
 					return resp.Write(rw)
 				}
-				ctx = auth_util.ContextWithID(ctx, auth_util.ID(id))
+				ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(id))
 			}
-
-			var cc net.Conn
-			if v, ok := connPool.Load(target); ok {
-				cc = v.(net.Conn)
-				log.Debugf("connection to node %s(%s) found in pool", target.Name, target.Addr)
-			}
-			if cc == nil {
-				cc, err = h.router.Dial(ctx, "tcp", target.Addr)
-				if err != nil {
-					// TODO: the router itself may be failed due to the failed node in the router,
-					// the dead marker may be a wrong operation.
-					if marker := target.Marker(); marker != nil {
-						marker.Mark()
-					}
-					log.Warnf("connect to node %s(%s) failed: %v", target.Name, target.Addr, err)
-					return resp.Write(rw)
-				}
-				if marker := target.Marker(); marker != nil {
-					marker.Reset()
-				}
-
-				if tlsSettings := target.Options().TLS; tlsSettings != nil {
-					cc = tls.Client(cc, &tls.Config{
-						ServerName:         tlsSettings.ServerName,
-						InsecureSkipVerify: !tlsSettings.Secure,
-					})
-				}
-
-				connPool.Store(target, cc)
-				log.Debugf("new connection to node %s(%s)", target.Name, target.Addr)
-
-				go func() {
-					defer cc.Close()
-					err := xnet.CopyBuffer(rw, cc, 8192)
-					if err != nil {
-						resp.Write(rw)
-					}
-					log.Debugf("close connection to node %s(%s), reason: %v", target.Name, target.Addr, err)
-					connPool.Delete(target)
-				}()
-			}
-
 			if httpSettings := target.Options().HTTP; httpSettings != nil {
 				if httpSettings.Host != "" {
 					req.Host = httpSettings.Host
@@ -264,39 +260,79 @@ func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, log l
 				}
 			}
 
-			if log.IsLevelEnabled(logger.TraceLevel) {
-				dump, _ := httputil.DumpRequest(req, false)
-				log.Trace(string(dump))
+			cc, err = h.router.Dial(ctx, "tcp", target.Addr)
+			if err != nil {
+				// TODO: the router itself may be failed due to the failed node in the router,
+				// the dead marker may be a wrong operation.
+				if marker := target.Marker(); marker != nil {
+					marker.Mark()
+				}
+				log.Warnf("connect to node %s(%s) failed: %v", target.Name, target.Addr, err)
+				return resp.Write(rw)
 			}
+			if marker := target.Marker(); marker != nil {
+				marker.Reset()
+			}
+
+			log.Debugf("connection to node %s(%s)", target.Name, target.Addr)
+
+			if tlsSettings := target.Options().TLS; tlsSettings != nil {
+				cfg := &tls.Config{
+					ServerName:         tlsSettings.ServerName,
+					InsecureSkipVerify: !tlsSettings.Secure,
+				}
+				tls_util.SetTLSOptions(cfg, &config.TLSOptions{
+					MinVersion:   tlsSettings.Options.MinVersion,
+					MaxVersion:   tlsSettings.Options.MaxVersion,
+					CipherSuites: tlsSettings.Options.CipherSuites,
+				})
+				cc = tls.Client(cc, cfg)
+			}
+
 			if err := req.Write(cc); err != nil {
-				log.Warnf("send request to node %s(%s) failed: %v", target.Name, target.Addr, err)
+				cc.Close()
+				log.Warnf("send request to node %s(%s): %v", target.Name, target.Addr, err)
 				return resp.Write(rw)
 			}
 
 			if req.Header.Get("Upgrade") == "websocket" {
-				err := xnet.CopyBuffer(cc, br, 8192)
+				err := xnet.Transport(cc, xio.NewReadWriter(br, rw))
 				if err == nil {
 					err = io.EOF
 				}
 				return err
 			}
 
-			// cc.SetReadDeadline(time.Now().Add(10 * time.Second))
+			go func() {
+				defer cc.Close()
+
+				res, err := http.ReadResponse(bufio.NewReader(cc), req)
+				if err != nil {
+					log.Warnf("read response from node %s(%s): %v", target.Name, target.Addr, err)
+					resp.Write(rw)
+					return
+				}
+
+				if log.IsLevelEnabled(logger.TraceLevel) {
+					dump, _ := httputil.DumpResponse(res, false)
+					log.Trace(string(dump))
+				}
+
+				if err = res.Write(rw); err != nil {
+					log.Errorf("write response from node %s(%s): %v", target.Name, target.Addr, err)
+				}
+			}()
 
 			return nil
 		}()
+
 		if err != nil {
-			// log.Error(err)
+			if cc != nil {
+				cc.Close()
+			}
 			break
 		}
 	}
-
-	connPool.Range(func(key, value any) bool {
-		if value != nil {
-			value.(net.Conn).Close()
-		}
-		return true
-	})
 
 	return
 }
@@ -311,4 +347,35 @@ func (h *forwardHandler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
+}
+
+func getRealClientAddr(req *http.Request, raddr net.Addr) net.Addr {
+	if req == nil {
+		return nil
+	}
+	// cloudflare CDN
+	sip := req.Header.Get("CF-Connecting-IP")
+	if sip == "" {
+		ss := strings.Split(req.Header.Get("X-Forwarded-For"), ",")
+		if len(ss) > 0 && ss[0] != "" {
+			sip = ss[0]
+		}
+	}
+	if sip == "" {
+		sip = req.Header.Get("X-Real-Ip")
+	}
+
+	ip := net.ParseIP(sip)
+	if ip == nil {
+		return raddr
+	}
+
+	_, sp, _ := net.SplitHostPort(raddr.String())
+
+	port, _ := strconv.Atoi(sp)
+
+	return &net.TCPAddr{
+		IP:   ip,
+		Port: port,
+	}
 }

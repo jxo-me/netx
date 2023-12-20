@@ -3,6 +3,7 @@ package rtcp
 import (
 	"context"
 	"net"
+	"sync"
 
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/listener"
@@ -22,6 +23,7 @@ type rtcpListener struct {
 	logger  logger.ILogger
 	closed  chan struct{}
 	options listener.Options
+	mu      sync.Mutex
 }
 
 func NewListener(opts ...listener.Option) listener.IListener {
@@ -45,9 +47,11 @@ func (l *rtcpListener) Init(md md.IMetaData) (err error) {
 	if xnet.IsIPv4(l.options.Addr) {
 		network = "tcp4"
 	}
-	laddr, err := net.ResolveTCPAddr(network, l.options.Addr)
-	if err != nil {
-		return
+	if laddr, _ := net.ResolveTCPAddr(network, l.options.Addr); laddr != nil {
+		l.laddr = laddr
+	}
+	if l.laddr == nil {
+		l.laddr = &bindAddr{addr: l.options.Addr}
 	}
 
 	l.laddr = laddr
@@ -66,23 +70,33 @@ func (l *rtcpListener) Accept() (conn net.Conn, err error) {
 	default:
 	}
 
-	if l.ln == nil {
-		l.ln, err = l.router.Bind(
+	ln := l.getListener()
+	if ln == nil {
+		ln, err = l.router.Bind(
 			context.Background(), "tcp", l.laddr.String(),
 			chain.MuxBindOption(true),
 		)
 		if err != nil {
 			return nil, listener.NewAcceptError(err)
 		}
-		l.ln = metrics.WrapListener(l.options.Service, l.ln)
-		l.ln = admission.WrapListener(l.options.Admission, l.ln)
-		l.ln = limiter.WrapListener(l.options.TrafficLimiter, l.ln)
-		l.ln = climiter.WrapListener(l.options.ConnLimiter, l.ln)
+		ln = metrics.WrapListener(l.options.Service, ln)
+		ln = admission.WrapListener(l.options.Admission, ln)
+		ln = limiter.WrapListener(l.options.TrafficLimiter, ln)
+		ln = climiter.WrapListener(l.options.ConnLimiter, ln)
+		l.setListener(ln)
 	}
-	conn, err = l.ln.Accept()
+
+	select {
+	case <-l.closed:
+		ln.Close()
+		return nil, net.ErrClosed
+	default:
+	}
+
+	conn, err = ln.Accept()
 	if err != nil {
-		l.ln.Close()
-		l.ln = nil
+		ln.Close()
+		l.setListener(nil)
 		return nil, listener.NewAcceptError(err)
 	}
 	return
@@ -97,11 +111,34 @@ func (l *rtcpListener) Close() error {
 	case <-l.closed:
 	default:
 		close(l.closed)
-		if l.ln != nil {
-			l.ln.Close()
-			// l.ln = nil
+		if ln := l.getListener(); ln != nil {
+			ln.Close()
 		}
 	}
 
 	return nil
+}
+
+func (l *rtcpListener) setListener(ln net.Listener) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.ln = ln
+}
+
+func (l *rtcpListener) getListener() net.Listener {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.ln
+}
+
+type bindAddr struct {
+	addr string
+}
+
+func (p *bindAddr) Network() string {
+	return "tcp"
+}
+
+func (p *bindAddr) String() string {
+	return p.addr
 }

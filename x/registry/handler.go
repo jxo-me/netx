@@ -5,11 +5,13 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type HandlerRegistry struct {
-	registry[handler.NewHandler]
+type NewHandler func(opts ...handler.Option) handler.Handler
+
+type handlerRegistry struct {
+	registry[NewHandler]
 }
 
-func (r *HandlerRegistry) Register(name string, v handler.NewHandler) error {
+func (r *handlerRegistry) Register(name string, v NewHandler) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

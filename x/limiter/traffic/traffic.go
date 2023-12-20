@@ -82,13 +82,15 @@ type limitValue struct {
 type trafficLimiter struct {
 	generators     sync.Map
 	cidrGenerators cidranger.Ranger
-	connInLimits   *cache.Cache
-	connOutLimits  *cache.Cache
-	inLimits       *cache.Cache
-	outLimits      *cache.Cache
-	mu             sync.RWMutex
-	cancelFunc     context.CancelFunc
-	options        options
+	// connection level in/out limits
+	connInLimits  *cache.Cache
+	connOutLimits *cache.Cache
+	// service level in/out limits
+	inLimits   *cache.Cache
+	outLimits  *cache.Cache
+	mu         sync.RWMutex
+	cancelFunc context.CancelFunc
+	options    options
 }
 
 func NewTrafficLimiter(opts ...Option) limiter.ITrafficLimiter {
@@ -119,7 +121,7 @@ func NewTrafficLimiter(opts ...Option) limiter.ITrafficLimiter {
 
 // In obtains a traffic input limiter based on key.
 // The key should be client connection address.
-func (l *trafficLimiter) In(key string) limiter.ILimiter {
+func (l *trafficLimiter) In(ctx context.Context, key string, opts ...limiter.Option) limiter.ILimiter {
 	var lims []limiter.ILimiter
 
 	// service level limiter
@@ -183,7 +185,7 @@ func (l *trafficLimiter) In(key string) limiter.ILimiter {
 
 // Out obtains a traffic output limiter based on key.
 // The key should be client connection address.
-func (l *trafficLimiter) Out(key string) limiter.ILimiter {
+func (l *trafficLimiter) Out(ctx context.Context, key string, opts ...limiter.Option) limiter.ILimiter {
 	var lims []limiter.ILimiter
 
 	// service level limiter
