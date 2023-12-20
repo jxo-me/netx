@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
+	logger_parser "github.com/jxo-me/netx/x/config/parsing/logger"
 	xmetrics "github.com/jxo-me/netx/x/metrics"
 )
 
@@ -20,8 +22,10 @@ func (p *program) Init(env svc.Environment) error {
 	fmt.Println("init", env.IsWindowsService())
 	cfg := &config.Config{}
 	if cfgFile != "" {
-		if err := cfg.ReadFile(cfgFile); err != nil {
-			return err
+		if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
+			if err := cfg.ReadFile(cfgFile); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -30,7 +34,8 @@ func (p *program) Init(env svc.Environment) error {
 		return err
 	}
 	cfg = p.mergeConfig(cfg, cmdCfg)
-	if len(cfg.Services) == 0 && apiAddr == "" {
+
+	if len(cfg.Services) == 0 && apiAddr == "" && cfg.API == nil {
 		if err := cfg.Load(); err != nil {
 			return err
 		}
@@ -87,7 +92,11 @@ func (p *program) Init(env svc.Environment) error {
 		}
 	}
 
-	logger.SetDefault(logFromConfig(cfg.Log))
+	logCfg := cfg.Log
+	if logCfg == nil {
+		logCfg = &config.LogConfig{}
+	}
+	logger.SetDefault(logger_parser.ParseLogger(&config.LoggerConfig{Log: logCfg}))
 
 	if outputFormat != "" {
 		if err := cfg.Write(os.Stdout, outputFormat); err != nil {
@@ -184,10 +193,13 @@ func (p *program) mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
 		Resolvers:  append(cfg1.Resolvers, cfg2.Resolvers...),
 		Hosts:      append(cfg1.Hosts, cfg2.Hosts...),
 		Ingresses:  append(cfg1.Ingresses, cfg2.Ingresses...),
+		SDs:        append(cfg1.SDs, cfg2.SDs...),
 		Recorders:  append(cfg1.Recorders, cfg2.Recorders...),
 		Limiters:   append(cfg1.Limiters, cfg2.Limiters...),
 		CLimiters:  append(cfg1.CLimiters, cfg2.CLimiters...),
 		RLimiters:  append(cfg1.RLimiters, cfg2.RLimiters...),
+		Loggers:    append(cfg1.Loggers, cfg2.Loggers...),
+		Routers:    append(cfg1.Routers, cfg2.Routers...),
 		TLS:        cfg1.TLS,
 		Log:        cfg1.Log,
 		API:        cfg1.API,

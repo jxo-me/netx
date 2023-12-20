@@ -1,5 +1,5 @@
 package main
 
-const (
-	version = "3.0.0-rc9"
+var (
+	version = "3.0.0"
 )

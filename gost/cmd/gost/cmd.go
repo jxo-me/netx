@@ -16,7 +16,6 @@ import (
 	"github.com/jxo-me/netx/x/limiter/conn"
 	"github.com/jxo-me/netx/x/limiter/traffic"
 	mdx "github.com/jxo-me/netx/x/metadata"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 var (
