@@ -4,10 +4,10 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
-type loggerRegistry struct {
+type LoggerRegistry struct {
 	registry[logger.ILogger]
 }
 
-func (r *loggerRegistry) Register(name string, v logger.ILogger) error {
+func (r *LoggerRegistry) Register(name string, v logger.ILogger) error {
 	return r.registry.Register(name, v)
 }
