@@ -22,8 +22,14 @@ func (p *program) Init(env svc.Environment) error {
 	fmt.Println("init", env.IsWindowsService())
 	cfg := &config.Config{}
 	if cfgFile != "" {
-		if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
+		cfgFile = strings.TrimSpace(cfgFile)
+		if strings.HasPrefix(cfgFile, "{") && strings.HasSuffix(cfgFile, "}") {
+			if err := json.Unmarshal([]byte(cfgFile), cfg); err != nil {
+				return err
+			}
+		} else {
 			if err := cfg.ReadFile(cfgFile); err != nil {
+				logger.Default().Error(err)
 				return err
 			}
 		}
