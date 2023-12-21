@@ -7,7 +7,7 @@ toolchain go1.21.5
 //replace github.com/jxo-me/netx/x => ../x
 
 require (
-	github.com/jxo-me/netx/x v0.0.1
+	github.com/jxo-me/netx/x v0.0.3
 	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.31.0
 )

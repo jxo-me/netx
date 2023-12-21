@@ -27,7 +27,7 @@ require (
 	github.com/jxo-me/netx/core v0.0.1
 	github.com/jxo-me/netx/gosocks4 v0.0.1
 	github.com/jxo-me/netx/gosocks5 v0.0.1
-	github.com/jxo-me/netx/plugin v0.0.1
+	github.com/jxo-me/netx/plugin v0.0.2
 	github.com/jxo-me/netx/relay v0.0.1
 	github.com/jxo-me/netx/tls-dissector v0.0.1
 	github.com/miekg/dns v1.1.57
