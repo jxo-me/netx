@@ -4,22 +4,11 @@ go 1.21
 
 toolchain go1.21.5
 
-replace (
-	github.com/jxo-me/gfbot => ../../gfbot
-	github.com/jxo-me/netx/core => ../core
-	github.com/jxo-me/netx/gosocks4 => ../gosocks4
-	github.com/jxo-me/netx/gosocks5 => ../gosocks5
-	github.com/jxo-me/netx/plugin => ../plugin
-	github.com/jxo-me/netx/relay => ../relay
-	github.com/jxo-me/netx/tls-dissector => ../tls-dissector
-	github.com/jxo-me/netx/x => ../x
-)
-
 require (
 	github.com/gogf/gf/v2 v2.6.0
 	github.com/jxo-me/gfbot v0.1.16
-	github.com/jxo-me/netx/core v0.0.0-00010101000000-000000000000
-	github.com/jxo-me/netx/x v0.0.0-00010101000000-000000000000
+	github.com/jxo-me/netx/core v0.0.0-20231221070104-b7f6350a8429
+	github.com/jxo-me/netx/x v0.0.0-20231221070104-b7f6350a8429
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -40,7 +29,7 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grokify/html-strip-tags-go v0.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/jxo-me/netx/plugin v0.0.0-00010101000000-000000000000 // indirect
+	github.com/jxo-me/netx/plugin v0.0.0-20231221070104-b7f6350a8429 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -64,6 +53,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
+	github.com/vishvananda/netlink v1.1.0 // indirect
+	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.14.0 // indirect
