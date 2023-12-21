@@ -208,12 +208,6 @@ func (h *hEvent) OnWebAppCommand(c telebot.IContext) error {
 	)
 }
 
-func (h *hEvent) OnCallbackGame(c telebot.IContext) error {
-	name := c.Callback().GameShortName
-	fmt.Println("Click Callback Game game name:", name)
-	return c.Respond(&telebot.CallbackResponse{Text: "跳转游戏", URL: "https://dev.us.jxo.me"})
-}
-
 func (h *hEvent) OnGameTextCommand(c telebot.IContext) error {
 	//cmd := c.Callback().Data
 	_ = c.Send("OnGameTextCommand")

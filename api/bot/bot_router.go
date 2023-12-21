@@ -98,7 +98,6 @@ var (
 			telebot.OnText:         telebot.HandlerFunc(Event.OnText),
 			telebot.OnCallback:     telebot.HandlerFunc(Event.OnCallback),
 			telebot.OnUserJoined:   telebot.HandlerFunc(Event.OnUserJoined),
-			telebot.OnCallbackGame: telebot.HandlerFunc(Event.OnCallbackGame),
 			telebot.OnMyChatMember: telebot.HandlerFunc(Event.OnMyChatMember),
 
 			// TextCommand
