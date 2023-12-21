@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/ingress"
 )
 
 const (
@@ -170,7 +170,7 @@ func addIngressHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addIngressHandler json.Unmarshal error:", err.Error())
 	}
-	v := parsing.ParseIngress(&data)
+	v := parser.ParseIngress(&data)
 	if err = app.Runtime.IngressRegistry().Register(data.Name, v); err != nil {
 		return ctx.Reply(ErrDup)
 	}
@@ -230,7 +230,7 @@ func updateIngressHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v := parsing.ParseIngress(&data)
+	v := parser.ParseIngress(&data)
 
 	app.Runtime.IngressRegistry().Unregister(srvName)
 

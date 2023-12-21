@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/limiter"
 )
 
 const (
@@ -166,7 +166,7 @@ func addConnLimiterHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addConnLimiterHandler json.Unmarshal error:", err.Error())
 	}
-	v := parsing.ParseConnLimiter(&data)
+	v := parser.ParseConnLimiter(&data)
 	if err = app.Runtime.ConnLimiterRegistry().Register(data.Name, v); err != nil {
 		return ctx.Reply(ErrDup)
 	}
@@ -226,7 +226,7 @@ func updateConnLimiterHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v := parsing.ParseConnLimiter(&data)
+	v := parser.ParseConnLimiter(&data)
 
 	app.Runtime.ConnLimiterRegistry().Unregister(srvName)
 

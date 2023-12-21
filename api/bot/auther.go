@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/auth"
 )
 
 const (
@@ -166,7 +166,7 @@ func addAutherHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addAutherHandler json.Unmarshal error:", err.Error())
 	}
-	v := parsing.ParseAuther(&data)
+	v := parser.ParseAuther(&data)
 	if err = app.Runtime.AutherRegistry().Register(data.Name, v); err != nil {
 		return ctx.Reply(ErrDup)
 	}
@@ -226,7 +226,7 @@ func updateAutherHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v := parsing.ParseAuther(&data)
+	v := parser.ParseAuther(&data)
 
 	app.Runtime.AutherRegistry().Unregister(srvName)
 

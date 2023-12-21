@@ -6,9 +6,10 @@ import (
 	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/gfbot/handlers"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/chain"
 )
 
 const (
@@ -177,7 +178,7 @@ func addChainHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addChainHandler json.Unmarshal error:", err.Error())
 	}
-	v, err := parsing.ParseChain(&data)
+	v, err := parser.ParseChain(&data, logger.Default())
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}
@@ -240,7 +241,7 @@ func updateChainHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v, err := parsing.ParseChain(&data)
+	v, err := parser.ParseChain(&data, logger.Default())
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}

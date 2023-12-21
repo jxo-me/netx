@@ -3,9 +3,10 @@ package handler
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/hop"
 )
 
 var (
@@ -27,7 +28,7 @@ func (h *hHop) CreateHop(ctx context.Context, req *CreateHopReq) (res *NullStruc
 		return nil, ErrInvalid
 	}
 
-	v, err := parsing.ParseHop(&req.Data)
+	v, err := parser.ParseHop(&req.Data, logger.Default())
 	if err != nil {
 		return nil, ErrCreate
 	}
@@ -58,7 +59,7 @@ func (h *hHop) UpdateHop(ctx context.Context, req *UpdateHopReq) (res *NullStruc
 
 	req.Data.Name = req.Hop
 
-	v, err := parsing.ParseHop(&req.Data)
+	v, err := parser.ParseHop(&req.Data, logger.Default())
 	if err != nil {
 		return nil, ErrCreate
 	}

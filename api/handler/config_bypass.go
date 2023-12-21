@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/bypass"
 )
 
 var (
@@ -26,7 +26,7 @@ func (h *hBypass) CreateBypass(ctx context.Context, req *CreateBypassReq) (res *
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseBypass(&req.Data)
+	v := parser.ParseBypass(&req.Data)
 
 	if err := app.Runtime.BypassRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -57,7 +57,7 @@ func (h *hBypass) UpdateBypass(ctx context.Context, req *UpdateBypassReq) (res *
 
 	req.Data.Name = req.Bypass
 
-	v := parsing.ParseBypass(&req.Data)
+	v := parser.ParseBypass(&req.Data)
 
 	app.Runtime.BypassRegistry().Unregister(req.Bypass)
 

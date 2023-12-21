@@ -34,6 +34,8 @@ var (
 
 func init() {
 	boot.Boots(app.Runtime)
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+
 	args := strings.Join(os.Args[1:], "  ")
 
 	if strings.Contains(args, " -- ") {

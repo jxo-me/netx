@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/service"
 )
 
 const (
@@ -223,7 +223,7 @@ func addServiceHandler(ctx telebot.IContext) error {
 		return ctx.Reply(ErrDup)
 	}
 
-	svc, err := parsing.ParseService(&data)
+	svc, err := parser.ParseService(&data)
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}
@@ -291,7 +291,7 @@ func updateServiceHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	svc, err := parsing.ParseService(&data)
+	svc, err := parser.ParseService(&data)
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}

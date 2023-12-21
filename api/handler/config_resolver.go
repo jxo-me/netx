@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/resolver"
 )
 
 var (
@@ -26,7 +26,7 @@ func (h *hResolver) CreateResolver(ctx context.Context, req *CreateResolverReq) 
 		return nil, ErrInvalid
 	}
 
-	v, err := parsing.ParseResolver(&req.Data)
+	v, err := parser.ParseResolver(&req.Data)
 	if err != nil {
 		return nil, ErrCreate
 	}
@@ -60,7 +60,7 @@ func (h *hResolver) UpdateResolver(ctx context.Context, req *UpdateResolverReq) 
 
 	req.Data.Name = req.Resolver
 
-	v, err := parsing.ParseResolver(&req.Data)
+	v, err := parser.ParseResolver(&req.Data)
 	if err != nil {
 		return nil, ErrCreate
 	}

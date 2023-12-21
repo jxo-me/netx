@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/resolver"
 )
 
 const (
@@ -180,7 +180,7 @@ func addResolverHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addResolverHandler json.Unmarshal error:", err.Error())
 	}
-	v, err := parsing.ParseResolver(&data)
+	v, err := parser.ParseResolver(&data)
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}
@@ -243,7 +243,7 @@ func updateResolverHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v, err := parsing.ParseResolver(&data)
+	v, err := parser.ParseResolver(&data)
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}

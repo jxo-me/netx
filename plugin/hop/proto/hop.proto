@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 package proto;
-option go_package = "github.com/go-gost/plugin/hop/proto";
+option go_package = "github.com/jxo-me/netx/plugin/hop/proto";
 
 message SelectRequest {
 	string network = 1;

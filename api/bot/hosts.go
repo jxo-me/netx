@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/hosts"
 )
 
 const (
@@ -181,7 +181,7 @@ func addHostHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addHostHandler json.Unmarshal error:", err.Error())
 	}
-	v := parsing.ParseHosts(&data)
+	v := parser.ParseHostMapper(&data)
 	if err = app.Runtime.HostsRegistry().Register(data.Name, v); err != nil {
 		return ctx.Reply(ErrDup)
 	}
@@ -241,7 +241,7 @@ func updateHostHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v := parsing.ParseHosts(&data)
+	v := parser.ParseHostMapper(&data)
 
 	app.Runtime.HostsRegistry().Unregister(srvName)
 

@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/hosts"
 )
 
 var (
@@ -26,7 +26,7 @@ func (h *hHosts) CreateHosts(ctx context.Context, req *CreateHostsReq) (res *Nul
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseHosts(&req.Data)
+	v := parser.ParseHostMapper(&req.Data)
 
 	if err := app.Runtime.HostsRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -57,7 +57,7 @@ func (h *hHosts) UpdateHosts(ctx context.Context, req *UpdateHostsReq) (res *Nul
 
 	req.Data.Name = req.Hosts
 
-	v := parsing.ParseHosts(&req.Data)
+	v := parser.ParseHostMapper(&req.Data)
 
 	app.Runtime.HostsRegistry().Unregister(req.Hosts)
 

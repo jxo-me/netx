@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/bypass"
 )
 
 const (
@@ -166,7 +166,7 @@ func addBypassHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addBypassHandler json.Unmarshal error:", err.Error())
 	}
-	v := parsing.ParseBypass(&data)
+	v := parser.ParseBypass(&data)
 	if err = app.Runtime.BypassRegistry().Register(data.Name, v); err != nil {
 		return ctx.Reply(ErrDup)
 	}
@@ -226,7 +226,7 @@ func updateBypassHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v := parsing.ParseBypass(&data)
+	v := parser.ParseBypass(&data)
 
 	app.Runtime.BypassRegistry().Unregister(srvName)
 

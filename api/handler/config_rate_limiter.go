@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/limiter"
 )
 
 var (
@@ -30,7 +30,7 @@ func (h *hRateLimiter) CreateRateLimiter(ctx context.Context, req *CreateRateLim
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseRateLimiter(&req.Data)
+	v := parser.ParseRateLimiter(&req.Data)
 
 	if err := app.Runtime.RateLimiterRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -61,7 +61,7 @@ func (h *hRateLimiter) UpdateRateLimiter(ctx context.Context, req *UpdateRateLim
 
 	req.Data.Name = req.Limiter
 
-	v := parsing.ParseRateLimiter(&req.Data)
+	v := parser.ParseRateLimiter(&req.Data)
 
 	app.Runtime.RateLimiterRegistry().Unregister(req.Limiter)
 

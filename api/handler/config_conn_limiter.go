@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/limiter"
 )
 
 var (
@@ -30,7 +30,7 @@ func (h *hConnLimiter) CreateConnLimiter(ctx context.Context, req *CreateConnLim
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseConnLimiter(&req.Data)
+	v := parser.ParseConnLimiter(&req.Data)
 
 	if err := app.Runtime.ConnLimiterRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -60,7 +60,7 @@ func (h *hConnLimiter) UpdateConnLimiter(ctx context.Context, req *UpdateConnLim
 
 	req.Data.Name = req.Limiter
 
-	v := parsing.ParseConnLimiter(&req.Data)
+	v := parser.ParseConnLimiter(&req.Data)
 
 	app.Runtime.ConnLimiterRegistry().Unregister(req.Limiter)
 

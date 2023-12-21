@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/gfbot/handlers"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/admission"
 )
 
 const (
@@ -165,7 +165,7 @@ func addAdmissionHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addAdmissionHandler json.Unmarshal error:", err.Error())
 	}
-	v := parsing.ParseAdmission(&data)
+	v := parser.ParseAdmission(&data)
 	if err = app.Runtime.AdmissionRegistry().Register(data.Name, v); err != nil {
 		return ctx.Reply(ErrDup)
 	}
@@ -225,7 +225,7 @@ func updateAdmissionHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v := parsing.ParseAdmission(&data)
+	v := parser.ParseAdmission(&data)
 
 	app.Runtime.AdmissionRegistry().Unregister(srvName)
 

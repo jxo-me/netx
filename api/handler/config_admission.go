@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/admission"
 )
 
 var (
@@ -26,7 +26,7 @@ func (h *hAdmission) CreateAdmission(ctx context.Context, req *CreateAdmissionRe
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseAdmission(&req.Data)
+	v := parser.ParseAdmission(&req.Data)
 
 	if err := app.Runtime.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -58,7 +58,7 @@ func (h *hAdmission) UpdateAdmission(ctx context.Context, req *UpdateAdmissionRe
 
 	req.Data.Name = req.Admission
 
-	v := parsing.ParseAdmission(&req.Data)
+	v := parser.ParseAdmission(&req.Data)
 
 	app.Runtime.AdmissionRegistry().Unregister(req.Admission)
 

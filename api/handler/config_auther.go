@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/auth"
 )
 
 var (
@@ -27,7 +27,7 @@ func (h *hAuther) CreateAuther(ctx context.Context, req *CreateAutherReq) (res *
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseAuther(&req.Data)
+	v := parser.ParseAuther(&req.Data)
 	if err := app.Runtime.AutherRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
 	}
@@ -58,7 +58,7 @@ func (h *hAuther) UpdateAuther(ctx context.Context, req *UpdateAutherReq) (res *
 
 	req.Data.Name = req.Auther
 
-	v := parsing.ParseAuther(&req.Data)
+	v := parser.ParseAuther(&req.Data)
 	app.Runtime.AutherRegistry().Unregister(req.Auther)
 
 	if err := app.Runtime.AutherRegistry().Register(req.Auther, v); err != nil {

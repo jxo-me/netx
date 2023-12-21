@@ -3,9 +3,10 @@ package handler
 import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/chain"
 )
 
 var (
@@ -27,7 +28,7 @@ func (h *hChain) CreateChain(ctx context.Context, req *CreateChainReq) (res *Nul
 		return nil, ErrInvalid
 	}
 
-	v, err := parsing.ParseChain(&req.Data)
+	v, err := parser.ParseChain(&req.Data, logger.Default())
 	if err != nil {
 		return nil, ErrCreate
 	}
@@ -61,7 +62,7 @@ func (h *hChain) UpdateChain(ctx context.Context, req *UpdateChainReq) (res *Nul
 
 	req.Data.Name = req.Chain
 
-	v, err := parsing.ParseChain(&req.Data)
+	v, err := parser.ParseChain(&req.Data, logger.Default())
 	if err != nil {
 		return nil, ErrCreate
 	}

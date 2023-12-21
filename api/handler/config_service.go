@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/service"
 )
 
 var (
@@ -31,7 +31,7 @@ func (h *hService) CreateService(ctx context.Context, req *CreateServiceReq) (re
 		return nil, ErrDup
 	}
 
-	svc, err := parsing.ParseService(&req.Data)
+	svc, err := parser.ParseService(&req.Data)
 	if err != nil {
 		return nil, ErrCreate
 	}
@@ -70,7 +70,7 @@ func (h *hService) UpdateService(ctx context.Context, req *UpdateServiceReq) (re
 
 	req.Data.Name = req.Service
 
-	svc, err := parsing.ParseService(&req.Data)
+	svc, err := parser.ParseService(&req.Data)
 	if err != nil {
 		return nil, ErrCreate
 	}

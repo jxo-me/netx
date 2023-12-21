@@ -6,9 +6,10 @@ import (
 	"github.com/gogf/gf/v2/util/gconv"
 	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/gfbot/handlers"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/hop"
 )
 
 const (
@@ -200,7 +201,7 @@ func addHopHandler(ctx telebot.IContext) error {
 	if err != nil {
 		return ctx.Reply("addHopHandler json.Unmarshal error:", err.Error())
 	}
-	v, err := parsing.ParseHop(&data)
+	v, err := parser.ParseHop(&data, logger.Default())
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}
@@ -264,7 +265,7 @@ func updateHopHandler(ctx telebot.IContext) error {
 
 	data.Name = srvName
 
-	v, err := parsing.ParseHop(&data)
+	v, err := parser.ParseHop(&data, logger.Default())
 	if err != nil {
 		return ctx.Reply(ErrCreate)
 	}

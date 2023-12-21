@@ -149,6 +149,7 @@ func registerRouters(r *ghttp.RouterGroup) {
 		handler.Admission,
 		handler.Bypass,
 		handler.Resolver,
+		handler.Router,
 		handler.Hosts,
 		handler.Ingress,
 		handler.Limiter,

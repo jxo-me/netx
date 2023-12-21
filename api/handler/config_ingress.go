@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jxo-me/netx/x/app"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/ingress"
 )
 
 var (
@@ -26,7 +26,7 @@ func (h *hIngress) CreateIngress(ctx context.Context, req *CreateIngressReq) (re
 		return nil, ErrInvalid
 	}
 
-	v := parsing.ParseIngress(&req.Data)
+	v := parser.ParseIngress(&req.Data)
 
 	if err := app.Runtime.IngressRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -58,7 +58,7 @@ func (h *hIngress) UpdateIngress(ctx context.Context, req *UpdateIngressReq) (re
 
 	req.Data.Name = req.Ingress
 
-	v := parsing.ParseIngress(&req.Data)
+	v := parser.ParseIngress(&req.Data)
 
 	app.Runtime.IngressRegistry().Unregister(req.Ingress)
 
