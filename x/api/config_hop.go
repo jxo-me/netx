@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/hop"
 )
 
 // swagger:parameters createHopRequest
@@ -40,7 +41,7 @@ func createHop(ctx *gin.Context) {
 		return
 	}
 
-	v, err := parsing.ParseHop(&req.Data)
+	v, err := parser.ParseHop(&req.Data, logger.Default())
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
@@ -99,7 +100,7 @@ func updateHop(ctx *gin.Context) {
 
 	req.Data.Name = req.Hop
 
-	v, err := parsing.ParseHop(&req.Data)
+	v, err := parser.ParseHop(&req.Data, logger.Default())
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return

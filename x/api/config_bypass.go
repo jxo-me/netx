@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/bypass"
 )
 
 // swagger:parameters createBypassRequest
@@ -40,7 +40,7 @@ func createBypass(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseBypass(&req.Data)
+	v := parser.ParseBypass(&req.Data)
 
 	if err := app.Runtime.BypassRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +94,7 @@ func updateBypass(ctx *gin.Context) {
 
 	req.Data.Name = req.Bypass
 
-	v := parsing.ParseBypass(&req.Data)
+	v := parser.ParseBypass(&req.Data)
 
 	app.Runtime.BypassRegistry().Unregister(req.Bypass)
 

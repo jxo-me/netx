@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/chain"
 )
 
 // swagger:parameters createChainRequest
@@ -40,7 +41,7 @@ func createChain(ctx *gin.Context) {
 		return
 	}
 
-	v, err := parsing.ParseChain(&req.Data)
+	v, err := parser.ParseChain(&req.Data, logger.Default())
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return
@@ -99,7 +100,7 @@ func updateChain(ctx *gin.Context) {
 
 	req.Data.Name = req.Chain
 
-	v, err := parsing.ParseChain(&req.Data)
+	v, err := parser.ParseChain(&req.Data, logger.Default())
 	if err != nil {
 		writeError(ctx, ErrCreate)
 		return

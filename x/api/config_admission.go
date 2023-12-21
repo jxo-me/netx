@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/admission"
 )
 
 // swagger:parameters createAdmissionRequest
@@ -40,7 +40,7 @@ func createAdmission(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseAdmission(&req.Data)
+	v := parser.ParseAdmission(&req.Data)
 
 	if err := app.Runtime.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +94,7 @@ func updateAdmission(ctx *gin.Context) {
 
 	req.Data.Name = req.Admission
 
-	v := parsing.ParseAdmission(&req.Data)
+	v := parser.ParseAdmission(&req.Data)
 
 	app.Runtime.AdmissionRegistry().Unregister(req.Admission)
 

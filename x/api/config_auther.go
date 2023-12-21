@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/auth"
 )
 
 // swagger:parameters createAutherRequest
@@ -40,7 +40,7 @@ func createAuther(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseAuther(&req.Data)
+	v := parser.ParseAuther(&req.Data)
 	if err := app.Runtime.AutherRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
 		return
@@ -93,7 +93,7 @@ func updateAuther(ctx *gin.Context) {
 
 	req.Data.Name = req.Auther
 
-	v := parsing.ParseAuther(&req.Data)
+	v := parser.ParseAuther(&req.Data)
 	app.Runtime.AutherRegistry().Unregister(req.Auther)
 
 	if err := app.Runtime.AutherRegistry().Register(req.Auther, v); err != nil {

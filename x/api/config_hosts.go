@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
-	"github.com/jxo-me/netx/x/config/parsing"
+	parser "github.com/jxo-me/netx/x/config/parsing/hosts"
 )
 
 // swagger:parameters createHostsRequest
@@ -40,7 +40,7 @@ func createHosts(ctx *gin.Context) {
 		return
 	}
 
-	v := parsing.ParseHosts(&req.Data)
+	v := parser.ParseHostMapper(&req.Data)
 
 	if err := app.Runtime.HostsRegistry().Register(req.Data.Name, v); err != nil {
 		writeError(ctx, ErrDup)
@@ -94,7 +94,7 @@ func updateHosts(ctx *gin.Context) {
 
 	req.Data.Name = req.Hosts
 
-	v := parsing.ParseHosts(&req.Data)
+	v := parser.ParseHostMapper(&req.Data)
 
 	app.Runtime.HostsRegistry().Unregister(req.Hosts)
 
