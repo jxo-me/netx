@@ -8,7 +8,7 @@ require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/api v0.0.3
 	github.com/jxo-me/netx/core v0.0.1
-	github.com/jxo-me/netx/x v0.0.2
+	github.com/jxo-me/netx/x v0.0.3
 )
 
 require (
@@ -107,8 +107,8 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
-	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
-	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
+	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
+	golang.zx2c4.com/wireguard v0.0.0-20220703234212-c31a7b1ab478 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 	google.golang.org/grpc v1.60.1 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
