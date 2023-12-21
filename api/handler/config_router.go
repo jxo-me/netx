@@ -27,9 +27,6 @@ func (h *hRouter) CreateRouter(ctx context.Context, req *CreateRouterReq) (res *
 	}
 
 	v := parser.ParseRouter(&req.Data)
-	if err != nil {
-		return nil, ErrCreate
-	}
 
 	if err := app.Runtime.RouterRegistry().Register(req.Data.Name, v); err != nil {
 		return nil, ErrDup
@@ -61,9 +58,6 @@ func (h *hRouter) UpdateResolver(ctx context.Context, req *UpdateRouterReq) (res
 	req.Data.Name = req.Router
 
 	v := parser.ParseRouter(&req.Data)
-	if err != nil {
-		return nil, ErrCreate
-	}
 
 	app.Runtime.RouterRegistry().Unregister(req.Router)
 
