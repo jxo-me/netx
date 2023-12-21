@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"strings"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/jxo-me/netx/relay"
 	xingress "github.com/jxo-me/netx/x/ingress"
 	"github.com/jxo-me/netx/x/internal/util/mux"
-	"github.com/jxo-me/netx/x/registry"
 )
 
 const (
@@ -27,7 +27,7 @@ type metadata struct {
 	directTunnel            bool
 	tunnelTTL               time.Duration
 	ingress                 ingress.IIngress
-	sd                      sd.SD
+	sd                      sd.ISD
 	muxCfg                  *mux.Config
 }
 
@@ -43,7 +43,7 @@ func (h *tunnelHandler) parseMetadata(md mdata.IMetaData) (err error) {
 	h.md.entryPointID = parseTunnelID(mdutil.GetString(md, "entrypoint.id"))
 	h.md.entryPointProxyProtocol = mdutil.GetInt(md, "entrypoint.ProxyProtocol")
 
-	h.md.ingress = registry.IngressRegistry().Get(mdutil.GetString(md, "ingress"))
+	h.md.ingress = app.Runtime.IngressRegistry().Get(mdutil.GetString(md, "ingress"))
 	if h.md.ingress == nil {
 		var rules []*ingress.Rule
 		for _, s := range strings.Split(mdutil.GetString(md, "tunnel"), ",") {
@@ -66,7 +66,7 @@ func (h *tunnelHandler) parseMetadata(md mdata.IMetaData) (err error) {
 			)
 		}
 	}
-	h.md.sd = registry.SDRegistry().Get(mdutil.GetString(md, "sd"))
+	h.md.sd = app.Runtime.SDRegistry().Get(mdutil.GetString(md, "sd"))
 
 	h.md.muxCfg = &mux.Config{
 		Version:           mdutil.GetInt(md, "mux.version"),

@@ -3,7 +3,7 @@ package auto
 import (
 	"bufio"
 	"context"
-	"github.com/jxo-me/netx/x/registry"
+	"github.com/jxo-me/netx/x/app"
 	"net"
 	"time"
 
@@ -32,17 +32,17 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 		options: options,
 	}
 
-	if f := registry.HandlerRegistry().Get("http"); f != nil {
+	if f := app.Runtime.HandlerRegistry().Get("http"); f != nil {
 		v := append(opts,
 			handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": "http"})))
 		h.httpHandler = f(v...)
 	}
-	if f := registry.HandlerRegistry().Get("socks4"); f != nil {
+	if f := app.Runtime.HandlerRegistry().Get("socks4"); f != nil {
 		v := append(opts,
 			handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": "socks4"})))
 		h.socks4Handler = f(v...)
 	}
-	if f := registry.HandlerRegistry().Get("socks5"); f != nil {
+	if f := app.Runtime.HandlerRegistry().Get("socks5"); f != nil {
 		v := append(opts,
 			handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": "socks5"})))
 		h.socks5Handler = f(v...)

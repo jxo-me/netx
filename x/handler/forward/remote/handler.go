@@ -31,7 +31,7 @@ import (
 )
 
 type forwardHandler struct {
-	hop     hop.Hop
+	hop     hop.IHop
 	router  *chain.Router
 	md      metadata
 	options handler.Options

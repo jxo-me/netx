@@ -3,6 +3,7 @@ package boot
 import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/x/consts"
+	"github.com/jxo-me/netx/x/handler/auto"
 	"github.com/jxo-me/netx/x/handler/dns"
 	"github.com/jxo-me/netx/x/handler/file"
 	"github.com/jxo-me/netx/x/handler/forward/local"
@@ -23,10 +24,12 @@ import (
 	handlerSshd "github.com/jxo-me/netx/x/handler/sshd"
 	"github.com/jxo-me/netx/x/handler/tap"
 	"github.com/jxo-me/netx/x/handler/tun"
+	"github.com/jxo-me/netx/x/handler/tunnel"
 	"github.com/jxo-me/netx/x/handler/unix"
 )
 
 var Handlers = map[string]handler.NewHandler{
+	consts.Auto:     auto.NewHandler,
 	consts.Dns:      dns.NewHandler,
 	consts.File:     file.NewHandler,
 	consts.Tcp:      local.NewHandler,
@@ -54,5 +57,6 @@ var Handlers = map[string]handler.NewHandler{
 	consts.Sshd:     handlerSshd.NewHandler,
 	consts.Tap:      tap.NewHandler,
 	consts.Tun:      tun.NewHandler,
+	consts.Tunnel:   tunnel.NewHandler,
 	consts.Unix:     unix.NewHandler,
 }

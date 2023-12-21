@@ -18,7 +18,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// Applicable SSH Request types for Port Forwarding - RFC 4254 7.X
+// ForwardedTCPReturnRequest Applicable SSH Request types for Port Forwarding - RFC 4254 7.X
 const (
 	ForwardedTCPReturnRequest = "forwarded-tcpip" // RFC 4254 7.2
 )

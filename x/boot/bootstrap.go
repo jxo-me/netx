@@ -7,8 +7,6 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/listener"
-	"github.com/jxo-me/netx/x/consts"
-	"github.com/jxo-me/netx/x/handler/auto"
 )
 
 var (
@@ -85,38 +83,9 @@ func (b *Boot) InitHandler() (err error) {
 	// handler
 	for name, handle := range b.Handlers {
 		//fmt.Println("Register Handler type:", name)
-		if name == consts.Auto {
-			err = b.App.HandlerRegistry().Register(consts.Auto, func(opts ...handler.Option) handler.IHandler {
-				options := handler.Options{}
-				for _, opt := range opts {
-					opt(&options)
-				}
-				h := auto.NewHandler(opts...)
-				if f := b.App.HandlerRegistry().Get(consts.Http); f != nil {
-					v := append(opts,
-						handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": consts.Http})))
-					h.SetHttpHandler(f(v...))
-				}
-				if f := b.App.HandlerRegistry().Get(consts.Socks4); f != nil {
-					v := append(opts,
-						handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": consts.Socks4})))
-					h.SetSocks4Handler(f(v...))
-				}
-				if f := b.App.HandlerRegistry().Get(consts.Socks5); f != nil {
-					v := append(opts,
-						handler.LoggerOption(options.Logger.WithFields(map[string]any{"handler": consts.Socks5})))
-					h.SetSocks5Handler(f(v...))
-				}
-				return h
-			})
-			if err != nil {
-				return err
-			}
-		} else {
-			err = b.App.HandlerRegistry().Register(name, handle)
-			if err != nil {
-				return err
-			}
+		err = b.App.HandlerRegistry().Register(name, handle)
+		if err != nil {
+			return err
 		}
 	}
 	return err

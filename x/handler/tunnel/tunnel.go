@@ -17,12 +17,12 @@ type Connector struct {
 	id   relay.ConnectorID
 	tid  relay.TunnelID
 	node string
-	sd   sd.SD
+	sd   sd.ISD
 	t    time.Time
 	s    *mux.Session
 }
 
-func NewConnector(id relay.ConnectorID, tid relay.TunnelID, node string, s *mux.Session, sd sd.SD) *Connector {
+func NewConnector(id relay.ConnectorID, tid relay.TunnelID, node string, s *mux.Session, sd sd.ISD) *Connector {
 	c := &Connector{
 		id:   id,
 		tid:  tid,
@@ -70,7 +70,7 @@ type Tunnel struct {
 	n          uint64
 	close      chan struct{}
 	mu         sync.RWMutex
-	sd         sd.SD
+	sd         sd.ISD
 	ttl        time.Duration
 }
 
@@ -89,7 +89,7 @@ func NewTunnel(node string, tid relay.TunnelID, ttl time.Duration) *Tunnel {
 	return t
 }
 
-func (t *Tunnel) WithSD(sd sd.SD) {
+func (t *Tunnel) WithSD(sd sd.ISD) {
 	t.sd = sd
 }
 
@@ -191,12 +191,12 @@ func (t *Tunnel) clean() {
 
 type ConnectorPool struct {
 	node    string
-	sd      sd.SD
+	sd      sd.ISD
 	tunnels map[string]*Tunnel
 	mu      sync.RWMutex
 }
 
-func NewConnectorPool(node string, sd sd.SD) *ConnectorPool {
+func NewConnectorPool(node string, sd sd.ISD) *ConnectorPool {
 	p := &ConnectorPool{
 		node:    node,
 		sd:      sd,
