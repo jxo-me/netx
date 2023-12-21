@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/router"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	mdx "github.com/jxo-me/netx/x/metadata"
@@ -21,7 +22,7 @@ type tunListener struct {
 	logger  logger.ILogger
 	md      metadata
 	options listener.Options
-	routes []*router.Route
+	routes  []*router.Route
 }
 
 func NewListener(opts ...listener.Option) listener.IListener {

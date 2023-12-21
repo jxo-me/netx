@@ -32,7 +32,7 @@ type entrypoint struct {
 	node    string
 	pool    *ConnectorPool
 	ingress ingress.IIngress
-	sd      sd.SD
+	sd      sd.ISD
 	log     logger.ILogger
 }
 

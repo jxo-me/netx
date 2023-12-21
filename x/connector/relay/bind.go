@@ -39,7 +39,7 @@ func (c *relayConnector) Bind(ctx context.Context, conn net.Conn, network, addre
 	}
 }
 
-func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.Logger) (net.Listener, error) {
+func (c *relayConnector) bindTCP(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) (net.Listener, error) {
 	laddr, err := c.bind(conn, relay.CmdBind, network, address)
 	if err != nil {
 		return nil, err

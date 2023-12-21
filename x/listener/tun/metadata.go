@@ -1,6 +1,7 @@
 package tun
 
 import (
+	"github.com/jxo-me/netx/x/app"
 	"net"
 	"strings"
 
@@ -42,7 +43,7 @@ func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 		Name:   mdutil.GetString(md, name),
 		Peer:   mdutil.GetString(md, peer),
 		MTU:    mdutil.GetInt(md, mtu),
-		Router: registry.RouterRegistry().Get(mdutil.GetString(md, "router")),
+		Router: app.Runtime.RouterRegistry().Get(mdutil.GetString(md, "router")),
 	}
 	if config.MTU <= 0 {
 		config.MTU = defaultMTU

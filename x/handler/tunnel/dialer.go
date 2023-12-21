@@ -12,7 +12,7 @@ import (
 type Dialer struct {
 	node    string
 	pool    *ConnectorPool
-	sd      sd.SD
+	sd      sd.ISD
 	retry   int
 	timeout time.Duration
 	log     logger.ILogger

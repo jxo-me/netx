@@ -6,6 +6,7 @@ import (
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/judwhite/go-svc"
 	"github.com/jxo-me/netx/core/logger"

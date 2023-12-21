@@ -19,7 +19,6 @@ import (
 	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
-	"github.com/jxo-me/netx/x/registry"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -31,10 +30,6 @@ var (
 	ErrUnauthorized       = errors.New("unauthorized")
 	ErrRateLimit          = errors.New("rate limiting exceeded")
 )
-
-func init() {
-	registry.HandlerRegistry().Register("tunnel", NewHandler)
-}
 
 type tunnelHandler struct {
 	id       string

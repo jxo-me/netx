@@ -26,7 +26,7 @@ type grpcPlugin struct {
 }
 
 // NewGRPCPlugin creates a Hop plugin based on gRPC.
-func NewGRPCPlugin(name string, addr string, opts ...plugin.Option) hop.Hop {
+func NewGRPCPlugin(name string, addr string, opts ...plugin.Option) hop.IHop {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
@@ -123,7 +123,7 @@ type httpPlugin struct {
 }
 
 // NewHTTPPlugin creates an Hop plugin based on HTTP.
-func NewHTTPPlugin(name string, url string, opts ...plugin.Option) hop.Hop {
+func NewHTTPPlugin(name string, url string, opts ...plugin.Option) hop.IHop {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)

@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type grpcPluginRecorder struct {
+type grpcPlugin struct {
 	conn   grpc.ClientConnInterface
 	client proto.RecorderClient
 	log    logger.ILogger
@@ -72,7 +72,7 @@ func (p *grpcPlugin) Record(ctx context.Context, b []byte, opts ...recorder.Reco
 	return nil
 }
 
-func (p *grpcPluginRecorder) Close() error {
+func (p *grpcPlugin) Close() error {
 	if closer, ok := p.conn.(io.Closer); ok {
 		return closer.Close()
 	}

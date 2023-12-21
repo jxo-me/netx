@@ -1,14 +1,15 @@
 package registry
 
 import (
+	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 )
 
 type ListenerRegistry struct {
-	registry[NewListener]
+	registry[listener.NewListener]
 }
 
-func (r *ListenerRegistry) Register(name string, v NewListener) error {
+func (r *ListenerRegistry) Register(name string, v listener.NewListener) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

@@ -94,7 +94,7 @@ type chainHop struct {
 	options    options
 }
 
-func NewHop(opts ...Option) hop.Hop {
+func NewHop(opts ...Option) hop.IHop {
 	var options options
 	for _, opt := range opts {
 		if opt != nil {

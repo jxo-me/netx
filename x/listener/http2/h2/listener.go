@@ -1,6 +1,7 @@
 package h2
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"net"

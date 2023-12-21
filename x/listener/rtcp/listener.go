@@ -54,7 +54,6 @@ func (l *rtcpListener) Init(md md.IMetaData) (err error) {
 		l.laddr = &bindAddr{addr: l.options.Addr}
 	}
 
-	l.laddr = laddr
 	l.router = chain.NewRouter(
 		chain.ChainRouterOption(l.options.Chain),
 		chain.LoggerRouterOption(l.logger),

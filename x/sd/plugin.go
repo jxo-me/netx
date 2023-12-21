@@ -22,7 +22,7 @@ type grpcPlugin struct {
 }
 
 // NewGRPCPlugin creates an SD plugin based on gRPC.
-func NewGRPCPlugin(name string, addr string, opts ...plugin.Option) sd.SD {
+func NewGRPCPlugin(name string, addr string, opts ...plugin.Option) sd.ISD {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)
@@ -157,7 +157,7 @@ type httpPlugin struct {
 }
 
 // NewHTTPPlugin creates an SD plugin based on HTTP.
-func NewHTTPPlugin(name string, url string, opts ...plugin.Option) sd.SD {
+func NewHTTPPlugin(name string, url string, opts ...plugin.Option) sd.ISD {
 	var options plugin.Options
 	for _, opt := range opts {
 		opt(&options)

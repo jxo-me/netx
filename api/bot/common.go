@@ -7,7 +7,20 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/app"
-	"github.com/jxo-me/netx/x/config/parsing"
+	admission_parser "github.com/jxo-me/netx/x/config/parsing/admission"
+	auth_parser "github.com/jxo-me/netx/x/config/parsing/auth"
+	bypass_parser "github.com/jxo-me/netx/x/config/parsing/bypass"
+	chain_parser "github.com/jxo-me/netx/x/config/parsing/chain"
+	hop_parser "github.com/jxo-me/netx/x/config/parsing/hop"
+	hosts_parser "github.com/jxo-me/netx/x/config/parsing/hosts"
+	ingress_parser "github.com/jxo-me/netx/x/config/parsing/ingress"
+	limiter_parser "github.com/jxo-me/netx/x/config/parsing/limiter"
+	logger_parser "github.com/jxo-me/netx/x/config/parsing/logger"
+	recorder_parser "github.com/jxo-me/netx/x/config/parsing/recorder"
+	resolver_parser "github.com/jxo-me/netx/x/config/parsing/resolver"
+	router_parser "github.com/jxo-me/netx/x/config/parsing/router"
+	sd_parser "github.com/jxo-me/netx/x/config/parsing/sd"
+	service_parser "github.com/jxo-me/netx/x/config/parsing/service"
 	"net/url"
 	"os"
 	"strconv"
@@ -604,8 +617,16 @@ func buildService(cfg *config.Config) (services []service.IService) {
 
 	log := logger.Default()
 
+	for _, loggerCfg := range cfg.Loggers {
+		if lg := logger_parser.ParseLogger(loggerCfg); lg != nil {
+			if err := app.Runtime.LoggerRegistry().Register(loggerCfg.Name, lg); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	for _, autherCfg := range cfg.Authers {
-		if auther := parsing.ParseAuther(autherCfg); auther != nil {
+		if auther := auth_parser.ParseAuther(autherCfg); auther != nil {
 			if err := app.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
 				log.Fatal(err)
 			}
@@ -613,7 +634,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, admissionCfg := range cfg.Admissions {
-		if adm := parsing.ParseAdmission(admissionCfg); adm != nil {
+		if adm := admission_parser.ParseAdmission(admissionCfg); adm != nil {
 			if err := app.Runtime.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
 				log.Fatal(err)
 			}
@@ -621,7 +642,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, bypassCfg := range cfg.Bypasses {
-		if bp := parsing.ParseBypass(bypassCfg); bp != nil {
+		if bp := bypass_parser.ParseBypass(bypassCfg); bp != nil {
 			if err := app.Runtime.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
 				log.Fatal(err)
 			}
@@ -629,7 +650,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, resolverCfg := range cfg.Resolvers {
-		r, err := parsing.ParseResolver(resolverCfg)
+		r, err := resolver_parser.ParseResolver(resolverCfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -641,7 +662,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, hostsCfg := range cfg.Hosts {
-		if h := parsing.ParseHosts(hostsCfg); h != nil {
+		if h := hosts_parser.ParseHostMapper(hostsCfg); h != nil {
 			if err := app.Runtime.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
@@ -649,15 +670,31 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, ingressCfg := range cfg.Ingresses {
-		if h := parsing.ParseIngress(ingressCfg); h != nil {
+		if h := ingress_parser.ParseIngress(ingressCfg); h != nil {
 			if err := app.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
+	for _, routerCfg := range cfg.Routers {
+		if h := router_parser.ParseRouter(routerCfg); h != nil {
+			if err := app.Runtime.RouterRegistry().Register(routerCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	for _, sdCfg := range cfg.SDs {
+		if h := sd_parser.ParseSD(sdCfg); h != nil {
+			if err := app.Runtime.SDRegistry().Register(sdCfg.Name, h); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	for _, recorderCfg := range cfg.Recorders {
-		if h := parsing.ParseRecorder(recorderCfg); h != nil {
+		if h := recorder_parser.ParseRecorder(recorderCfg); h != nil {
 			if err := app.Runtime.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
@@ -665,28 +702,28 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, limiterCfg := range cfg.Limiters {
-		if h := parsing.ParseTrafficLimiter(limiterCfg); h != nil {
+		if h := limiter_parser.ParseTrafficLimiter(limiterCfg); h != nil {
 			if err := app.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, limiterCfg := range cfg.CLimiters {
-		if h := parsing.ParseConnLimiter(limiterCfg); h != nil {
+		if h := limiter_parser.ParseConnLimiter(limiterCfg); h != nil {
 			if err := app.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, limiterCfg := range cfg.RLimiters {
-		if h := parsing.ParseRateLimiter(limiterCfg); h != nil {
+		if h := limiter_parser.ParseRateLimiter(limiterCfg); h != nil {
 			if err := app.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	for _, hopCfg := range cfg.Hops {
-		hop, err := parsing.ParseHop(hopCfg)
+		hop, err := hop_parser.ParseHop(hopCfg, log)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -697,7 +734,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 		}
 	}
 	for _, chainCfg := range cfg.Chains {
-		c, err := parsing.ParseChain(chainCfg)
+		c, err := chain_parser.ParseChain(chainCfg, log)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -709,7 +746,7 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	}
 
 	for _, svcCfg := range cfg.Services {
-		svc, err := parsing.ParseService(svcCfg)
+		svc, err := service_parser.ParseService(svcCfg)
 		if err != nil {
 			log.Fatal(err)
 		}

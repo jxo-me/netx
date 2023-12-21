@@ -89,7 +89,7 @@ func MPTCPServerOption(mptcp bool) ServerOption {
 	}
 }
 
-func LoggerServerOption(logger logger.Logger) ServerOption {
+func LoggerServerOption(logger logger.ILogger) ServerOption {
 	return func(opts *serverOptions) {
 		opts.logger = logger
 	}
