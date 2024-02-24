@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/logger"
 	xbypass "github.com/jxo-me/netx/x/bypass"
+	bypassplugin "github.com/jxo-me/netx/x/bypass/plugin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
@@ -28,13 +29,13 @@ func ParseBypass(cfg *config.BypassConfig) bypass.IBypass {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xbypass.NewHTTPPlugin(
+			return bypassplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xbypass.NewGRPCPlugin(
+			return bypassplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
 	xingress "github.com/jxo-me/netx/x/ingress"
+	ingressplugin "github.com/jxo-me/netx/x/ingress/plugin"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
 )
@@ -27,13 +28,13 @@ func ParseIngress(cfg *config.IngressConfig) ingress.IIngress {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xingress.NewHTTPPlugin(
+			return ingressplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xingress.NewGRPCPlugin(
+			return ingressplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

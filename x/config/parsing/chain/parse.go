@@ -8,7 +8,7 @@ import (
 	"github.com/jxo-me/netx/x/app"
 	xchain "github.com/jxo-me/netx/x/chain"
 	"github.com/jxo-me/netx/x/config"
-	hop_parser "github.com/jxo-me/netx/x/config/parsing/hop"
+	hopparser "github.com/jxo-me/netx/x/config/parsing/hop"
 	mdx "github.com/jxo-me/netx/x/metadata"
 )
 
@@ -37,7 +37,7 @@ func ParseChain(cfg *config.ChainConfig, log logger.ILogger) (chain.IChainer, er
 		var err error
 
 		if ch.Nodes != nil || ch.Plugin != nil {
-			if hop, err = hop_parser.ParseHop(ch, log); err != nil {
+			if hop, err = hopparser.ParseHop(ch, log); err != nil {
 				return nil, err
 			}
 		} else {

@@ -9,6 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/config"
 	xhosts "github.com/jxo-me/netx/x/hosts"
+	hostsplugin "github.com/jxo-me/netx/x/hosts/plugin"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
 )
@@ -28,13 +29,13 @@ func ParseHostMapper(cfg *config.HostsConfig) hosts.IHostMapper {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xhosts.NewHTTPPlugin(
+			return hostsplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xhosts.NewGRPCPlugin(
+			return hostsplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

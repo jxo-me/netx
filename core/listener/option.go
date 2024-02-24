@@ -10,6 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/conn"
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/x/stats"
 )
 
 type Options struct {
@@ -21,6 +22,7 @@ type Options struct {
 	TrafficLimiter traffic.ITrafficLimiter
 	ConnLimiter    conn.IConnLimiter
 	Chain          chain.IChainer
+	Stats          *stats.Stats
 	Logger         logger.ILogger
 	Service        string
 	ProxyProtocol  int
@@ -73,6 +75,12 @@ func ConnLimiterOption(limiter conn.IConnLimiter) Option {
 func ChainOption(chain chain.IChainer) Option {
 	return func(opts *Options) {
 		opts.Chain = chain
+	}
+}
+
+func StatsOption(stats *stats.Stats) Option {
+	return func(opts *Options) {
+		opts.Stats = stats
 	}
 }
 

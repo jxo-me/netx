@@ -7,8 +7,11 @@ import (
 
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/socks"
+	"github.com/jxo-me/netx/x/stats"
+	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
@@ -55,6 +58,15 @@ func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network
 		return err
 	}
 	log.Debugf("bind on %s OK", pc.LocalAddr())
+
+	clientID := ctxvalue.ClientIDFromContext(ctx)
+	if h.options.Observer != nil {
+		pstats := h.stats.Stats(string(clientID))
+		pstats.Add(stats.KindTotalConns, 1)
+		pstats.Add(stats.KindCurrentConns, 1)
+		defer pstats.Add(stats.KindCurrentConns, -1)
+		conn = stats_wrapper.WrapConn(conn, pstats)
+	}
 
 	r := udp.NewRelay(socks.UDPTunServerConn(conn), pc).
 		WithBypass(h.options.Bypass).

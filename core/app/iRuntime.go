@@ -16,6 +16,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/recorder"
 	reg "github.com/jxo-me/netx/core/registry"
 	"github.com/jxo-me/netx/core/resolver"
@@ -42,6 +43,7 @@ type IRuntime interface {
 	ResolverRegistry() reg.IRegistry[resolver.IResolver]
 	RouterRegistry() reg.IRegistry[router.IRouter]
 	SDRegistry() reg.IRegistry[sd.ISD]
+	ObserverRegistry() reg.IRegistry[observer.IObserver]
 	ServiceRegistry() reg.IRegistry[service.IService]
 	LoggerRegistry() reg.IRegistry[logger.ILogger]
 	TrafficLimiterRegistry() reg.IRegistry[traffic.ITrafficLimiter]

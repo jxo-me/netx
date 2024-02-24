@@ -10,7 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks5"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/util/ss"
 	"github.com/shadowsocks/go-shadowsocks2/core"

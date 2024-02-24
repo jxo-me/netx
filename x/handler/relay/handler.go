@@ -11,9 +11,9 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
 )
 
 var (
@@ -28,7 +28,8 @@ type relayHandler struct {
 	router  *chain.Router
 	md      metadata
 	options handler.Options
-	ep      service.IService
+	stats   *stats_util.HandlerStats
+	cancel  context.CancelFunc
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -39,6 +40,7 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &relayHandler{
 		options: options,
+		stats:   stats_util.NewHandlerStats(options.Service),
 	}
 }
 
@@ -50,6 +52,13 @@ func (h *relayHandler) Init(md md.IMetaData) (err error) {
 	h.router = h.options.Router
 	if h.router == nil {
 		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	h.cancel = cancel
+
+	if h.options.Observer != nil {
+		go h.observeStats(ctx)
 	}
 
 	return nil
@@ -167,8 +176,8 @@ func (h *relayHandler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 
 // Close implements io.Closer interface.
 func (h *relayHandler) Close() error {
-	if h.ep != nil {
-		return h.ep.Close()
+	if h.cancel != nil {
+		h.cancel()
 	}
 	return nil
 }
@@ -183,4 +192,22 @@ func (h *relayHandler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
+}
+
+func (h *relayHandler) observeStats(ctx context.Context) {
+	if h.options.Observer == nil {
+		return
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			h.options.Observer.Observe(ctx, h.stats.Events())
+		case <-ctx.Done():
+			return
+		}
+	}
 }

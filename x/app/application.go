@@ -18,6 +18,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/recorder"
 	reg "github.com/jxo-me/netx/core/registry"
 	"github.com/jxo-me/netx/core/resolver"
@@ -50,6 +51,7 @@ type Application struct {
 	resolverReg       reg.IRegistry[resolver.IResolver]
 	routerReg         reg.IRegistry[router.IRouter]
 	sdReg             reg.IRegistry[sd.ISD]
+	observerReg       reg.IRegistry[observer.IObserver]
 	serviceReg        reg.IRegistry[service.IService]
 	loggerReg         reg.IRegistry[logger.ILogger]
 	trafficLimiterReg reg.IRegistry[traffic.ITrafficLimiter]
@@ -74,6 +76,7 @@ func NewConfig() *Application {
 		resolverReg:       new(registry.ResolverRegistry),
 		routerReg:         new(registry.RouterRegistry),
 		sdReg:             new(registry.SdRegistry),
+		observerReg:       new(registry.ObserverRegistry),
 		serviceReg:        new(registry.ServiceRegistry),
 		loggerReg:         new(registry.LoggerRegistry),
 		trafficLimiterReg: new(registry.TrafficLimiterRegistry),
@@ -153,6 +156,10 @@ func (a *Application) RouterRegistry() reg.IRegistry[router.IRouter] {
 
 func (a *Application) SDRegistry() reg.IRegistry[sd.ISD] {
 	return a.sdReg
+}
+
+func (a *Application) ObserverRegistry() reg.IRegistry[observer.IObserver] {
+	return a.observerReg
 }
 
 func (a *Application) ServiceRegistry() reg.IRegistry[service.IService] {

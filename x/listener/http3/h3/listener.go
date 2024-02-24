@@ -11,6 +11,7 @@ import (
 	pht_util "github.com/jxo-me/netx/x/internal/util/pht"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 	"github.com/quic-go/quic-go"
 )
 
@@ -80,6 +81,7 @@ func (l *http3Listener) Accept() (conn net.Conn, err error) {
 	}
 
 	conn = metrics.WrapConn(l.options.Service, conn)
+	conn = stats.WrapConn(conn, l.options.Stats)
 	conn = admission.WrapConn(l.options.Admission, conn)
 	conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
 	return conn, nil

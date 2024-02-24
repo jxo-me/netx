@@ -66,7 +66,10 @@ func (h *dnsHandler) Init(md md.IMetaData) (err error) {
 		for i, addr := range h.md.dns {
 			nodes = append(nodes, chain.NewNode(fmt.Sprintf("target-%d", i), addr))
 		}
-		h.hop = xhop.NewHop(xhop.NodeOption(nodes...))
+		h.hop = xhop.NewHop(
+			xhop.NodeOption(nodes...),
+			xhop.LoggerOption(log),
+		)
 	}
 
 	var nodes []*chain.Node

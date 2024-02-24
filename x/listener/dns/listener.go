@@ -16,6 +16,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 	"github.com/miekg/dns"
 )
 
@@ -112,6 +113,7 @@ func (l *dnsListener) Accept() (conn net.Conn, err error) {
 	select {
 	case conn = <-l.cqueue:
 		conn = metrics.WrapConn(l.options.Service, conn)
+		conn = stats.WrapConn(conn, l.options.Stats)
 		conn = admission.WrapConn(l.options.Admission, conn)
 		conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
 	case err, ok = <-l.errChan:

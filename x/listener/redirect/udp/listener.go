@@ -9,6 +9,7 @@ import (
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 type redirectListener struct {
@@ -49,6 +50,7 @@ func (l *redirectListener) Accept() (conn net.Conn, err error) {
 		return
 	}
 	conn = metrics.WrapConn(l.options.Service, conn)
+	conn = stats.WrapConn(conn, l.options.Stats)
 	conn = admission.WrapConn(l.options.Admission, conn)
 	conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
 	return

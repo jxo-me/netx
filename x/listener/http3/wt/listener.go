@@ -8,8 +8,12 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	wt_util "github.com/jxo-me/netx/x/internal/util/wt"
+	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	wt "github.com/quic-go/webtransport-go"
@@ -90,6 +94,10 @@ func (l *wtListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
+		conn = metrics.WrapConn(l.options.Service, conn)
+		conn = stats.WrapConn(conn, l.options.Stats)
+		conn = admission.WrapConn(l.options.Admission, conn)
+		conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

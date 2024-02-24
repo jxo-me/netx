@@ -22,15 +22,20 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	"github.com/jxo-me/netx/x/stats"
+	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 type httpHandler struct {
 	router  *chain.Router
 	md      metadata
 	options handler.Options
+	stats   *stats_util.HandlerStats
+	cancel  context.CancelFunc
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -41,6 +46,7 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &httpHandler{
 		options: options,
+		stats:   stats_util.NewHandlerStats(options.Service),
 	}
 }
 
@@ -52,6 +58,13 @@ func (h *httpHandler) Init(md md.IMetaData) error {
 	h.router = h.options.Router
 	if h.router == nil {
 		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	h.cancel = cancel
+
+	if h.options.Observer != nil {
+		go h.observeStats(ctx)
 	}
 
 	return nil
@@ -66,6 +79,7 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
@@ -86,6 +100,13 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 	defer req.Body.Close()
 
 	return h.handleRequest(ctx, conn, req, log)
+}
+
+func (h *httpHandler) Close() error {
+	if h.cancel != nil {
+		h.cancel()
+	}
+	return nil
 }
 
 func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *http.Request, log logger.ILogger) error {
@@ -216,12 +237,19 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 		}
 	}
 
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, conn.RemoteAddr().String(),
+	rw := traffic_wrapper.WrapReadWriter(h.options.Limiter, conn,
 		traffic.NetworkOption(network),
 		traffic.AddrOption(addr),
 		traffic.ClientOption(clientID),
 		traffic.SrcOption(conn.RemoteAddr().String()),
 	)
+	if h.options.Observer != nil {
+		pstats := h.stats.Stats(clientID)
+		pstats.Add(stats.KindTotalConns, 1)
+		pstats.Add(stats.KindCurrentConns, 1)
+		defer pstats.Add(stats.KindCurrentConns, -1)
+		rw = stats_wrapper.WrapReadWriter(rw, pstats)
+	}
 
 	start := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
@@ -372,4 +400,22 @@ func (h *httpHandler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
+}
+
+func (h *httpHandler) observeStats(ctx context.Context) {
+	if h.options.Observer == nil {
+		return
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			h.options.Observer.Observe(ctx, h.stats.Events())
+		case <-ctx.Done():
+			return
+		}
+	}
 }

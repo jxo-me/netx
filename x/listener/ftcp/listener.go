@@ -11,6 +11,7 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 	"github.com/xtaci/tcpraw"
 )
 
@@ -47,6 +48,7 @@ func (l *ftcpListener) Init(md md.IMetaData) (err error) {
 		return
 	}
 	conn = metrics.WrapPacketConn(l.options.Service, conn)
+	conn = stats.WrapPacketConn(conn, l.options.Stats)
 	conn = admission.WrapPacketConn(l.options.Admission, conn)
 	conn = limiter.WrapPacketConn(l.options.TrafficLimiter, conn)
 

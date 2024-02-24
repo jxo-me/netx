@@ -14,7 +14,7 @@ import (
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 type http3Handler struct {

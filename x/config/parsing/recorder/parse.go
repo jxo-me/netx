@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/plugin"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
+	recorderplugin "github.com/jxo-me/netx/x/recorder/plugin"
 )
 
 func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
@@ -25,13 +26,13 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xrecorder.NewHTTPPlugin(
+			return recorderplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xrecorder.NewGRPCPlugin(
+			return recorderplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

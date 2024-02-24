@@ -10,9 +10,11 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	"github.com/jxo-me/netx/x/stats"
+	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.ILogger) error {
@@ -87,12 +89,20 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 		conn = rc
 	}
 
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, conn.RemoteAddr().String(),
+	clientID := ctxvalue.ClientIDFromContext(ctx)
+	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
 		traffic.NetworkOption(network),
 		traffic.AddrOption(target.Addr),
-		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),
+		traffic.ClientOption(string(clientID)),
 		traffic.SrcOption(conn.RemoteAddr().String()),
 	)
+	if h.options.Observer != nil {
+		pstats := h.stats.Stats(string(clientID))
+		pstats.Add(stats.KindTotalConns, 1)
+		pstats.Add(stats.KindCurrentConns, 1)
+		defer pstats.Add(stats.KindCurrentConns, -1)
+		rw = stats_wrapper.WrapReadWriter(rw, pstats)
+	}
 
 	t := time.Now()
 	log.Debugf("%s <-> %s", conn.RemoteAddr(), target.Addr)

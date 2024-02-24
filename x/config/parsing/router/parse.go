@@ -11,6 +11,7 @@ import (
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
 	xrouter "github.com/jxo-me/netx/x/router"
+	routerplugin "github.com/jxo-me/netx/x/router/plugin"
 )
 
 func ParseRouter(cfg *config.RouterConfig) router.IRouter {
@@ -28,13 +29,13 @@ func ParseRouter(cfg *config.RouterConfig) router.IRouter {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xrouter.NewHTTPPlugin(
+			return routerplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xrouter.NewGRPCPlugin(
+			return routerplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

@@ -2,8 +2,6 @@ package service
 
 import (
 	"fmt"
-	"github.com/jxo-me/netx/x/app"
-
 	"github.com/jxo-me/netx/core/admission"
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/bypass"
@@ -16,6 +14,7 @@ import (
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/core/selector"
 	"github.com/jxo-me/netx/core/service"
+	"github.com/jxo-me/netx/x/app"
 	xchain "github.com/jxo-me/netx/x/chain"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
@@ -29,6 +28,7 @@ import (
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	"github.com/jxo-me/netx/x/metadata"
 	xservice "github.com/jxo-me/netx/x/service"
+	"github.com/jxo-me/netx/x/stats"
 )
 
 func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
@@ -96,6 +96,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	ifce := cfg.Interface
 	var preUp, preDown, postUp, postDown []string
 	var ignoreChain bool
+	var pStats *stats.Stats
 	if cfg.Metadata != nil {
 		md := metadata.NewMetadata(cfg.Metadata)
 		ppv = mdutil.GetInt(md, parsing.MDKeyProxyProtocol)
@@ -112,6 +113,10 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		postUp = mdutil.GetStrings(md, parsing.MDKeyPostUp)
 		postDown = mdutil.GetStrings(md, parsing.MDKeyPostDown)
 		ignoreChain = mdutil.GetBool(md, parsing.MDKeyIgnoreChain)
+
+		if mdutil.GetBool(md, parsing.MDKeyEnableStats) {
+			pStats = &stats.Stats{}
+		}
 	}
 
 	listenOpts := []listener.Option{
@@ -125,6 +130,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		listener.LoggerOption(listenerLogger),
 		listener.ServiceOption(cfg.Name),
 		listener.ProxyProtocolOption(ppv),
+		listener.StatsOption(pStats),
 	}
 	if !ignoreChain {
 		listenOpts = append(listenOpts,
@@ -218,6 +224,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 			handler.TLSConfigOption(tlsConfig),
 			handler.RateLimiterOption(app.Runtime.RateLimiterRegistry().Get(cfg.RLimiter)),
 			handler.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Handler.Limiter)),
+			handler.ObserverOption(app.Runtime.ObserverRegistry().Get(cfg.Handler.Observer)),
 			handler.LoggerOption(handlerLogger),
 			handler.ServiceOption(cfg.Name),
 		)
@@ -226,7 +233,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 
 	if forwarder, ok := h.(handler.IForwarder); ok {
-		hop, err := parseForwarder(cfg.Forwarder)
+		hop, err := parseForwarder(cfg.Forwarder, log)
 		if err != nil {
 			return nil, err
 		}
@@ -249,6 +256,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		xservice.PostUpOption(postUp),
 		xservice.PostDownOption(postDown),
 		xservice.RecordersOption(recorders...),
+		xservice.StatsOption(pStats),
+		xservice.ObserverOption(app.Runtime.ObserverRegistry().Get(cfg.Observer)),
 		xservice.LoggerOption(serviceLogger),
 	)
 
@@ -256,7 +265,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	return s, nil
 }
 
-func parseForwarder(cfg *config.ForwarderConfig) (hop.IHop, error) {
+func parseForwarder(cfg *config.ForwarderConfig, log logger.ILogger) (hop.IHop, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -288,12 +297,13 @@ func parseForwarder(cfg *config.ForwarderConfig) (hop.IHop, error) {
 					HTTP:     node.HTTP,
 					TLS:      node.TLS,
 					Auth:     node.Auth,
+					Metadata: node.Metadata,
 				})
 			}
 		}
 	}
 	if len(hc.Nodes) > 0 {
-		return hop_parser.ParseHop(&hc, logger.Default())
+		return hop_parser.ParseHop(&hc, log)
 	}
 	return app.Runtime.HopRegistry().Get(hc.Name), nil
 }

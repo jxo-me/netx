@@ -13,6 +13,7 @@ import (
 	node_parser "github.com/jxo-me/netx/x/config/parsing/node"
 	selector_parser "github.com/jxo-me/netx/x/config/parsing/selector"
 	xhop "github.com/jxo-me/netx/x/hop"
+	hopplugin "github.com/jxo-me/netx/x/hop/plugin"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
 )
@@ -32,13 +33,13 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xhop.NewHTTPPlugin(
+			return hopplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			), nil
 		default:
-			return xhop.NewGRPCPlugin(
+			return hopplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

@@ -12,6 +12,7 @@ import (
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	mdx "github.com/jxo-me/netx/x/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 type tapListener struct {
@@ -85,6 +86,7 @@ func (l *tapListener) listenLoop() {
 				cancel: cancel,
 			}
 			c = metrics.WrapConn(l.options.Service, c)
+			c = stats.WrapConn(c, l.options.Stats)
 			c = limiter.WrapConn(l.options.TrafficLimiter, c)
 			c = withMetadata(mdx.NewMetadata(map[string]any{
 				"config": l.md.config,

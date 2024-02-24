@@ -9,7 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/relay"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 type tunnelConnector struct {
@@ -81,7 +81,7 @@ func (c *tunnelConnector) Connect(ctx context.Context, conn net.Conn, network, a
 	req.Features = append(req.Features, af) // dst address
 
 	req.Features = append(req.Features, &relay.TunnelFeature{
-		ID: c.md.tunnelID.ID(),
+		ID: c.md.tunnelID,
 	})
 
 	if _, err := req.WriteTo(conn); err != nil {

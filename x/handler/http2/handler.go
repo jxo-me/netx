@@ -23,16 +23,21 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
+	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
 	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	"github.com/jxo-me/netx/x/stats"
+	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 type http2Handler struct {
 	router  *chain.Router
 	md      metadata
 	options handler.Options
+	stats   *stats_util.HandlerStats
+	cancel  context.CancelFunc
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -43,6 +48,7 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &http2Handler{
 		options: options,
+		stats:   stats_util.NewHandlerStats(options.Service),
 	}
 }
 
@@ -56,6 +62,12 @@ func (h *http2Handler) Init(md md.IMetaData) error {
 		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	h.cancel = cancel
+
+	if h.options.Observer != nil {
+		go h.observeStats(ctx)
+	}
 	return nil
 }
 
@@ -91,6 +103,13 @@ func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 		md.Get("r").(*http.Request),
 		log,
 	)
+}
+
+func (h *http2Handler) Close() error {
+	if h.cancel != nil {
+		h.cancel()
+	}
+	return nil
 }
 
 // NOTE: there is an issue (golang/go#43989) will cause the client hangs
@@ -199,12 +218,20 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			return nil
 		}
 
-		rw := wrapper.WrapReadWriter(h.options.Limiter, xio.NewReadWriter(req.Body, flushWriter{w}), req.RemoteAddr,
+		rw := wrapper.WrapReadWriter(h.options.Limiter, xio.NewReadWriter(req.Body, flushWriter{w}),
 			traffic.NetworkOption("tcp"),
 			traffic.AddrOption(addr),
 			traffic.ClientOption(clientID),
 			traffic.SrcOption(req.RemoteAddr),
 		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(clientID)
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
 		start := time.Now()
 		log.Infof("%s <-> %s", req.RemoteAddr, addr)
 		netpkg.Transport(rw, cc)
@@ -380,4 +407,22 @@ func (h *http2Handler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
+}
+
+func (h *http2Handler) observeStats(ctx context.Context) {
+	if h.options.Observer == nil {
+		return
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			h.options.Observer.Observe(ctx, h.stats.Events())
+		case <-ctx.Done():
+			return
+		}
+	}
 }

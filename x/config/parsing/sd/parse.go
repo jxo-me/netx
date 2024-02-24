@@ -7,7 +7,7 @@ import (
 	"github.com/jxo-me/netx/core/sd"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/plugin"
-	xsd "github.com/jxo-me/netx/x/sd"
+	sdplugin "github.com/jxo-me/netx/x/sd/plugin"
 )
 
 func ParseSD(cfg *config.SDConfig) sd.ISD {
@@ -24,13 +24,13 @@ func ParseSD(cfg *config.SDConfig) sd.ISD {
 	}
 	switch strings.ToLower(cfg.Plugin.Type) {
 	case "http":
-		return xsd.NewHTTPPlugin(
+		return sdplugin.NewHTTPPlugin(
 			cfg.Name, cfg.Plugin.Addr,
 			plugin.TLSConfigOption(tlsCfg),
 			plugin.TimeoutOption(cfg.Plugin.Timeout),
 		)
 	default:
-		return xsd.NewGRPCPlugin(
+		return sdplugin.NewGRPCPlugin(
 			cfg.Name, cfg.Plugin.Addr,
 			plugin.TokenOption(cfg.Plugin.Token),
 			plugin.TLSConfigOption(tlsCfg),

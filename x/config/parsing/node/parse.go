@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net"
+	"regexp"
 	"strings"
 	"time"
 
@@ -168,10 +169,36 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		chain.NetworkNodeOption(cfg.Network),
 	}
 	if cfg.HTTP != nil {
-		opts = append(opts, chain.HTTPNodeOption(&chain.HTTPNodeSettings{
+		settings := &chain.HTTPNodeSettings{
 			Host:   cfg.HTTP.Host,
 			Header: cfg.HTTP.Header,
-		}))
+		}
+
+		auth := cfg.HTTP.Auth
+		if auth == nil {
+			auth = cfg.Auth
+		}
+		if auth != nil {
+			settings.Auther = xauth.NewAuthenticator(
+				xauth.AuthsOption(map[string]string{auth.Username: auth.Password}),
+				xauth.LoggerOption(log.WithFields(map[string]any{
+					"kind":     "node",
+					"node":     cfg.Name,
+					"addr":     cfg.Addr,
+					"host":     cfg.Host,
+					"protocol": cfg.Protocol,
+				})),
+			)
+		}
+		for _, v := range cfg.HTTP.Rewrite {
+			if pattern, _ := regexp.Compile(v.Match); pattern != nil {
+				settings.Rewrite = append(settings.Rewrite, chain.HTTPURLRewriteSetting{
+					Pattern:     pattern,
+					Replacement: v.Replacement,
+				})
+			}
+		}
+		opts = append(opts, chain.HTTPNodeOption(settings))
 	}
 	if cfg.TLS != nil {
 		tlsCfg := &chain.TLSNodeSettings{
@@ -184,19 +211,6 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 			tlsCfg.Options.CipherSuites = o.CipherSuites
 		}
 		opts = append(opts, chain.TLSNodeOption(tlsCfg))
-	}
-	if cfg.Auth != nil {
-		opts = append(opts, chain.AutherNodeOption(
-			xauth.NewAuthenticator(
-				xauth.AuthsOption(map[string]string{cfg.Auth.Username: cfg.Auth.Password}),
-				xauth.LoggerOption(logger.Default().WithFields(map[string]any{
-					"kind":     "node",
-					"node":     cfg.Name,
-					"addr":     cfg.Addr,
-					"host":     cfg.Host,
-					"protocol": cfg.Protocol,
-				})),
-			)))
 	}
 	return chain.NewNode(cfg.Name, cfg.Addr, opts...), nil
 }

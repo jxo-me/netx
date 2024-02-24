@@ -268,6 +268,11 @@ type LimiterConfig struct {
 	Plugin *PluginConfig `yaml:",omitempty" json:"plugin,omitempty"`
 }
 
+type ObserverConfig struct {
+	Name   string        `json:"name"`
+	Plugin *PluginConfig `yaml:",omitempty" json:"plugin,omitempty"`
+}
+
 type ListenerConfig struct {
 	Type       string            `json:"type"`
 	Chain      string            `yaml:",omitempty" json:"chain,omitempty"`
@@ -289,6 +294,7 @@ type HandlerConfig struct {
 	Auth       *AuthConfig       `yaml:",omitempty" json:"auth,omitempty"`
 	TLS        *TLSConfig        `yaml:",omitempty" json:"tls,omitempty"`
 	Limiter    string            `yaml:",omitempty" json:"limiter,omitempty"`
+	Observer   string            `yaml:",omitempty" json:"observer,omitempty"`
 	Metadata   map[string]any    `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
@@ -309,12 +315,21 @@ type ForwardNodeConfig struct {
 	Bypasses []string        `yaml:",omitempty" json:"bypasses,omitempty"`
 	HTTP     *HTTPNodeConfig `yaml:",omitempty" json:"http,omitempty"`
 	TLS      *TLSNodeConfig  `yaml:",omitempty" json:"tls,omitempty"`
-	Auth     *AuthConfig     `yaml:",omitempty" json:"auth,omitempty"`
+	// DEPRECATED by HTTP.Auth
+	Auth     *AuthConfig    `yaml:",omitempty" json:"auth,omitempty"`
+	Metadata map[string]any `yaml:",omitempty" json:"metadata,omitempty"`
+}
+
+type HTTPURLRewriteConfig struct {
+	Match       string
+	Replacement string
 }
 
 type HTTPNodeConfig struct {
-	Host   string            `yaml:",omitempty" json:"host,omitempty"`
-	Header map[string]string `yaml:",omitempty" json:"header,omitempty"`
+	Host    string                 `yaml:",omitempty" json:"host,omitempty"`
+	Header  map[string]string      `yaml:",omitempty" json:"header,omitempty"`
+	Auth    *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
+	Rewrite []HTTPURLRewriteConfig `yaml:",omitempty" json:"rewrite,omitempty"`
 }
 
 type TLSNodeConfig struct {
@@ -359,11 +374,34 @@ type ServiceConfig struct {
 	RLimiter   string            `yaml:"rlimiter,omitempty" json:"rlimiter,omitempty"`
 	Logger     string            `yaml:",omitempty" json:"logger,omitempty"`
 	Loggers    []string          `yaml:",omitempty" json:"loggers,omitempty"`
+	Observer   string            `yaml:",omitempty" json:"observer,omitempty"`
 	Recorders  []*RecorderObject `yaml:",omitempty" json:"recorders,omitempty"`
 	Handler    *HandlerConfig    `yaml:",omitempty" json:"handler,omitempty"`
 	Listener   *ListenerConfig   `yaml:",omitempty" json:"listener,omitempty"`
 	Forwarder  *ForwarderConfig  `yaml:",omitempty" json:"forwarder,omitempty"`
 	Metadata   map[string]any    `yaml:",omitempty" json:"metadata,omitempty"`
+	// service status, read-only
+	Status *ServiceStatus `yaml:",omitempty" json:"status,omitempty"`
+}
+
+type ServiceStatus struct {
+	CreateTime int64          `yaml:"createTime" json:"createTime"`
+	State      string         `yaml:"state" json:"state"`
+	Events     []ServiceEvent `yaml:",omitempty" json:"events,omitempty"`
+	Stats      *ServiceStats  `yaml:",omitempty" json:"stats,omitempty"`
+}
+
+type ServiceEvent struct {
+	Time int64  `yaml:"time" json:"time"`
+	Msg  string `yaml:"msg" json:"msg"`
+}
+
+type ServiceStats struct {
+	TotalConns   uint64 `yaml:"totalConns" json:"totalConns"`
+	CurrentConns uint64 `yaml:"currentConns" json:"currentConns"`
+	TotalErrs    uint64 `yaml:"totalErrs" json:"totalErrs"`
+	InputBytes   uint64 `yaml:"inputBytes" json:"inputBytes"`
+	OutputBytes  uint64 `yaml:"outputBytes" json:"outputBytes"`
 }
 
 type ChainConfig struct {
@@ -409,8 +447,8 @@ type NodeConfig struct {
 	Hosts     string           `yaml:",omitempty" json:"hosts,omitempty"`
 	Connector *ConnectorConfig `yaml:",omitempty" json:"connector,omitempty"`
 	Dialer    *DialerConfig    `yaml:",omitempty" json:"dialer,omitempty"`
-	Metadata  map[string]any   `yaml:",omitempty" json:"metadata,omitempty"`
 	HTTP      *HTTPNodeConfig  `yaml:",omitempty" json:"http,omitempty"`
 	TLS       *TLSNodeConfig   `yaml:",omitempty" json:"tls,omitempty"`
 	Auth      *AuthConfig      `yaml:",omitempty" json:"auth,omitempty"`
+	Metadata  map[string]any   `yaml:",omitempty" json:"metadata,omitempty"`
 }

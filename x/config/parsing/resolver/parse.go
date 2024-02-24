@@ -11,6 +11,7 @@ import (
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/plugin"
 	xresolver "github.com/jxo-me/netx/x/resolver"
+	resolverplugin "github.com/jxo-me/netx/x/resolver/plugin"
 )
 
 func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
@@ -28,13 +29,13 @@ func ParseResolver(cfg *config.ResolverConfig) (resolver.IResolver, error) {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xresolver.NewHTTPPlugin(
+			return resolverplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			), nil
 		default:
-			return xresolver.NewGRPCPlugin(
+			return resolverplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/logger"
 	xauth "github.com/jxo-me/netx/x/auth"
+	authplugin "github.com/jxo-me/netx/x/auth/plugin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
@@ -28,13 +29,13 @@ func ParseAuther(cfg *config.AutherConfig) auth.IAuthenticator {
 		}
 		switch cfg.Plugin.Type {
 		case "http":
-			return xauth.NewHTTPPlugin(
+			return authplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xauth.NewGRPCPlugin(
+			return authplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

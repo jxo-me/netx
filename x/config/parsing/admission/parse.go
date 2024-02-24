@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/admission"
 	"github.com/jxo-me/netx/core/logger"
 	xadmission "github.com/jxo-me/netx/x/admission"
+	admissionplugin "github.com/jxo-me/netx/x/admission/plugin"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
@@ -28,13 +29,13 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xadmission.NewHTTPPlugin(
+			return admissionplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xadmission.NewGRPCPlugin(
+			return admissionplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

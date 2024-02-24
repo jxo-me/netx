@@ -21,7 +21,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/x/config"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/util/forward"
@@ -240,23 +240,33 @@ func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, remot
 			})
 			log.Debugf("find node for host %s -> %s(%s)", req.Host, target.Name, target.Addr)
 
-			if auther := target.Options().Auther; auther != nil {
-				username, password, _ := req.BasicAuth()
-				id, ok := auther.Authenticate(ctx, username, password)
-				if !ok {
-					resp.StatusCode = http.StatusUnauthorized
-					resp.Header.Set("WWW-Authenticate", "Basic")
-					log.Warnf("node %s(%s) 401 unauthorized", target.Name, target.Addr)
-					return resp.Write(rw)
-				}
-				ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(id))
-			}
 			if httpSettings := target.Options().HTTP; httpSettings != nil {
+				if auther := httpSettings.Auther; auther != nil {
+					username, password, _ := req.BasicAuth()
+					id, ok := auther.Authenticate(ctx, username, password)
+					if !ok {
+						resp.StatusCode = http.StatusUnauthorized
+						resp.Header.Set("WWW-Authenticate", "Basic")
+						log.Warnf("node %s(%s) 401 unauthorized", target.Name, target.Addr)
+						return resp.Write(rw)
+					}
+					ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(id))
+				}
+
 				if httpSettings.Host != "" {
 					req.Host = httpSettings.Host
 				}
 				for k, v := range httpSettings.Header {
 					req.Header.Set(k, v)
+				}
+
+				for _, re := range httpSettings.Rewrite {
+					if re.Pattern.MatchString(req.URL.Path) {
+						if s := re.Pattern.ReplaceAllString(req.URL.Path, re.Replacement); s != "" {
+							req.URL.Path = s
+							break
+						}
+					}
 				}
 			}
 

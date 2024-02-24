@@ -16,7 +16,7 @@ import (
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	xservice "github.com/jxo-me/netx/x/service"
@@ -211,7 +211,7 @@ func (h *tunnelHandler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 			}
 		case relay.FeatureTunnel:
 			if feature, _ := f.(*relay.TunnelFeature); feature != nil {
-				tunnelID = relay.NewTunnelID(feature.ID[:])
+				tunnelID = feature.ID
 			}
 		case relay.FeatureNetwork:
 			if feature, _ := f.(*relay.NetworkFeature); feature != nil {

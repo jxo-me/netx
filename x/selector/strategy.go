@@ -12,7 +12,7 @@ import (
 	"github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/core/selector"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 type roundRobinStrategy[T any] struct {
@@ -35,7 +35,7 @@ func (s *roundRobinStrategy[T]) Apply(ctx context.Context, vs ...T) (v T) {
 }
 
 type randomStrategy[T any] struct {
-	rw *randomWeighted[T]
+	rw *RandomWeighted[T]
 	mu sync.Mutex
 }
 
@@ -43,7 +43,7 @@ type randomStrategy[T any] struct {
 // The node will be selected randomly.
 func RandomStrategy[T any]() selector.IStrategy[T] {
 	return &randomStrategy[T]{
-		rw: newRandomWeighted[T](),
+		rw: NewRandomWeighted[T](),
 	}
 }
 

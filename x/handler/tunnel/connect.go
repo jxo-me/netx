@@ -9,7 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 )
@@ -100,7 +100,7 @@ func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, c
 		req.WriteTo(cc)
 	}
 
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn, tunnelID.String(),
+	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
 		traffic.NetworkOption(network),
 		traffic.AddrOption(dstAddr),
 		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),

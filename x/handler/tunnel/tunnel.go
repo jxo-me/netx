@@ -3,7 +3,6 @@ package tunnel
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +10,11 @@ import (
 	"github.com/jxo-me/netx/core/sd"
 	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/util/mux"
+	"github.com/jxo-me/netx/x/selector"
+)
+
+const (
+	MaxWeight uint8 = 0xff
 )
 
 type Connector struct {
@@ -67,11 +71,11 @@ type Tunnel struct {
 	id         relay.TunnelID
 	connectors []*Connector
 	t          time.Time
-	n          uint64
 	close      chan struct{}
 	mu         sync.RWMutex
 	sd         sd.ISD
 	ttl        time.Duration
+	rw         *selector.RandomWeighted[*Connector]
 }
 
 func NewTunnel(node string, tid relay.TunnelID, ttl time.Duration) *Tunnel {
@@ -81,6 +85,7 @@ func NewTunnel(node string, tid relay.TunnelID, ttl time.Duration) *Tunnel {
 		t:     time.Now(),
 		close: make(chan struct{}),
 		ttl:   ttl,
+		rw:    selector.NewRandomWeighted[*Connector](),
 	}
 	if t.ttl <= 0 {
 		t.ttl = defaultTTL
@@ -112,21 +117,34 @@ func (t *Tunnel) GetConnector(network string) *Connector {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	var connectors []*Connector
+	rw := t.rw
+	rw.Reset()
+
+	found := false
 	for _, c := range t.connectors {
 		if c.Session().IsClosed() {
 			continue
 		}
+
+		weight := c.ID().Weight()
+		if weight == 0 {
+			weight = 1
+		}
+
 		if network == "udp" && c.id.IsUDP() ||
 			network != "udp" && !c.id.IsUDP() {
-			connectors = append(connectors, c)
+			if weight == MaxWeight && !found {
+				rw.Reset()
+				found = true
+			}
+
+			if weight == MaxWeight || !found {
+				rw.Add(c, int(weight))
+			}
 		}
 	}
-	if len(connectors) == 0 {
-		return nil
-	}
-	n := atomic.AddUint64(&t.n, 1) - 1
-	return connectors[n%uint64(len(connectors))]
+
+	return rw.Next()
 }
 
 func (t *Tunnel) CloseOnIdle() bool {

@@ -12,6 +12,7 @@ import (
 	kcp_util "github.com/jxo-me/netx/x/internal/util/kcp"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 	"github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
@@ -70,6 +71,7 @@ func (l *kcpListener) Init(md md.IMetaData) (err error) {
 	}
 
 	conn = metrics.WrapUDPConn(l.options.Service, conn)
+	conn = stats.WrapUDPConn(conn, l.options.Stats)
 	conn = admission.WrapUDPConn(l.options.Admission, conn)
 	conn = limiter.WrapUDPConn(l.options.TrafficLimiter, conn)
 
@@ -155,7 +157,9 @@ func (l *kcpListener) mux(conn net.Conn) {
 	smuxConfig.Version = l.md.config.SmuxVer
 	smuxConfig.MaxReceiveBuffer = l.md.config.SmuxBuf
 	smuxConfig.MaxStreamBuffer = l.md.config.StreamBuf
-	smuxConfig.KeepAliveInterval = time.Duration(l.md.config.KeepAlive) * time.Second
+	if l.md.config.KeepAlive > 0 {
+		smuxConfig.KeepAliveInterval = time.Duration(l.md.config.KeepAlive) * time.Second
+	}
 
 	if !l.md.config.NoComp {
 		conn = kcp_util.CompStreamConn(conn)

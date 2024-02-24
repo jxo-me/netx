@@ -21,7 +21,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	dissector "github.com/jxo-me/netx/tls-dissector"
-	ctxvalue "github.com/jxo-me/netx/x/internal/ctx"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xio "github.com/jxo-me/netx/x/internal/io"
 	netpkg "github.com/jxo-me/netx/x/internal/net"
 )
@@ -85,8 +85,10 @@ func (h *sniHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	}
 
 	rw := xio.NewReadWriter(io.MultiReader(bytes.NewReader(hdr[:]), conn), conn)
+
+	tlsVersion := binary.BigEndian.Uint16(hdr[1:3])
 	if hdr[0] == dissector.Handshake &&
-		binary.BigEndian.Uint16(hdr[1:3]) == tls.VersionTLS10 {
+		(tlsVersion >= tls.VersionTLS10 && tlsVersion <= tls.VersionTLS13) {
 		return h.handleHTTPS(ctx, rw, conn.RemoteAddr(), log)
 	}
 	return h.handleHTTP(ctx, rw, conn.RemoteAddr(), log)

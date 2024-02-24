@@ -7,11 +7,19 @@ import (
 	"github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/resolver"
 	"github.com/jxo-me/netx/core/selector"
+	"regexp"
 )
 
+type HTTPURLRewriteSetting struct {
+	Pattern     *regexp.Regexp
+	Replacement string
+}
+
 type HTTPNodeSettings struct {
-	Host   string
-	Header map[string]string
+	Host    string
+	Header  map[string]string
+	Auther  auth.IAuthenticator
+	Rewrite []HTTPURLRewriteSetting
 }
 
 type TLSNodeSettings struct {
@@ -36,7 +44,6 @@ type NodeOptions struct {
 	Path       string
 	HTTP       *HTTPNodeSettings
 	TLS        *TLSNodeSettings
-	Auther     auth.IAuthenticator
 }
 
 type NodeOption func(*NodeOptions)
@@ -104,12 +111,6 @@ func HTTPNodeOption(httpSettings *HTTPNodeSettings) NodeOption {
 func TLSNodeOption(tlsSettings *TLSNodeSettings) NodeOption {
 	return func(o *NodeOptions) {
 		o.TLS = tlsSettings
-	}
-}
-
-func AutherNodeOption(auther auth.IAuthenticator) NodeOption {
-	return func(o *NodeOptions) {
-		o.Auther = auther
 	}
 }
 

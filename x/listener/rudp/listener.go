@@ -13,6 +13,7 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 type rudpListener struct {
@@ -100,6 +101,7 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 
 	if pc, ok := conn.(net.PacketConn); ok {
 		uc := metrics.WrapUDPConn(l.options.Service, pc)
+		uc = stats.WrapUDPConn(uc, l.options.Stats)
 		uc = admission.WrapUDPConn(l.options.Admission, uc)
 		conn = limiter.WrapUDPConn(l.options.TrafficLimiter, uc)
 	}

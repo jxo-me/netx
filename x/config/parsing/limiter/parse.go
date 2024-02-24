@@ -14,6 +14,7 @@ import (
 	xconn "github.com/jxo-me/netx/x/limiter/conn"
 	xrate "github.com/jxo-me/netx/x/limiter/rate"
 	xtraffic "github.com/jxo-me/netx/x/limiter/traffic"
+	trafficplugin "github.com/jxo-me/netx/x/limiter/traffic/plugin"
 )
 
 func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.ITrafficLimiter) {
@@ -31,13 +32,13 @@ func ParseTrafficLimiter(cfg *config.LimiterConfig) (lim traffic.ITrafficLimiter
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return xtraffic.NewHTTPPlugin(
+			return trafficplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return xtraffic.NewGRPCPlugin(
+			return trafficplugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),

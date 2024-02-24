@@ -11,6 +11,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer"
 )
 
 type Options struct {
@@ -22,6 +23,7 @@ type Options struct {
 	Limiter     traffic.ITrafficLimiter
 	TLSConfig   *tls.Config
 	Logger      logger.ILogger
+	Observer    observer.IObserver
 	Service     string
 }
 
@@ -72,6 +74,12 @@ func TLSConfigOption(tlsConfig *tls.Config) Option {
 func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *Options) {
 		opts.Logger = logger
+	}
+}
+
+func ObserverOption(observer observer.IObserver) Option {
+	return func(opts *Options) {
+		opts.Observer = observer
 	}
 }
 
