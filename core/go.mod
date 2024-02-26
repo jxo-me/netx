@@ -7,7 +7,7 @@ replace github.com/jxo-me/netx/x => ../x
 require (
 	github.com/gogf/gf/v2 v2.6.3
 	github.com/jxo-me/gfbot v0.1.16
-	github.com/jxo-me/netx/x v0.0.7
+	github.com/jxo-me/netx/x v0.0.8
 	golang.org/x/sys v0.17.0
 )
 

@@ -5,8 +5,8 @@ go 1.22
 require (
 	github.com/gogf/gf/v2 v2.6.3
 	github.com/jxo-me/gfbot v0.1.16
-	github.com/jxo-me/netx/core v0.0.3
-	github.com/jxo-me/netx/x v0.0.6
+	github.com/jxo-me/netx/core v0.0.4
+	github.com/jxo-me/netx/x v0.0.8
 	gopkg.in/yaml.v3 v3.0.1
 )
 
