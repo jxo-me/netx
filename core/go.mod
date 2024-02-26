@@ -10,7 +10,7 @@ require (
 	github.com/gogf/gf/v2 v2.6.3
 	github.com/jxo-me/gfbot v0.1.16
 	github.com/jxo-me/netx/x v0.0.4
-	golang.org/x/sys v0.15.0
+	golang.org/x/sys v0.17.0
 )
 
 require (
@@ -31,7 +31,7 @@ require (
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
