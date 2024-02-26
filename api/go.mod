@@ -1,8 +1,6 @@
 module github.com/jxo-me/netx/api
 
-go 1.21
-
-toolchain go1.21.5
+go 1.22
 
 require (
 	github.com/gogf/gf/v2 v2.6.3

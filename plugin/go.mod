@@ -1,8 +1,6 @@
 module github.com/jxo-me/netx/plugin
 
-go 1.21
-
-toolchain go1.21.5
+go 1.22
 
 //replace github.com/jxo-me/netx/x => ../x
 
