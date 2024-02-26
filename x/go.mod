@@ -5,7 +5,6 @@ go 1.21
 toolchain go1.21.5
 
 replace (
-	github.com/jxo-me/netx/api => ../api
 	github.com/jxo-me/netx/core => ../core
 	github.com/jxo-me/netx/gosocks4 => ../gosocks4
 	github.com/jxo-me/netx/gosocks5 => ../gosocks5
@@ -24,11 +23,11 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
-	github.com/jxo-me/netx/core v0.0.1
+	github.com/jxo-me/netx/core v0.0.2
 	github.com/jxo-me/netx/gosocks4 v0.0.1
 	github.com/jxo-me/netx/gosocks5 v0.0.1
-	github.com/jxo-me/netx/plugin v0.0.3
-	github.com/jxo-me/netx/relay v0.0.1
+	github.com/jxo-me/netx/plugin v0.0.4
+	github.com/jxo-me/netx/relay v0.0.2
 	github.com/jxo-me/netx/tls-dissector v0.0.1
 	github.com/miekg/dns v1.1.57
 	github.com/patrickmn/go-cache v2.1.0+incompatible
