@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/x/app"
+	xmd "github.com/jxo-me/netx/x/metadata"
 	"net/http"
 	"os"
 	"strings"
@@ -20,7 +22,6 @@ type program struct {
 }
 
 func (p *program) Init(env svc.Environment) error {
-	fmt.Println("init", env.IsWindowsService())
 	cfg := &config.Config{}
 	if cfgFile != "" {
 		cfgFile = strings.TrimSpace(cfgFile)
@@ -73,8 +74,26 @@ func (p *program) Init(env svc.Environment) error {
 		cfg.API = &config.APIConfig{
 			Addr: apiAddr,
 		}
-	}
-	if cfg.API != nil {
+		if url, _ := normCmd(apiAddr); url != nil {
+			cfg.API.Addr = url.Host
+			if url.User != nil {
+				username := url.User.Username()
+				password, _ := url.User.Password()
+				cfg.API.Auth = &config.AuthConfig{
+					Username: username,
+					Password: password,
+				}
+			}
+			m := map[string]any{}
+			for k, v := range url.Query() {
+				if len(v) > 0 {
+					m[k] = v[0]
+				}
+			}
+			md := xmd.NewMetadata(m)
+			cfg.API.PathPrefix = mdutil.GetString(md, "pathPrefix")
+			cfg.API.AccessLog = mdutil.GetBool(md, "accesslog")
+		}
 		if botEnable {
 			if apiDomain != "" {
 				cfg.API.Domain = apiDomain
@@ -96,6 +115,25 @@ func (p *program) Init(env svc.Environment) error {
 	if metricsAddr != "" {
 		cfg.Metrics = &config.MetricsConfig{
 			Addr: metricsAddr,
+		}
+		if url, _ := normCmd(metricsAddr); url != nil {
+			cfg.Metrics.Addr = url.Host
+			if url.User != nil {
+				username := url.User.Username()
+				password, _ := url.User.Password()
+				cfg.Metrics.Auth = &config.AuthConfig{
+					Username: username,
+					Password: password,
+				}
+			}
+			m := map[string]any{}
+			for k, v := range url.Query() {
+				if len(v) > 0 {
+					m[k] = v[0]
+				}
+			}
+			md := xmd.NewMetadata(m)
+			cfg.Metrics.Path = mdutil.GetString(md, "path")
 		}
 	}
 
@@ -207,6 +245,7 @@ func (p *program) mergeConfig(cfg1, cfg2 *config.Config) *config.Config {
 		RLimiters:  append(cfg1.RLimiters, cfg2.RLimiters...),
 		Loggers:    append(cfg1.Loggers, cfg2.Loggers...),
 		Routers:    append(cfg1.Routers, cfg2.Routers...),
+		Observers:  append(cfg1.Observers, cfg2.Observers...),
 		TLS:        cfg1.TLS,
 		Log:        cfg1.Log,
 		API:        cfg1.API,

@@ -63,6 +63,7 @@ type Config struct {
 	Limiters   []*LimiterConfig   `yaml:",omitempty" json:"limiters,omitempty"`
 	CLimiters  []*LimiterConfig   `yaml:"climiters,omitempty" json:"climiters,omitempty"`
 	RLimiters  []*LimiterConfig   `yaml:"rlimiters,omitempty" json:"rlimiters,omitempty"`
+	Observers  []*ObserverConfig  `yaml:",omitempty" json:"observers,omitempty"`
 	Loggers    []*LoggerConfig    `yaml:",omitempty" json:"loggers,omitempty"`
 	TLS        *TLSConfig         `yaml:",omitempty" json:"tls,omitempty"`
 	Log        *LogConfig         `yaml:",omitempty" json:"log,omitempty"`
