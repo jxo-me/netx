@@ -1,14 +1,14 @@
 module github.com/jxo-me/netx/gost
 
-go 1.21
+go 1.22
 
-toolchain go1.21.5
+toolchain go1.22.0
 
 require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/api v0.0.5
-	github.com/jxo-me/netx/core v0.0.2
-	github.com/jxo-me/netx/x v0.0.5
+	github.com/jxo-me/netx/core v0.0.3
+	github.com/jxo-me/netx/x v0.0.6
 )
 
 require (
@@ -40,8 +40,8 @@ require (
 	github.com/jxo-me/gfbot v0.1.16 // indirect
 	github.com/jxo-me/netx/gosocks4 v0.0.1 // indirect
 	github.com/jxo-me/netx/gosocks5 v0.0.1 // indirect
-	github.com/jxo-me/netx/plugin v0.0.3 // indirect
-	github.com/jxo-me/netx/relay v0.0.1 // indirect
+	github.com/jxo-me/netx/plugin v0.0.4 // indirect
+	github.com/jxo-me/netx/relay v0.0.2 // indirect
 	github.com/jxo-me/netx/tls-dissector v0.0.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/klauspost/reedsolomon v1.11.8 // indirect

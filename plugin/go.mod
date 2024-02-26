@@ -5,7 +5,7 @@ go 1.22
 //replace github.com/jxo-me/netx/x => ../x
 
 require (
-	github.com/jxo-me/netx/x v0.0.5
+	github.com/jxo-me/netx/x v0.0.6
 	google.golang.org/grpc v1.62.0
 	google.golang.org/protobuf v1.32.0
 )
