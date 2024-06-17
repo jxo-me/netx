@@ -24,16 +24,16 @@ import (
 )
 
 type options struct {
-	admission admission.IAdmission
-	recorders []recorder.RecorderObject
-	preUp     []string
-	postUp    []string
-	preDown   []string
-	postDown  []string
-	stats     *stats.Stats
-	observer  observer.IObserver
+	admission     admission.IAdmission
+	recorders     []recorder.RecorderObject
+	preUp         []string
+	postUp        []string
+	preDown       []string
+	postDown      []string
+	stats         *stats.Stats
+	observer      observer.IObserver
 	observePeriod time.Duration
-	logger    logger.ILogger
+	logger        logger.ILogger
 }
 
 type Option func(opts *options)
@@ -92,7 +92,7 @@ func ObservePeriodOption(period time.Duration) Option {
 	}
 }
 
-func LoggerOption(logger logger.Logger) Option {
+func LoggerOption(logger logger.ILogger) Option {
 	return func(opts *options) {
 		opts.logger = logger
 	}
