@@ -9,7 +9,6 @@ import (
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/quic-go/quic-go"
-	"github.com/quic-go/quic-go/http3"
 	wt "github.com/quic-go/webtransport-go"
 )
 
@@ -69,33 +68,32 @@ func (d *wtDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOpt
 			path:   d.md.path,
 			header: d.md.header,
 			dialer: &wt.Dialer{
-				RoundTripper: &http3.RoundTripper{
-					TLSClientConfig: d.options.TLSConfig,
-					Dial: func(ctx context.Context, adr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
-						// d.options.Logger.Infof("dial: %s, %s, %s", addr, adr, host)
-						udpAddr, err := net.ResolveUDPAddr("udp", addr)
-						if err != nil {
-							return nil, err
-						}
+				TLSClientConfig: d.options.TLSConfig,
+				DialAddr: func(ctx context.Context, adr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+					// d.options.Logger.Infof("dial: %s, %s, %s", addr, adr, host)
+					udpAddr, err := net.ResolveUDPAddr("udp", addr)
+					if err != nil {
+						return nil, err
+					}
 
-						udpConn, err := options.NetDialer.Dial(ctx, "udp", "")
-						if err != nil {
-							return nil, err
-						}
+					udpConn, err := options.NetDialer.Dial(ctx, "udp", "")
+					if err != nil {
+						return nil, err
+					}
 
-						return quic.DialEarly(ctx, udpConn.(net.PacketConn), udpAddr, tlsCfg, cfg)
-					},
-					QuicConfig: &quic.Config{
-						KeepAlivePeriod:      d.md.keepAlivePeriod,
-						HandshakeIdleTimeout: d.md.handshakeTimeout,
-						MaxIdleTimeout:       d.md.maxIdleTimeout,
-						/*
-							Versions: []quic.VersionNumber{
-								quic.Version1,
-							},
-						*/
-						MaxIncomingStreams: int64(d.md.maxStreams),
-					},
+					return quic.DialEarly(ctx, udpConn.(net.PacketConn), udpAddr, tlsCfg, cfg)
+				},
+				QUICConfig: &quic.Config{
+					KeepAlivePeriod:      d.md.keepAlivePeriod,
+					HandshakeIdleTimeout: d.md.handshakeTimeout,
+					MaxIdleTimeout:       d.md.maxIdleTimeout,
+					/*
+						Versions: []quic.VersionNumber{
+							quic.Version1,
+						},
+					*/
+					MaxIncomingStreams: int64(d.md.maxStreams),
+					EnableDatagrams:    true,
 				},
 			},
 		}

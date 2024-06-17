@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/core/logger"
@@ -36,19 +38,26 @@ func createHop(ctx *gin.Context) {
 	var req createHopRequest
 	ctx.ShouldBindJSON(&req.Data)
 
-	if req.Data.Name == "" {
-		writeError(ctx, ErrInvalid)
+	name := strings.TrimSpace(req.Data.Name)
+	if name == "" {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeInvalid, "hop name is required"))
+		return
+	}
+	req.Data.Name = name
+
+	if app.Runtime.HopRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("hop %s already exists", name)))
 		return
 	}
 
 	v, err := parser.ParseHop(&req.Data, logger.Default())
 	if err != nil {
-		writeError(ctx, ErrCreate)
+		writeError(ctx, NewError(http.StatusInternalServerError, ErrCodeFailed, fmt.Sprintf("create hop %s failed: %s", name, err.Error())))
 		return
 	}
 
-	if err := app.Runtime.HopRegistry().Register(req.Data.Name, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.HopRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("hop %s already exists", name)))
 		return
 	}
 
@@ -93,29 +102,30 @@ func updateHop(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !app.Runtime.HopRegistry().IsRegistered(req.Hop) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Hop)
+	if !app.Runtime.HopRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("hop %s not found", name)))
 		return
 	}
 
-	req.Data.Name = req.Hop
+	req.Data.Name = name
 
 	v, err := parser.ParseHop(&req.Data, logger.Default())
 	if err != nil {
-		writeError(ctx, ErrCreate)
+		writeError(ctx, NewError(http.StatusInternalServerError, ErrCodeFailed, fmt.Sprintf("create hop %s failed: %s", name, err.Error())))
 		return
 	}
 
-	app.Runtime.HopRegistry().Unregister(req.Hop)
+	app.Runtime.HopRegistry().Unregister(name)
 
-	if err := app.Runtime.HopRegistry().Register(req.Hop, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.HopRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("hop %s already exists", name)))
 		return
 	}
 
 	config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Hops {
-			if c.Hops[i].Name == req.Hop {
+			if c.Hops[i].Name == name {
 				c.Hops[i] = &req.Data
 				break
 			}
@@ -155,17 +165,19 @@ func deleteHop(ctx *gin.Context) {
 	var req deleteHopRequest
 	ctx.ShouldBindUri(&req)
 
-	if !app.Runtime.HopRegistry().IsRegistered(req.Hop) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Hop)
+
+	if !app.Runtime.HopRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("hop %s not found", name)))
 		return
 	}
-	app.Runtime.HopRegistry().Unregister(req.Hop)
+	app.Runtime.HopRegistry().Unregister(name)
 
 	config.OnUpdate(func(c *config.Config) error {
 		hops := c.Hops
 		c.Hops = nil
 		for _, s := range hops {
-			if s.Name == req.Hop {
+			if s.Name == name {
 				continue
 			}
 			c.Hops = append(c.Hops, s)

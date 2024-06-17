@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 
 	"github.com/jxo-me/netx/core/dialer"
@@ -10,8 +11,9 @@ import (
 )
 
 type obfsHTTPDialer struct {
-	md     metadata
-	logger logger.ILogger
+	tlsEnabled bool
+	md         metadata
+	logger     logger.ILogger
 }
 
 func NewDialer(opts ...dialer.Option) dialer.IDialer {
@@ -22,6 +24,18 @@ func NewDialer(opts ...dialer.Option) dialer.IDialer {
 
 	return &obfsHTTPDialer{
 		logger: options.Logger,
+	}
+}
+
+func NewTLSDialer(opts ...dialer.Option) dialer.IDialer {
+	options := &dialer.Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	return &obfsHTTPDialer{
+		tlsEnabled: true,
+		logger:     options.Logger,
 	}
 }
 
@@ -54,9 +68,16 @@ func (d *obfsHTTPDialer) Handshake(ctx context.Context, conn net.Conn, options .
 		host = opts.Addr
 	}
 
+	if d.tlsEnabled {
+		conn = tls.Client(conn, &tls.Config{
+			ServerName: host,
+		})
+	}
+
 	return &obfsHTTPConn{
 		Conn:   conn,
 		host:   host,
+		path:   d.md.path,
 		header: d.md.header,
 		logger: d.logger,
 	}, nil

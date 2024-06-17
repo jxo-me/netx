@@ -129,10 +129,11 @@ func (r *route) connect(ctx context.Context, logger logger.ILogger) (conn net.Co
 					metrics.Labels{"chain": name, "node": node.Name}); v != nil {
 					v.Inc()
 				}
-			} else {
-				if marker != nil {
-					marker.Reset()
-				}
+				return
+			}
+
+			if marker != nil {
+				marker.Reset()
 			}
 		}
 	}()

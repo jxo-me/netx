@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
@@ -35,25 +37,27 @@ func createService(ctx *gin.Context) {
 	var req createServiceRequest
 	ctx.ShouldBindJSON(&req.Data)
 
-	if req.Data.Name == "" {
-		writeError(ctx, ErrInvalid)
+	name := strings.TrimSpace(req.Data.Name)
+	if name == "" {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeInvalid, "service name is required"))
 		return
 	}
+	req.Data.Name = name
 
-	if app.Runtime.ServiceRegistry().IsRegistered(req.Data.Name) {
-		writeError(ctx, ErrDup)
+	if app.Runtime.ServiceRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("service %s already exists", name)))
 		return
 	}
 
 	svc, err := parser.ParseService(&req.Data)
 	if err != nil {
-		writeError(ctx, ErrCreate)
+		writeError(ctx, NewError(http.StatusInternalServerError, ErrCodeFailed, fmt.Sprintf("create service %s failed: %s", name, err.Error())))
 		return
 	}
 
-	if err := app.Runtime.ServiceRegistry().Register(req.Data.Name, svc); err != nil {
+	if err := app.Runtime.ServiceRegistry().Register(name, svc); err != nil {
 		svc.Close()
-		writeError(ctx, ErrDup)
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("service %s already exists", name)))
 		return
 	}
 
@@ -99,26 +103,28 @@ func updateService(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	old := app.Runtime.ServiceRegistry().Get(req.Service)
+	name := strings.TrimSpace(req.Service)
+
+	old := app.Runtime.ServiceRegistry().Get(name)
 	if old == nil {
-		writeError(ctx, ErrNotFound)
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("service %s not found", name)))
 		return
 	}
 	old.Close()
 
-	req.Data.Name = req.Service
+	req.Data.Name = name
 
 	svc, err := parser.ParseService(&req.Data)
 	if err != nil {
-		writeError(ctx, ErrCreate)
+		writeError(ctx, NewError(http.StatusInternalServerError, ErrCodeFailed, fmt.Sprintf("create service %s failed: %s", name, err.Error())))
 		return
 	}
 
-	app.Runtime.ServiceRegistry().Unregister(req.Service)
+	app.Runtime.ServiceRegistry().Unregister(name)
 
-	if err := app.Runtime.ServiceRegistry().Register(req.Service, svc); err != nil {
+	if err := app.Runtime.ServiceRegistry().Register(name, svc); err != nil {
 		svc.Close()
-		writeError(ctx, ErrDup)
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("service %s already exists", name)))
 		return
 	}
 
@@ -126,7 +132,7 @@ func updateService(ctx *gin.Context) {
 
 	config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Services {
-			if c.Services[i].Name == req.Service {
+			if c.Services[i].Name == name {
 				c.Services[i] = &req.Data
 				break
 			}
@@ -166,20 +172,22 @@ func deleteService(ctx *gin.Context) {
 	var req deleteServiceRequest
 	ctx.ShouldBindUri(&req)
 
-	svc := app.Runtime.ServiceRegistry().Get(req.Service)
+	name := strings.TrimSpace(req.Service)
+
+	svc := app.Runtime.ServiceRegistry().Get(name)
 	if svc == nil {
-		writeError(ctx, ErrNotFound)
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("service %s not found", name)))
 		return
 	}
 
-	app.Runtime.ServiceRegistry().Unregister(req.Service)
+	app.Runtime.ServiceRegistry().Unregister(name)
 	svc.Close()
 
 	config.OnUpdate(func(c *config.Config) error {
 		services := c.Services
 		c.Services = nil
 		for _, s := range services {
-			if s.Name == req.Service {
+			if s.Name == name {
 				continue
 			}
 			c.Services = append(c.Services, s)

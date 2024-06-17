@@ -53,7 +53,7 @@ func (l *http3Listener) Init(md md.IMetaData) (err error) {
 	l.server = &http3.Server{
 		Addr:      l.options.Addr,
 		TLSConfig: l.options.TLSConfig,
-		QuicConfig: &quic.Config{
+		QUICConfig: &quic.Config{
 			KeepAlivePeriod:      l.md.keepAlivePeriod,
 			HandshakeIdleTimeout: l.md.handshakeTimeout,
 			MaxIdleTimeout:       l.md.maxIdleTimeout,

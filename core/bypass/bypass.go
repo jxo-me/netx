@@ -1,6 +1,9 @@
 package bypass
 
-import "context"
+import (
+	"context"
+	"slices"
+)
 
 type Options struct {
 	Host string
@@ -20,6 +23,7 @@ func WithPathOption(path string) Option {
 // IBypass is a filter of address (IP or domain).
 type IBypass interface {
 	// Contains reports whether the bypass includes addr.
+	IsWhitelist() bool
 	Contains(ctx context.Context, network, addr string, opts ...Option) bool
 }
 
@@ -34,10 +38,33 @@ func BypassGroup(bypasses ...IBypass) IBypass {
 }
 
 func (p *bypassGroup) Contains(ctx context.Context, network, addr string, opts ...Option) bool {
+	var whitelist, blacklist []bool
 	for _, bypass := range p.bypasses {
-		if bypass != nil && bypass.Contains(ctx, network, addr, opts...) {
-			return true
+		result := bypass.Contains(ctx, network, addr, opts...)
+		if bypass.IsWhitelist() {
+			whitelist = append(whitelist, result)
+		} else {
+			blacklist = append(blacklist, result)
 		}
 	}
+	status := false
+	if len(whitelist) > 0 {
+		if slices.Contains(whitelist, false) {
+			status = false
+		} else {
+			status = true
+		}
+	}
+	if !status && len(blacklist) > 0 {
+		if slices.Contains(blacklist, true) {
+			status = true
+		} else {
+			status = false
+		}
+	}
+	return status
+}
+
+func (p *bypassGroup) IsWhitelist() bool {
 	return false
 }

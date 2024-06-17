@@ -32,6 +32,7 @@ type options struct {
 	postDown  []string
 	stats     *stats.Stats
 	observer  observer.IObserver
+	observePeriod time.Duration
 	logger    logger.ILogger
 }
 
@@ -85,7 +86,13 @@ func ObserverOption(observer observer.IObserver) Option {
 	}
 }
 
-func LoggerOption(logger logger.ILogger) Option {
+func ObservePeriodOption(period time.Duration) Option {
+	return func(opts *options) {
+		opts.observePeriod = period
+	}
+}
+
+func LoggerOption(logger logger.Logger) Option {
 	return func(opts *options) {
 		opts.logger = logger
 	}
@@ -129,6 +136,10 @@ func (s *defaultService) Addr() net.Addr {
 func (s *defaultService) Serve() error {
 	s.execCmds("post-up", s.options.postUp)
 	s.setState(StateReady)
+	s.status.addEvent(Event{
+		Time:    time.Now(),
+		Message: fmt.Sprintf("service %s is listening on %s", s.name, s.listener.Addr()),
+	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -290,7 +301,12 @@ func (s *defaultService) observeStats(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
+	d := s.options.observePeriod
+	if d < time.Millisecond {
+		d = 5 * time.Second
+	}
+
+	ticker := time.NewTicker(d)
 	defer ticker.Stop()
 
 	for {

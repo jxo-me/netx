@@ -6,6 +6,7 @@ import (
 	mdata "github.com/jxo-me/netx/core/metadata"
 	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	ssh_util "github.com/jxo-me/netx/x/internal/util/ssh"
+	"github.com/mitchellh/go-homedir"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -29,6 +30,10 @@ func (l *sshListener) parseMetadata(md mdata.IMetaData) (err error) {
 	)
 
 	if key := mdutil.GetString(md, privateKeyFile); key != "" {
+		key, err = homedir.Expand(key)
+		if err != nil {
+			return err
+		}
 		data, err := os.ReadFile(key)
 		if err != nil {
 			return err

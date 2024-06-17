@@ -29,18 +29,23 @@ import (
 	"github.com/jxo-me/netx/x/metadata"
 	xservice "github.com/jxo-me/netx/x/service"
 	"github.com/jxo-me/netx/x/stats"
+	"strings"
+	"time"
 )
 
 func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	if cfg.Listener == nil {
-		cfg.Listener = &config.ListenerConfig{
-			Type: "tcp",
-		}
+		cfg.Listener = &config.ListenerConfig{}
 	}
+	if strings.TrimSpace(cfg.Listener.Type) == "" {
+		cfg.Listener.Type = "tcp"
+	}
+
 	if cfg.Handler == nil {
-		cfg.Handler = &config.HandlerConfig{
-			Type: "auto",
-		}
+		cfg.Handler = &config.HandlerConfig{}
+	}
+	if strings.TrimSpace(cfg.Handler.Type) == "" {
+		cfg.Handler.Type = "auto"
 	}
 
 	log := logger.Default()
@@ -97,6 +102,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	var preUp, preDown, postUp, postDown []string
 	var ignoreChain bool
 	var pStats *stats.Stats
+	var observePeriod time.Duration
 	if cfg.Metadata != nil {
 		md := metadata.NewMetadata(cfg.Metadata)
 		ppv = mdutil.GetInt(md, parsing.MDKeyProxyProtocol)
@@ -117,6 +123,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		if mdutil.GetBool(md, parsing.MDKeyEnableStats) {
 			pStats = &stats.Stats{}
 		}
+		observePeriod = mdutil.GetDuration(md, "observePeriod")
 	}
 
 	listenOpts := []listener.Option{
@@ -142,7 +149,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	if rf := app.Runtime.ListenerRegistry().Get(cfg.Listener.Type); rf != nil {
 		ln = rf(listenOpts...)
 	} else {
-		return nil, fmt.Errorf("unregistered listener: %s", cfg.Listener.Type)
+		return nil, fmt.Errorf("unknown listener: %s", cfg.Listener.Type)
 	}
 
 	if cfg.Listener.Metadata == nil {
@@ -229,7 +236,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 			handler.ServiceOption(cfg.Name),
 		)
 	} else {
-		return nil, fmt.Errorf("unregistered handler: %s", cfg.Handler.Type)
+		return nil, fmt.Errorf("unknown handler: %s", cfg.Handler.Type)
 	}
 
 	if forwarder, ok := h.(handler.IForwarder); ok {
@@ -258,6 +265,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		xservice.RecordersOption(recorders...),
 		xservice.StatsOption(pStats),
 		xservice.ObserverOption(app.Runtime.ObserverRegistry().Get(cfg.Observer)),
+		xservice.ObservePeriodOption(observePeriod),
 		xservice.LoggerOption(serviceLogger),
 	)
 
@@ -268,6 +276,14 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 func parseForwarder(cfg *config.ForwarderConfig, log logger.ILogger) (hop.IHop, error) {
 	if cfg == nil {
 		return nil, nil
+	}
+
+	hopName := cfg.Hop
+	if hopName == "" {
+		hopName = cfg.Name
+	}
+	if hopName != "" {
+		return app.Runtime.HopRegistry().Get(hopName), nil
 	}
 
 	hc := config.HopConfig{
@@ -285,27 +301,42 @@ func parseForwarder(cfg *config.ForwarderConfig, log logger.ILogger) (hop.IHop, 
 				if i > 0 {
 					name = fmt.Sprintf("%s-%d", node.Name, i)
 				}
+
+				filter := node.Filter
+				if filter == nil {
+					if node.Protocol != "" || node.Host != "" || node.Path != "" {
+						filter = &config.NodeFilterConfig{
+							Protocol: node.Protocol,
+							Host:     node.Host,
+							Path:     node.Path,
+						}
+					}
+				}
+
+				httpCfg := node.HTTP
+				if node.Auth != nil {
+					if httpCfg == nil {
+						httpCfg = &config.HTTPNodeConfig{}
+					}
+					if httpCfg.Auth == nil {
+						httpCfg.Auth = node.Auth
+					}
+				}
 				hc.Nodes = append(hc.Nodes, &config.NodeConfig{
 					Name:     name,
 					Addr:     addr,
-					Host:     node.Host,
 					Network:  node.Network,
-					Protocol: node.Protocol,
-					Path:     node.Path,
 					Bypass:   node.Bypass,
 					Bypasses: node.Bypasses,
-					HTTP:     node.HTTP,
+					Filter:   filter,
+					HTTP:     httpCfg,
 					TLS:      node.TLS,
-					Auth:     node.Auth,
 					Metadata: node.Metadata,
 				})
 			}
 		}
 	}
-	if len(hc.Nodes) > 0 {
-		return hop_parser.ParseHop(&hc, log)
-	}
-	return app.Runtime.HopRegistry().Get(hc.Name), nil
+	return hop_parser.ParseHop(&hc, log)
 }
 
 func chainGroup(name string, group *config.ChainGroupConfig) chain.IChainer {

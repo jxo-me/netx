@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
@@ -35,15 +37,22 @@ func createAdmission(ctx *gin.Context) {
 	var req createAdmissionRequest
 	ctx.ShouldBindJSON(&req.Data)
 
-	if req.Data.Name == "" {
-		writeError(ctx, ErrInvalid)
+	name := strings.TrimSpace(req.Data.Name)
+	if name == "" {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeInvalid, "admission name is required"))
+		return
+	}
+	req.Data.Name = name
+
+	if app.Runtime.AdmissionRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("admission %s already exists", name)))
 		return
 	}
 
 	v := parser.ParseAdmission(&req.Data)
 
-	if err := app.Runtime.AdmissionRegistry().Register(req.Data.Name, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.AdmissionRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("admission %s already exists", name)))
 		return
 	}
 
@@ -87,25 +96,27 @@ func updateAdmission(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !app.Runtime.AdmissionRegistry().IsRegistered(req.Admission) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Admission)
+
+	if !app.Runtime.AdmissionRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("admission %s not found", name)))
 		return
 	}
 
-	req.Data.Name = req.Admission
+	req.Data.Name = name
 
 	v := parser.ParseAdmission(&req.Data)
 
-	app.Runtime.AdmissionRegistry().Unregister(req.Admission)
+	app.Runtime.AdmissionRegistry().Unregister(name)
 
-	if err := app.Runtime.AdmissionRegistry().Register(req.Admission, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.AdmissionRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("admission %s already exists", name)))
 		return
 	}
 
 	config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Admissions {
-			if c.Admissions[i].Name == req.Admission {
+			if c.Admissions[i].Name == name {
 				c.Admissions[i] = &req.Data
 				break
 			}
@@ -145,17 +156,19 @@ func deleteAdmission(ctx *gin.Context) {
 	var req deleteAdmissionRequest
 	ctx.ShouldBindUri(&req)
 
-	if !app.Runtime.AdmissionRegistry().IsRegistered(req.Admission) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Admission)
+
+	if !app.Runtime.AdmissionRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("admission %s not found", name)))
 		return
 	}
-	app.Runtime.AdmissionRegistry().Unregister(req.Admission)
+	app.Runtime.AdmissionRegistry().Unregister(name)
 
 	config.OnUpdate(func(c *config.Config) error {
 		admissiones := c.Admissions
 		c.Admissions = nil
 		for _, s := range admissiones {
-			if s.Name == req.Admission {
+			if s.Name == name {
 				continue
 			}
 			c.Admissions = append(c.Admissions, s)

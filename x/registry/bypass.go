@@ -37,3 +37,11 @@ func (w *bypassWrapper) Contains(ctx context.Context, network, addr string, opts
 	}
 	return bp.Contains(ctx, network, addr, opts...)
 }
+
+func (w *bypassWrapper) IsWhitelist() bool {
+	bp := w.r.get(w.name)
+	if bp == nil {
+		return false
+	}
+	return bp.IsWhitelist()
+}

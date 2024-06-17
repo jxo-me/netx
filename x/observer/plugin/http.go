@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/observer"
@@ -58,6 +59,9 @@ func NewHTTPPlugin(name string, url string, opts ...plugin.Option) observer.IObs
 		opt(&options)
 	}
 
+	if !strings.HasPrefix(url, "http") {
+		url = "http://" + url
+	}
 	return &httpPlugin{
 		url:    url,
 		client: plugin.NewHTTPClient(&options),

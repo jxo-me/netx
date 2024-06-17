@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
@@ -35,15 +37,22 @@ func createIngress(ctx *gin.Context) {
 	var req createIngressRequest
 	ctx.ShouldBindJSON(&req.Data)
 
-	if req.Data.Name == "" {
-		writeError(ctx, ErrInvalid)
+	name := strings.TrimSpace(req.Data.Name)
+	if name == "" {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeInvalid, "ingress name is required"))
+		return
+	}
+	req.Data.Name = name
+
+	if app.Runtime.IngressRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("ingress %s already exists", name)))
 		return
 	}
 
 	v := parser.ParseIngress(&req.Data)
 
-	if err := app.Runtime.IngressRegistry().Register(req.Data.Name, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.IngressRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("ingress %s already exists", name)))
 		return
 	}
 
@@ -87,25 +96,27 @@ func updateIngress(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !app.Runtime.IngressRegistry().IsRegistered(req.Ingress) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Ingress)
+
+	if !app.Runtime.IngressRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("ingress %s not found", name)))
 		return
 	}
 
-	req.Data.Name = req.Ingress
+	req.Data.Name = name
 
 	v := parser.ParseIngress(&req.Data)
 
-	app.Runtime.IngressRegistry().Unregister(req.Ingress)
+	app.Runtime.IngressRegistry().Unregister(name)
 
-	if err := app.Runtime.IngressRegistry().Register(req.Ingress, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.IngressRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("ingress %s already exists", name)))
 		return
 	}
 
 	config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Ingresses {
-			if c.Ingresses[i].Name == req.Ingress {
+			if c.Ingresses[i].Name == name {
 				c.Ingresses[i] = &req.Data
 				break
 			}
@@ -145,17 +156,19 @@ func deleteIngress(ctx *gin.Context) {
 	var req deleteIngressRequest
 	ctx.ShouldBindUri(&req)
 
-	if !app.Runtime.IngressRegistry().IsRegistered(req.Ingress) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Ingress)
+
+	if !app.Runtime.IngressRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("ingress %s not found", name)))
 		return
 	}
-	app.Runtime.IngressRegistry().Unregister(req.Ingress)
+	app.Runtime.IngressRegistry().Unregister(name)
 
 	config.OnUpdate(func(c *config.Config) error {
 		ingresses := c.Ingresses
 		c.Ingresses = nil
 		for _, s := range ingresses {
-			if s.Name == req.Ingress {
+			if s.Name == name {
 				continue
 			}
 			c.Ingresses = append(c.Ingresses, s)

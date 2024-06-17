@@ -33,34 +33,26 @@ func buildService(cfg *config.Config) (services []service.IService) {
 	log := logger.Default()
 
 	for _, loggerCfg := range cfg.Loggers {
-		if lg := logger_parser.ParseLogger(loggerCfg); lg != nil {
-			if err := app.Runtime.LoggerRegistry().Register(loggerCfg.Name, lg); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.LoggerRegistry().Register(loggerCfg.Name, logger_parser.ParseLogger(loggerCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, autherCfg := range cfg.Authers {
-		if auther := auth_parser.ParseAuther(autherCfg); auther != nil {
-			if err := app.Runtime.AutherRegistry().Register(autherCfg.Name, auther); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.AutherRegistry().Register(autherCfg.Name, auth_parser.ParseAuther(autherCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, admissionCfg := range cfg.Admissions {
-		if adm := admission_parser.ParseAdmission(admissionCfg); adm != nil {
-			if err := app.Runtime.AdmissionRegistry().Register(admissionCfg.Name, adm); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.AdmissionRegistry().Register(admissionCfg.Name, admission_parser.ParseAdmission(admissionCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, bypassCfg := range cfg.Bypasses {
-		if bp := bypass_parser.ParseBypass(bypassCfg); bp != nil {
-			if err := app.Runtime.BypassRegistry().Register(bypassCfg.Name, bp); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.BypassRegistry().Register(bypassCfg.Name, bypass_parser.ParseBypass(bypassCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
@@ -69,79 +61,59 @@ func buildService(cfg *config.Config) (services []service.IService) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if r != nil {
-			if err := app.Runtime.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.ResolverRegistry().Register(resolverCfg.Name, r); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, hostsCfg := range cfg.Hosts {
-		if h := hosts_parser.ParseHostMapper(hostsCfg); h != nil {
-			if err := app.Runtime.HostsRegistry().Register(hostsCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.HostsRegistry().Register(hostsCfg.Name, hosts_parser.ParseHostMapper(hostsCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, ingressCfg := range cfg.Ingresses {
-		if h := ingress_parser.ParseIngress(ingressCfg); h != nil {
-			if err := app.Runtime.IngressRegistry().Register(ingressCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.IngressRegistry().Register(ingressCfg.Name, ingress_parser.ParseIngress(ingressCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, routerCfg := range cfg.Routers {
-		if h := router_parser.ParseRouter(routerCfg); h != nil {
-			if err := app.Runtime.RouterRegistry().Register(routerCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.RouterRegistry().Register(routerCfg.Name, router_parser.ParseRouter(routerCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, sdCfg := range cfg.SDs {
-		if h := sd_parser.ParseSD(sdCfg); h != nil {
-			if err := app.Runtime.SDRegistry().Register(sdCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.SDRegistry().Register(sdCfg.Name, sd_parser.ParseSD(sdCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, observerCfg := range cfg.Observers {
-		if h := observer_parser.ParseObserver(observerCfg); h != nil {
-			if err := app.Runtime.ObserverRegistry().Register(observerCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.ObserverRegistry().Register(observerCfg.Name, observer_parser.ParseObserver(observerCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 	for _, recorderCfg := range cfg.Recorders {
-		if h := recorder_parser.ParseRecorder(recorderCfg); h != nil {
-			if err := app.Runtime.RecorderRegistry().Register(recorderCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.RecorderRegistry().Register(recorderCfg.Name, recorder_parser.ParseRecorder(recorderCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	for _, limiterCfg := range cfg.Limiters {
-		if h := limiter_parser.ParseTrafficLimiter(limiterCfg); h != nil {
-			if err := app.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.TrafficLimiterRegistry().Register(limiterCfg.Name, limiter_parser.ParseTrafficLimiter(limiterCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 	for _, limiterCfg := range cfg.CLimiters {
-		if h := limiter_parser.ParseConnLimiter(limiterCfg); h != nil {
-			if err := app.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.ConnLimiterRegistry().Register(limiterCfg.Name, limiter_parser.ParseConnLimiter(limiterCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 	for _, limiterCfg := range cfg.RLimiters {
-		if h := limiter_parser.ParseRateLimiter(limiterCfg); h != nil {
-			if err := app.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, h); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.RateLimiterRegistry().Register(limiterCfg.Name, limiter_parser.ParseRateLimiter(limiterCfg)); err != nil {
+			log.Fatal(err)
 		}
 	}
 	for _, hopCfg := range cfg.Hops {
@@ -149,10 +121,8 @@ func buildService(cfg *config.Config) (services []service.IService) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if hop != nil {
-			if err := app.Runtime.HopRegistry().Register(hopCfg.Name, hop); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.HopRegistry().Register(hopCfg.Name, hop); err != nil {
+			log.Fatal(err)
 		}
 	}
 	for _, chainCfg := range cfg.Chains {
@@ -160,10 +130,8 @@ func buildService(cfg *config.Config) (services []service.IService) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if c != nil {
-			if err := app.Runtime.ChainRegistry().Register(chainCfg.Name, c); err != nil {
-				log.Fatal(err)
-			}
+		if err := app.Runtime.ChainRegistry().Register(chainCfg.Name, c); err != nil {
+			log.Fatal(err)
 		}
 	}
 

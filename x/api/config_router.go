@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/x/config"
@@ -35,15 +37,22 @@ func createRouter(ctx *gin.Context) {
 	var req createRouterRequest
 	ctx.ShouldBindJSON(&req.Data)
 
-	if req.Data.Name == "" {
-		writeError(ctx, ErrInvalid)
+	name := strings.TrimSpace(req.Data.Name)
+	if name == "" {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeInvalid, "router name is required"))
+		return
+	}
+	req.Data.Name = name
+
+	if app.Runtime.RouterRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("router %s already exists", name)))
 		return
 	}
 
 	v := parser.ParseRouter(&req.Data)
 
-	if err := app.Runtime.RouterRegistry().Register(req.Data.Name, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.RouterRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("router %s already exists", name)))
 		return
 	}
 
@@ -87,25 +96,27 @@ func updateRouter(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !app.Runtime.RouterRegistry().IsRegistered(req.Router) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Router)
+
+	if !app.Runtime.RouterRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("router %s not found", name)))
 		return
 	}
 
-	req.Data.Name = req.Router
+	req.Data.Name = name
 
 	v := parser.ParseRouter(&req.Data)
 
-	app.Runtime.RouterRegistry().Unregister(req.Router)
+	app.Runtime.RouterRegistry().Unregister(name)
 
-	if err := app.Runtime.RouterRegistry().Register(req.Router, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.RouterRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("router %s already exists", name)))
 		return
 	}
 
 	config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Routers {
-			if c.Routers[i].Name == req.Router {
+			if c.Routers[i].Name == name {
 				c.Routers[i] = &req.Data
 				break
 			}
@@ -145,17 +156,19 @@ func deleteRouter(ctx *gin.Context) {
 	var req deleteRouterRequest
 	ctx.ShouldBindUri(&req)
 
-	if !app.Runtime.RouterRegistry().IsRegistered(req.Router) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Router)
+
+	if !app.Runtime.RouterRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("router %s not found", name)))
 		return
 	}
-	app.Runtime.RouterRegistry().Unregister(req.Router)
+	app.Runtime.RouterRegistry().Unregister(name)
 
 	config.OnUpdate(func(c *config.Config) error {
 		routeres := c.Routers
 		c.Routers = nil
 		for _, s := range routeres {
-			if s.Name == req.Router {
+			if s.Name == name {
 				continue
 			}
 			c.Routers = append(c.Routers, s)

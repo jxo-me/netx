@@ -32,7 +32,7 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 			}
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
-		case "http":
+		case plugin.HTTP:
 			return hopplugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
@@ -67,15 +67,17 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 		}
 
 		if v.Connector == nil {
-			v.Connector = &config.ConnectorConfig{
-				Type: "http",
-			}
+			v.Connector = &config.ConnectorConfig{}
+		}
+		if strings.TrimSpace(v.Connector.Type) == "" {
+			v.Connector.Type = "http"
 		}
 
 		if v.Dialer == nil {
-			v.Dialer = &config.DialerConfig{
-				Type: "tcp",
-			}
+			v.Dialer = &config.DialerConfig{}
+		}
+		if strings.TrimSpace(v.Dialer.Type) == "" {
+			v.Dialer.Type = "tcp"
 		}
 
 		node, err := node_parser.ParseNode(cfg.Name, v, log)

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/jxo-me/netx/x/app"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jxo-me/netx/core/logger"
@@ -36,19 +38,26 @@ func createChain(ctx *gin.Context) {
 	var req createChainRequest
 	ctx.ShouldBindJSON(&req.Data)
 
-	if req.Data.Name == "" {
-		writeError(ctx, ErrInvalid)
+	name := strings.TrimSpace(req.Data.Name)
+	if name == "" {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeInvalid, "chain name is required"))
+		return
+	}
+	req.Data.Name = name
+
+	if app.Runtime.ChainRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("chain %s already exists", name)))
 		return
 	}
 
 	v, err := parser.ParseChain(&req.Data, logger.Default())
 	if err != nil {
-		writeError(ctx, ErrCreate)
+		writeError(ctx, NewError(http.StatusInternalServerError, ErrCodeFailed, fmt.Sprintf("create chain %s failed: %s", name, err.Error())))
 		return
 	}
 
-	if err := app.Runtime.ChainRegistry().Register(req.Data.Name, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.ChainRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("chain %s already exists", name)))
 		return
 	}
 
@@ -93,29 +102,31 @@ func updateChain(ctx *gin.Context) {
 	ctx.ShouldBindUri(&req)
 	ctx.ShouldBindJSON(&req.Data)
 
-	if !app.Runtime.ChainRegistry().IsRegistered(req.Chain) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Chain)
+
+	if !app.Runtime.ChainRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("chain %s not found", name)))
 		return
 	}
 
-	req.Data.Name = req.Chain
+	req.Data.Name = name
 
 	v, err := parser.ParseChain(&req.Data, logger.Default())
 	if err != nil {
-		writeError(ctx, ErrCreate)
+		writeError(ctx, NewError(http.StatusInternalServerError, ErrCodeFailed, fmt.Sprintf("create chain %s failed: %s", name, err.Error())))
 		return
 	}
 
-	app.Runtime.ChainRegistry().Unregister(req.Chain)
+	app.Runtime.ChainRegistry().Unregister(name)
 
-	if err := app.Runtime.ChainRegistry().Register(req.Chain, v); err != nil {
-		writeError(ctx, ErrDup)
+	if err := app.Runtime.ChainRegistry().Register(name, v); err != nil {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeDup, fmt.Sprintf("chain %s already exists", name)))
 		return
 	}
 
 	config.OnUpdate(func(c *config.Config) error {
 		for i := range c.Chains {
-			if c.Chains[i].Name == req.Chain {
+			if c.Chains[i].Name == name {
 				c.Chains[i] = &req.Data
 				break
 			}
@@ -155,17 +166,19 @@ func deleteChain(ctx *gin.Context) {
 	var req deleteChainRequest
 	ctx.ShouldBindUri(&req)
 
-	if !app.Runtime.ChainRegistry().IsRegistered(req.Chain) {
-		writeError(ctx, ErrNotFound)
+	name := strings.TrimSpace(req.Chain)
+
+	if !app.Runtime.ChainRegistry().IsRegistered(name) {
+		writeError(ctx, NewError(http.StatusBadRequest, ErrCodeNotFound, fmt.Sprintf("chain %s not found", name)))
 		return
 	}
-	app.Runtime.ChainRegistry().Unregister(req.Chain)
+	app.Runtime.ChainRegistry().Unregister(name)
 
 	config.OnUpdate(func(c *config.Config) error {
 		chains := c.Chains
 		c.Chains = nil
 		for _, s := range chains {
-			if s.Name == req.Chain {
+			if s.Name == name {
 				continue
 			}
 			c.Chains = append(c.Chains, s)

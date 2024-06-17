@@ -12,7 +12,6 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/core/router"
 	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
 	"github.com/songgao/water/waterutil"
 )
@@ -102,23 +101,6 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	}
 
 	return h.handleServer(ctx, conn, config, log)
-}
-
-func (h *tunHandler) findRouteFor(ctx context.Context, dst net.IP, router router.IRouter) net.Addr {
-	if v, ok := h.routes.Load(ipToTunRouteKey(dst)); ok {
-		return v.(net.Addr)
-	}
-
-	if router == nil {
-		return nil
-	}
-
-	if route := router.GetRoute(ctx, dst); route != nil && route.Gateway != nil {
-		if v, ok := h.routes.Load(ipToTunRouteKey(route.Gateway)); ok {
-			return v.(net.Addr)
-		}
-	}
-	return nil
 }
 
 var mIPProts = map[waterutil.IPProtocol]string{
