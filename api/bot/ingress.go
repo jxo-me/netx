@@ -31,7 +31,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickIngresses(c telebot.IContext) error {
+func (h *hEvent) OnClickIngresses(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -60,7 +60,7 @@ func (h *hEvent) OnClickIngresses(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailIngress(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailIngress(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -95,7 +95,7 @@ func (h *hEvent) OnClickDetailIngress(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelIngress(c telebot.IContext) error {
+func (h *hEvent) OnClickDelIngress(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.IngressRegistry().Get(serviceName)
 	if svc == nil {
@@ -149,7 +149,7 @@ func UpdateIngressConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddIngressHandler(ctx telebot.IContext) error {
+func startAddIngressHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, IngressExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 Ingress 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -160,7 +160,7 @@ func startAddIngressHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(IngressAdd)
 }
 
-func addIngressHandler(ctx telebot.IContext) error {
+func addIngressHandler(ctx telebot.Context) error {
 	var (
 		data config.IngressConfig
 	)
@@ -186,7 +186,7 @@ func addIngressHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateIngressHandler(ctx telebot.IContext) error {
+func startUpdateIngressHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, IngressUpdate, srvName)
 	if err != nil {
@@ -202,7 +202,7 @@ func startUpdateIngressHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(IngressUpdate)
 }
 
-func updateIngressHandler(ctx telebot.IContext) error {
+func updateIngressHandler(ctx telebot.Context) error {
 	var (
 		data config.IngressConfig
 	)
@@ -254,7 +254,7 @@ func updateIngressHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelIngressHandler(ctx telebot.IContext) error {
+func cancelIngressHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 Ingress 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

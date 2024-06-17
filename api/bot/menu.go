@@ -25,7 +25,7 @@ func SetMenuConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startSetMenuHandler(ctx telebot.IContext) error {
+func startSetMenuHandler(ctx telebot.Context) error {
 	menu := &telebot.ReplyMarkup{ResizeKeyboard: true, OneTimeKeyboard: true}
 	disable := menu.Text("Disable")
 	enable := menu.Text("Enable")
@@ -38,7 +38,7 @@ Current status is: DISABLED`
 	return handlers.NextConversationState(MenuSet)
 }
 
-func setMenuHandler(ctx telebot.IContext) error {
+func setMenuHandler(ctx telebot.Context) error {
 	str := ctx.Message().Text
 	fmt.Println("set Menu status str:", str)
 	msg := `Success! The new status is: ENABLED. /help`
@@ -46,7 +46,7 @@ func setMenuHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelSetMenuHandler(ctx telebot.IContext) error {
+func cancelSetMenuHandler(ctx telebot.Context) error {
 	err := ctx.Reply("当前 /menu 操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{ReplyMarkup: &telebot.ReplyMarkup{RemoveKeyboard: true}})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

@@ -39,7 +39,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickChains(c telebot.IContext) error {
+func (h *hEvent) OnClickChains(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -68,7 +68,7 @@ func (h *hEvent) OnClickChains(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailChain(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailChain(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -103,7 +103,7 @@ func (h *hEvent) OnClickDetailChain(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelChain(c telebot.IContext) error {
+func (h *hEvent) OnClickDelChain(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.ChainRegistry().Get(serviceName)
 	if svc == nil {
@@ -157,7 +157,7 @@ func UpdateChainConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddChainHandler(ctx telebot.IContext) error {
+func startAddChainHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, ChainExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 转发链 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -168,7 +168,7 @@ func startAddChainHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ChainAdd)
 }
 
-func addChainHandler(ctx telebot.IContext) error {
+func addChainHandler(ctx telebot.Context) error {
 	var (
 		data config.ChainConfig
 	)
@@ -197,7 +197,7 @@ func addChainHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateChainHandler(ctx telebot.IContext) error {
+func startUpdateChainHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, ChainUpdate, srvName)
 	if err != nil {
@@ -213,7 +213,7 @@ func startUpdateChainHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ChainUpdate)
 }
 
-func updateChainHandler(ctx telebot.IContext) error {
+func updateChainHandler(ctx telebot.Context) error {
 	var (
 		data config.ChainConfig
 	)
@@ -267,7 +267,7 @@ func updateChainHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelChainHandler(ctx telebot.IContext) error {
+func cancelChainHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 转发链 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

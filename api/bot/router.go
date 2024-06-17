@@ -41,7 +41,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickRouters(c telebot.IContext) error {
+func (h *hEvent) OnClickRouters(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -70,7 +70,7 @@ func (h *hEvent) OnClickRouters(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailRouter(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailRouter(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -105,7 +105,7 @@ func (h *hEvent) OnClickDetailRouter(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelRouter(c telebot.IContext) error {
+func (h *hEvent) OnClickDelRouter(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.RouterRegistry().Get(serviceName)
 	if svc == nil {
@@ -159,7 +159,7 @@ func UpdateRouterConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddRouterHandler(ctx telebot.IContext) error {
+func startAddRouterHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, RouterExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 域名解析器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -170,7 +170,7 @@ func startAddRouterHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(RouterAdd)
 }
 
-func addRouterHandler(ctx telebot.IContext) error {
+func addRouterHandler(ctx telebot.Context) error {
 	var (
 		data config.RouterConfig
 	)
@@ -196,7 +196,7 @@ func addRouterHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateRouterHandler(ctx telebot.IContext) error {
+func startUpdateRouterHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, RouterUpdate, srvName)
 	if err != nil {
@@ -212,7 +212,7 @@ func startUpdateRouterHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(RouterUpdate)
 }
 
-func updateRouterHandler(ctx telebot.IContext) error {
+func updateRouterHandler(ctx telebot.Context) error {
 	var (
 		data config.RouterConfig
 	)
@@ -263,7 +263,7 @@ func updateRouterHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelRouterHandler(ctx telebot.IContext) error {
+func cancelRouterHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 域名解析器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

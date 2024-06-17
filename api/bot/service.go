@@ -76,7 +76,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickServices(c telebot.IContext) error {
+func (h *hEvent) OnClickServices(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -106,7 +106,7 @@ func (h *hEvent) OnClickServices(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailService(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -141,7 +141,7 @@ func (h *hEvent) OnClickDetailService(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelService(c telebot.IContext) error {
+func (h *hEvent) OnClickDelService(c telebot.Context) error {
 	cmd := c.Callback().Data
 	fmt.Println("OnClickDelService cmd:", cmd)
 	serviceName := cmd
@@ -198,7 +198,7 @@ func UpdateServiceConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddServiceHandler(ctx telebot.IContext) error {
+func startAddServiceHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, ServiceExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 服务 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -209,7 +209,7 @@ func startAddServiceHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ServiceAdd)
 }
 
-func addServiceHandler(ctx telebot.IContext) error {
+func addServiceHandler(ctx telebot.Context) error {
 	var (
 		data config.ServiceConfig
 	)
@@ -246,7 +246,7 @@ func addServiceHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateServiceHandler(ctx telebot.IContext) error {
+func startUpdateServiceHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, ServiceUpdate, srvName)
 	if err != nil {
@@ -262,7 +262,7 @@ func startUpdateServiceHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ServiceUpdate)
 }
 
-func updateServiceHandler(ctx telebot.IContext) error {
+func updateServiceHandler(ctx telebot.Context) error {
 	var (
 		data config.ServiceConfig
 	)
@@ -321,7 +321,7 @@ func updateServiceHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelServiceHandler(ctx telebot.IContext) error {
+func cancelServiceHandler(ctx telebot.Context) error {
 	err := ctx.Reply("当前操作已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

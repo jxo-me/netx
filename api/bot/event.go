@@ -96,7 +96,7 @@ type (
 	hEvent struct{}
 )
 
-func (h *hEvent) OnText(c telebot.IContext) error {
+func (h *hEvent) OnText(c telebot.Context) error {
 	btn := &telebot.MenuButton{
 		Type:   telebot.MenuButtonWebApp,
 		Text:   "WebApp",
@@ -150,17 +150,17 @@ func getSelectHosts() *telebot.ReplyMarkup {
 	return selector
 }
 
-func (h *hEvent) OnBackServices(c telebot.IContext) error {
+func (h *hEvent) OnBackServices(c telebot.Context) error {
 	selector := getSelectMenus()
 	return c.Edit("从下面的列表中选择一个服务:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 }
 
-func (h *hEvent) OnBackHosts(c telebot.IContext) error {
+func (h *hEvent) OnBackHosts(c telebot.Context) error {
 	selector := getSelectHosts()
 	return c.Edit("从下面的列表中选择一个节点:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 }
 
-func (h *hEvent) OnClickNode(c telebot.IContext) error {
+func (h *hEvent) OnClickNode(c telebot.Context) error {
 	selector := getSelectHosts()
 	if c.Callback() != nil {
 		return c.Edit("从下面的列表中选择一个服务:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
@@ -168,7 +168,7 @@ func (h *hEvent) OnClickNode(c telebot.IContext) error {
 	return c.Send("从下面的列表中选择一个服务:", &telebot.SendOptions{Protected: true, ReplyMarkup: selector})
 }
 
-func (h *hEvent) OnClickService(c telebot.IContext) error {
+func (h *hEvent) OnClickService(c telebot.Context) error {
 	cmd := c.Callback().Data
 	switch strings.ToLower(cmd) {
 	case "config":
@@ -188,16 +188,16 @@ func (h *hEvent) OnClickService(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnCallback(c telebot.IContext) error {
+func (h *hEvent) OnCallback(c telebot.Context) error {
 	cmd := c.Callback().Data
 	return c.Send(fmt.Sprintf("OnCallback:%s", cmd))
 }
 
-func (h *hEvent) OnUserJoined(c telebot.IContext) error {
+func (h *hEvent) OnUserJoined(c telebot.Context) error {
 	return c.Send("OnUserJoined")
 }
 
-func (h *hEvent) OnWebAppCommand(c telebot.IContext) error {
+func (h *hEvent) OnWebAppCommand(c telebot.Context) error {
 	selector := &telebot.ReplyMarkup{}
 	selector.Inline(selector.Row(selector.WebApp("Press me", &telebot.WebApp{URL: "https://dev.us.jxo.me"})))
 	return c.Reply(
@@ -208,18 +208,18 @@ func (h *hEvent) OnWebAppCommand(c telebot.IContext) error {
 	)
 }
 
-func (h *hEvent) OnGameTextCommand(c telebot.IContext) error {
+func (h *hEvent) OnGameTextCommand(c telebot.Context) error {
 	//cmd := c.Callback().Data
 	_ = c.Send("OnGameTextCommand")
 	btnPlayGame := &telebot.ReplyMarkup{
-		InlineKeyboard: [][]telebot.InlineButton{{{Text: "开始游戏", CallbackGame: &telebot.CallbackGame{}}}},
+		InlineKeyboard: [][]telebot.InlineButton{{{Text: "开始游戏"}}},
 	}
 	game := &telebot.Game{Name: "HGsport"}
 
 	return c.Send(game, &telebot.SendOptions{ReplyMarkup: btnPlayGame})
 }
 
-func (h *hEvent) OnContactTextCommand(c telebot.IContext) error {
+func (h *hEvent) OnContactTextCommand(c telebot.Context) error {
 	//phone := c.Message().Text
 	_ = c.Send("OnContactTextCommand")
 
@@ -228,7 +228,7 @@ func (h *hEvent) OnContactTextCommand(c telebot.IContext) error {
 	return c.Send(contact, &telebot.SendOptions{})
 }
 
-func (h *hEvent) OnVenueTextCommand(c telebot.IContext) error {
+func (h *hEvent) OnVenueTextCommand(c telebot.Context) error {
 	//phone := c.Message().Text
 	_ = c.Send("OnVenueTextCommand")
 
@@ -240,7 +240,7 @@ func (h *hEvent) OnVenueTextCommand(c telebot.IContext) error {
 	return c.Send(venue, &telebot.SendOptions{})
 }
 
-func (h *hEvent) OnMyChatMember(c telebot.IContext) error {
+func (h *hEvent) OnMyChatMember(c telebot.Context) error {
 	// 邀请bot加入channel
 	chatMember := c.ChatMember()
 	oldRole := chatMember.OldChatMember.Role

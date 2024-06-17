@@ -62,7 +62,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickHops(c telebot.IContext) error {
+func (h *hEvent) OnClickHops(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -91,7 +91,7 @@ func (h *hEvent) OnClickHops(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailHop(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailHop(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -126,7 +126,7 @@ func (h *hEvent) OnClickDetailHop(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelHop(c telebot.IContext) error {
+func (h *hEvent) OnClickDelHop(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.HopRegistry().Get(serviceName)
 	if svc == nil {
@@ -180,7 +180,7 @@ func UpdateHopConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddHopHandler(ctx telebot.IContext) error {
+func startAddHopHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, HopExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 跳跃点 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -191,7 +191,7 @@ func startAddHopHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(HopAdd)
 }
 
-func addHopHandler(ctx telebot.IContext) error {
+func addHopHandler(ctx telebot.Context) error {
 	var (
 		data config.HopConfig
 	)
@@ -221,7 +221,7 @@ func addHopHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateHopHandler(ctx telebot.IContext) error {
+func startUpdateHopHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, HopUpdate, srvName)
 	if err != nil {
@@ -237,7 +237,7 @@ func startUpdateHopHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(HopUpdate)
 }
 
-func updateHopHandler(ctx telebot.IContext) error {
+func updateHopHandler(ctx telebot.Context) error {
 	var (
 		data config.HopConfig
 	)
@@ -291,7 +291,7 @@ func updateHopHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelHopHandler(ctx telebot.IContext) error {
+func cancelHopHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 跳跃点 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

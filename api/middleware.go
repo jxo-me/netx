@@ -23,11 +23,11 @@ func mwLogger() ghttp.HandlerFunc {
 			"kind":     "api",
 			"method":   r.Request.Method,
 			"uri":      r.Request.RequestURI,
-			"code":     r.Response.Writer.Status,
+			"code":     r.Response.Status,
 			"client":   r.GetClientIp(),
 			"duration": duration,
 		}).Infof("| %3d | %13v | %15s | %-7s %s",
-			r.Response.Writer.Status, duration, r.GetClientIp(), r.Request.Method, r.Request.RequestURI)
+			r.Response.Status, duration, r.GetClientIp(), r.Request.Method, r.Request.RequestURI)
 
 	}
 }

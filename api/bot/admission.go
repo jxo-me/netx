@@ -26,7 +26,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickAdmissions(c telebot.IContext) error {
+func (h *hEvent) OnClickAdmissions(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -55,7 +55,7 @@ func (h *hEvent) OnClickAdmissions(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailAdmission(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailAdmission(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -90,7 +90,7 @@ func (h *hEvent) OnClickDetailAdmission(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelAdmission(c telebot.IContext) error {
+func (h *hEvent) OnClickDelAdmission(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.AdmissionRegistry().Get(serviceName)
 	if svc == nil {
@@ -144,7 +144,7 @@ func UpdateAdmissionConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddAdmissionHandler(ctx telebot.IContext) error {
+func startAddAdmissionHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, AdmissionExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 准入控制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -155,7 +155,7 @@ func startAddAdmissionHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(AdmissionAdd)
 }
 
-func addAdmissionHandler(ctx telebot.IContext) error {
+func addAdmissionHandler(ctx telebot.Context) error {
 	var (
 		data config.AdmissionConfig
 	)
@@ -181,7 +181,7 @@ func addAdmissionHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateAdmissionHandler(ctx telebot.IContext) error {
+func startUpdateAdmissionHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, AdmissionUpdate, srvName)
 	if err != nil {
@@ -197,7 +197,7 @@ func startUpdateAdmissionHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(AdmissionUpdate)
 }
 
-func updateAdmissionHandler(ctx telebot.IContext) error {
+func updateAdmissionHandler(ctx telebot.Context) error {
 	var (
 		data config.AdmissionConfig
 	)
@@ -249,7 +249,7 @@ func updateAdmissionHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelAdmissionHandler(ctx telebot.IContext) error {
+func cancelAdmissionHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 准入控制器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

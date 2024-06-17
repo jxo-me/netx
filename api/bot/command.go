@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
+func (h *hEvent) OnParsingCommand(c telebot.Context) error {
 	var (
 		services stringList
 		nodes    stringList
@@ -42,7 +42,7 @@ func (h *hEvent) OnParsingCommand(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnStartCommand(c telebot.IContext) error {
+func (h *hEvent) OnStartCommand(c telebot.Context) error {
 	payload := c.Message().Text
 	user := c.Message().Sender
 	str := strings.Split(payload, " ")
@@ -53,7 +53,7 @@ func (h *hEvent) OnStartCommand(c telebot.IContext) error {
 	return c.Send(fmt.Sprintf("欢迎 %s 加入 参数:%s", user.Username, token))
 }
 
-func (h *hEvent) OnGostCommand(c telebot.IContext) error {
+func (h *hEvent) OnGostCommand(c telebot.Context) error {
 	var (
 		services stringList
 		nodes    stringList

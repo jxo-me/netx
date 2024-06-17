@@ -41,7 +41,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickResolvers(c telebot.IContext) error {
+func (h *hEvent) OnClickResolvers(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -70,7 +70,7 @@ func (h *hEvent) OnClickResolvers(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailResolver(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailResolver(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -105,7 +105,7 @@ func (h *hEvent) OnClickDetailResolver(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelResolver(c telebot.IContext) error {
+func (h *hEvent) OnClickDelResolver(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.ResolverRegistry().Get(serviceName)
 	if svc == nil {
@@ -159,7 +159,7 @@ func UpdateResolverConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddResolverHandler(ctx telebot.IContext) error {
+func startAddResolverHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, ResolverExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 域名解析器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -170,7 +170,7 @@ func startAddResolverHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ResolverAdd)
 }
 
-func addResolverHandler(ctx telebot.IContext) error {
+func addResolverHandler(ctx telebot.Context) error {
 	var (
 		data config.ResolverConfig
 	)
@@ -199,7 +199,7 @@ func addResolverHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateResolverHandler(ctx telebot.IContext) error {
+func startUpdateResolverHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, ResolverUpdate, srvName)
 	if err != nil {
@@ -215,7 +215,7 @@ func startUpdateResolverHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ResolverUpdate)
 }
 
-func updateResolverHandler(ctx telebot.IContext) error {
+func updateResolverHandler(ctx telebot.Context) error {
 	var (
 		data config.ResolverConfig
 	)
@@ -269,7 +269,7 @@ func updateResolverHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelResolverHandler(ctx telebot.IContext) error {
+func cancelResolverHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 域名解析器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

@@ -58,9 +58,10 @@ require (
 	github.com/onsi/ginkgo/v2 v2.12.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
-	github.com/pion/dtls/v2 v2.2.8 // indirect
+	github.com/pion/dtls/v2 v2.2.6 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport/v2 v2.2.4 // indirect
+	github.com/pion/udp/v2 v2.0.1 // indirect
 	github.com/pires/go-proxyproto v0.7.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect

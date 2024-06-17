@@ -27,7 +27,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickBypasses(c telebot.IContext) error {
+func (h *hEvent) OnClickBypasses(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -56,7 +56,7 @@ func (h *hEvent) OnClickBypasses(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailBypass(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailBypass(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -91,7 +91,7 @@ func (h *hEvent) OnClickDetailBypass(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelBypass(c telebot.IContext) error {
+func (h *hEvent) OnClickDelBypass(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.BypassRegistry().Get(serviceName)
 	if svc == nil {
@@ -145,7 +145,7 @@ func UpdateBypassConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddBypassHandler(ctx telebot.IContext) error {
+func startAddBypassHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, BypassExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 分流器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -156,7 +156,7 @@ func startAddBypassHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(BypassAdd)
 }
 
-func addBypassHandler(ctx telebot.IContext) error {
+func addBypassHandler(ctx telebot.Context) error {
 	var (
 		data config.BypassConfig
 	)
@@ -182,7 +182,7 @@ func addBypassHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateBypassHandler(ctx telebot.IContext) error {
+func startUpdateBypassHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, BypassUpdate, srvName)
 	if err != nil {
@@ -198,7 +198,7 @@ func startUpdateBypassHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(BypassUpdate)
 }
 
-func updateBypassHandler(ctx telebot.IContext) error {
+func updateBypassHandler(ctx telebot.Context) error {
 	var (
 		data config.BypassConfig
 	)
@@ -250,7 +250,7 @@ func updateBypassHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelBypassHandler(ctx telebot.IContext) error {
+func cancelBypassHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 分流器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

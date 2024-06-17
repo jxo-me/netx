@@ -42,7 +42,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickHosts(c telebot.IContext) error {
+func (h *hEvent) OnClickHosts(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -71,7 +71,7 @@ func (h *hEvent) OnClickHosts(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailHosts(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailHosts(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -106,7 +106,7 @@ func (h *hEvent) OnClickDetailHosts(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelHosts(c telebot.IContext) error {
+func (h *hEvent) OnClickDelHosts(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.HostsRegistry().Get(serviceName)
 	if svc == nil {
@@ -160,7 +160,7 @@ func UpdateHostsConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddHostHandler(ctx telebot.IContext) error {
+func startAddHostHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, HostsExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 主机映射器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -171,7 +171,7 @@ func startAddHostHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(HostAdd)
 }
 
-func addHostHandler(ctx telebot.IContext) error {
+func addHostHandler(ctx telebot.Context) error {
 	var (
 		data config.HostsConfig
 	)
@@ -197,7 +197,7 @@ func addHostHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateHostHandler(ctx telebot.IContext) error {
+func startUpdateHostHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, HostUpdate, srvName)
 	if err != nil {
@@ -213,7 +213,7 @@ func startUpdateHostHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(HostUpdate)
 }
 
-func updateHostHandler(ctx telebot.IContext) error {
+func updateHostHandler(ctx telebot.Context) error {
 	var (
 		data config.HostsConfig
 	)
@@ -265,7 +265,7 @@ func updateHostHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelHostHandler(ctx telebot.IContext) error {
+func cancelHostHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 主机映射器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

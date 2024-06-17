@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (h *hEvent) OnClickConfig(c telebot.IContext) error {
+func (h *hEvent) OnClickConfig(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -33,7 +33,7 @@ func (h *hEvent) OnClickConfig(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickSaveConfig(c telebot.IContext) error {
+func (h *hEvent) OnClickSaveConfig(c telebot.Context) error {
 	t := time.Now().Format(time.DateOnly)
 	file := fmt.Sprintf("./gost_%s.json", t)
 	f, err := os.Create(file)

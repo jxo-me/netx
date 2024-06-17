@@ -31,7 +31,7 @@ func AddNodeConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func nodeStartHandler(ctx telebot.IContext) error {
+func nodeStartHandler(ctx telebot.Context) error {
 	err := ctx.Reply(fmt.Sprintf("你好, @%s.\n请输入新增节点名称?\n您可以随时键入 /cancel 来取消该过程。", ctx.Sender().Username), &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send start message: %w", err)
@@ -42,7 +42,7 @@ func nodeStartHandler(ctx telebot.IContext) error {
 }
 
 // cancelNodeHandler cancels the conversation.
-func cancelNodeHandler(ctx telebot.IContext) error {
+func cancelNodeHandler(ctx telebot.Context) error {
 	err := ctx.Reply("命令 AddNode 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
@@ -52,7 +52,7 @@ func cancelNodeHandler(ctx telebot.IContext) error {
 }
 
 // nodeNameHandler gets the user's nodeNameHandler
-func nodeNameHandler(ctx telebot.IContext) error {
+func nodeNameHandler(ctx telebot.Context) error {
 	inputName := ctx.Message().Text
 	err := ctx.Reply(fmt.Sprintf("新增机器人名称:%s!\n\n 请输入机器人Token?", html.EscapeString(inputName)), &telebot.SendOptions{})
 	if err != nil {
@@ -65,7 +65,7 @@ func nodeNameHandler(ctx telebot.IContext) error {
 }
 
 // nodeTokenHandler gets the user's nodeTokenHandler
-func nodeTokenHandler(ctx telebot.IContext) error {
+func nodeTokenHandler(ctx telebot.Context) error {
 	inputToken := ctx.Message().Text
 	if len(inputToken) != 46 {
 		// If the number is not valid, try again!
@@ -82,7 +82,7 @@ func nodeTokenHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(NODEDOMAIN)
 }
 
-func nodeDomainHandler(ctx telebot.IContext) error {
+func nodeDomainHandler(ctx telebot.Context) error {
 	inputDomain := ctx.Message().Text
 	nodeName := ""
 	nodeToken := ""

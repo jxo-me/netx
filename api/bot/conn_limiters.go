@@ -27,7 +27,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickConnLimiters(c telebot.IContext) error {
+func (h *hEvent) OnClickConnLimiters(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -56,7 +56,7 @@ func (h *hEvent) OnClickConnLimiters(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailConnLimiter(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailConnLimiter(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -91,7 +91,7 @@ func (h *hEvent) OnClickDetailConnLimiter(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelConnLimiter(c telebot.IContext) error {
+func (h *hEvent) OnClickDelConnLimiter(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.ConnLimiterRegistry().Get(serviceName)
 	if svc == nil {
@@ -145,7 +145,7 @@ func UpdateConnLimiterConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddConnLimiterHandler(ctx telebot.IContext) error {
+func startAddConnLimiterHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, CLimiterExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 并发限制器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -156,7 +156,7 @@ func startAddConnLimiterHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ConnLimiterAdd)
 }
 
-func addConnLimiterHandler(ctx telebot.IContext) error {
+func addConnLimiterHandler(ctx telebot.Context) error {
 	var (
 		data config.LimiterConfig
 	)
@@ -182,7 +182,7 @@ func addConnLimiterHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateConnLimiterHandler(ctx telebot.IContext) error {
+func startUpdateConnLimiterHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, ConnLimiterUpdate, srvName)
 	if err != nil {
@@ -198,7 +198,7 @@ func startUpdateConnLimiterHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(ConnLimiterUpdate)
 }
 
-func updateConnLimiterHandler(ctx telebot.IContext) error {
+func updateConnLimiterHandler(ctx telebot.Context) error {
 	var (
 		data config.LimiterConfig
 	)
@@ -250,7 +250,7 @@ func updateConnLimiterHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelConnLimiterHandler(ctx telebot.IContext) error {
+func cancelConnLimiterHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 并发连接数限制器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)

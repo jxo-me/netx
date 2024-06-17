@@ -27,7 +27,7 @@ const (
 `
 )
 
-func (h *hEvent) OnClickAuthers(c telebot.IContext) error {
+func (h *hEvent) OnClickAuthers(c telebot.Context) error {
 	var (
 		msg string
 	)
@@ -56,7 +56,7 @@ func (h *hEvent) OnClickAuthers(c telebot.IContext) error {
 	return c.Reply(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDetailAuther(c telebot.IContext) error {
+func (h *hEvent) OnClickDetailAuther(c telebot.Context) error {
 	var (
 		msg string
 		str string
@@ -91,7 +91,7 @@ func (h *hEvent) OnClickDetailAuther(c telebot.IContext) error {
 	return c.Edit(msg, &telebot.SendOptions{ReplyMarkup: selector, ParseMode: telebot.ModeMarkdownV2})
 }
 
-func (h *hEvent) OnClickDelAuther(c telebot.IContext) error {
+func (h *hEvent) OnClickDelAuther(c telebot.Context) error {
 	serviceName := c.Callback().Data
 	svc := app.Runtime.AutherRegistry().Get(serviceName)
 	if svc == nil {
@@ -145,7 +145,7 @@ func UpdateAutherConversation(entry, cancel string) handlers.Conversation {
 	)
 }
 
-func startAddAutherHandler(ctx telebot.IContext) error {
+func startAddAutherHandler(ctx telebot.Context) error {
 	example := fmt.Sprintf(CodeTpl, CodeStart, AutherExampleJson, CodeEnd)
 	err := ctx.Send(fmt.Sprintf("请输入 认证器 配置?\nExample：%s\n您可以随时键入 /cancel 来取消该操作。", example), &telebot.SendOptions{ParseMode: telebot.ModeMarkdownV2})
 	if err != nil {
@@ -156,7 +156,7 @@ func startAddAutherHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(AutherAdd)
 }
 
-func addAutherHandler(ctx telebot.IContext) error {
+func addAutherHandler(ctx telebot.Context) error {
 	var (
 		data config.AutherConfig
 	)
@@ -182,7 +182,7 @@ func addAutherHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func startUpdateAutherHandler(ctx telebot.IContext) error {
+func startUpdateAutherHandler(ctx telebot.Context) error {
 	srvName := ctx.Callback().Data
 	err := ctx.Bot().Store().UpdateData(ctx, AutherUpdate, srvName)
 	if err != nil {
@@ -198,7 +198,7 @@ func startUpdateAutherHandler(ctx telebot.IContext) error {
 	return handlers.NextConversationState(AutherUpdate)
 }
 
-func updateAutherHandler(ctx telebot.IContext) error {
+func updateAutherHandler(ctx telebot.Context) error {
 	var (
 		data config.AutherConfig
 	)
@@ -250,7 +250,7 @@ func updateAutherHandler(ctx telebot.IContext) error {
 	return handlers.EndConversation()
 }
 
-func cancelAutherHandler(ctx telebot.IContext) error {
+func cancelAutherHandler(ctx telebot.Context) error {
 	err := ctx.Reply("添加 认证器 已被取消。 还有什么我可以为你做的吗？", &telebot.SendOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to send cancelHandler message: %w", err)
