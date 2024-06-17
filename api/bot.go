@@ -24,10 +24,9 @@ func NewBot(ctx context.Context, domain, token, pathPrefix string) (*api.TGBot, 
 
 	// "5548720536:AAFY-wb4ir22eF5vRMQXft_sj-RDhaB54EQ"
 	pref := telebot.Settings{
-		Token:        token,
-		Poller:       hook,
-		Hook:         hook,
-		StateStorage: telebot.NewInMemoryStorage(telebot.KeyStrategySenderAndChat),
+		Token:  token,
+		Poller: hook,
+		Hook:   hook,
 	}
 
 	b, err := telebot.NewBot(pref)
