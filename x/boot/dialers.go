@@ -27,6 +27,7 @@ import (
 	dialerTls "github.com/jxo-me/netx/x/dialer/tls"
 	dialerUdp "github.com/jxo-me/netx/x/dialer/udp"
 	dialerUnix "github.com/jxo-me/netx/x/dialer/unix"
+	"github.com/jxo-me/netx/x/dialer/wg"
 	"github.com/jxo-me/netx/x/dialer/ws"
 )
 
@@ -60,6 +61,7 @@ var Dialers = map[string]dialer.NewDialer{
 	consts.Tls:     dialerTls.NewDialer,
 	consts.Udp:     dialerUdp.NewDialer,
 	consts.Unix:    dialerUnix.NewDialer,
+	consts.Wg:      wg.NewDialer,
 	consts.Ws:      ws.NewDialer,
 	consts.Wss:     ws.NewTLSDialer,
 }

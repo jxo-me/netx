@@ -143,6 +143,7 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 	tr := chain.NewTransport(d, cr,
 		chain.AddrTransportOption(cfg.Addr),
 		chain.InterfaceTransportOption(cfg.Interface),
+		chain.NetnsTransportOption(cfg.Netns),
 		chain.SockOptsTransportOption(sockOpts),
 		chain.TimeoutTransportOption(10*time.Second),
 	)

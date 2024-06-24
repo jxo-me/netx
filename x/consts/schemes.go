@@ -44,6 +44,7 @@ const (
 	Tunnel  = "tunnel"
 	Tls     = "tls"
 	Udp     = "udp"
+	Wg      = "wg"
 	Ws      = "ws"
 	Wss     = "wss"
 

@@ -2,17 +2,6 @@ package config
 
 import "time"
 
-type LoggerConfig struct {
-	Name string     `json:"name"`
-	Log  *LogConfig `yaml:",omitempty" json:"log,omitempty"`
-}
-
-type TLSOptions struct {
-	MinVersion   string   `yaml:"minVersion,omitempty" json:"minVersion,omitempty"`
-	MaxVersion   string   `yaml:"maxVersion,omitempty" json:"maxVersion,omitempty"`
-	CipherSuites []string `yaml:"cipherSuites,omitempty" json:"cipherSuites,omitempty"`
-}
-
 type LogConfig struct {
 	Output   string             `yaml:",omitempty" json:"output,omitempty"`
 	Level    string             `yaml:",omitempty" json:"level,omitempty"`
@@ -41,6 +30,11 @@ type LogRotationConfig struct {
 	// Compress determines if the rotated log files should be compressed
 	// using gzip. The default is not to perform compression.
 	Compress bool `yaml:"compress,omitempty" json:"compress,omitempty"`
+}
+
+type LoggerConfig struct {
+	Name string     `json:"name"`
+	Log  *LogConfig `yaml:",omitempty" json:"log,omitempty"`
 }
 
 type ProfilingConfig struct {
@@ -77,6 +71,12 @@ type TLSConfig struct {
 	Validity     time.Duration `yaml:",omitempty" json:"validity,omitempty"`
 	CommonName   string        `yaml:"commonName,omitempty" json:"commonName,omitempty"`
 	Organization string        `yaml:",omitempty" json:"organization,omitempty"`
+}
+
+type TLSOptions struct {
+	MinVersion   string   `yaml:"minVersion,omitempty" json:"minVersion,omitempty"`
+	MaxVersion   string   `yaml:"maxVersion,omitempty" json:"maxVersion,omitempty"`
+	CipherSuites []string `yaml:"cipherSuites,omitempty" json:"cipherSuites,omitempty"`
 }
 
 type PluginConfig struct {
@@ -443,6 +443,7 @@ type HopConfig struct {
 	Redis     *RedisLoader    `yaml:",omitempty" json:"redis,omitempty"`
 	HTTP      *HTTPLoader     `yaml:"http,omitempty" json:"http,omitempty"`
 	Plugin    *PluginConfig   `yaml:",omitempty" json:"plugin,omitempty"`
+	Metadata  map[string]any  `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
 type NodeConfig struct {
@@ -456,6 +457,7 @@ type NodeConfig struct {
 	Connector *ConnectorConfig  `yaml:",omitempty" json:"connector,omitempty"`
 	Dialer    *DialerConfig     `yaml:",omitempty" json:"dialer,omitempty"`
 	Interface string            `yaml:",omitempty" json:"interface,omitempty"`
+	Netns     string            `yaml:",omitempty" json:"netns,omitempty"`
 	SockOpts  *SockOptsConfig   `yaml:"sockopts,omitempty" json:"sockopts,omitempty"`
 	Filter    *NodeFilterConfig `yaml:",omitempty" json:"filter,omitempty"`
 	HTTP      *HTTPNodeConfig   `yaml:",omitempty" json:"http,omitempty"`

@@ -8,7 +8,9 @@ import (
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
+	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/x/config"
+	"github.com/jxo-me/netx/x/config/parsing"
 	bypass_parser "github.com/jxo-me/netx/x/config/parsing/bypass"
 	node_parser "github.com/jxo-me/netx/x/config/parsing/node"
 	selector_parser "github.com/jxo-me/netx/x/config/parsing/selector"
@@ -16,6 +18,7 @@ import (
 	hopplugin "github.com/jxo-me/netx/x/hop/plugin"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
+	"github.com/jxo-me/netx/x/metadata"
 )
 
 func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
@@ -47,6 +50,16 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 		}
 	}
 
+	ifce := cfg.Interface
+	var netns string
+	if cfg.Metadata != nil {
+		md := metadata.NewMetadata(cfg.Metadata)
+		if v := mdutil.GetString(md, parsing.MDKeyInterface); v != "" {
+			ifce = v
+		}
+		netns = mdutil.GetString(md, "netns")
+	}
+
 	var nodes []*chain.Node
 	for _, v := range cfg.Nodes {
 		if v == nil {
@@ -60,8 +73,12 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 			v.Hosts = cfg.Hosts
 		}
 		if v.Interface == "" {
-			v.Interface = cfg.Interface
+			v.Interface = ifce
 		}
+		if v.Netns == "" {
+			v.Netns = netns
+		}
+
 		if v.SockOpts == nil {
 			v.SockOpts = cfg.SockOpts
 		}

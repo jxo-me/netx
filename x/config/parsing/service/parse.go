@@ -29,6 +29,8 @@ import (
 	"github.com/jxo-me/netx/x/metadata"
 	xservice "github.com/jxo-me/netx/x/service"
 	"github.com/jxo-me/netx/x/stats"
+	"github.com/vishvananda/netns"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -103,6 +105,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	var ignoreChain bool
 	var pStats *stats.Stats
 	var observePeriod time.Duration
+	var netnsIn, netnsOut string
 	if cfg.Metadata != nil {
 		md := metadata.NewMetadata(cfg.Metadata)
 		ppv = mdutil.GetInt(md, parsing.MDKeyProxyProtocol)
@@ -124,6 +127,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 			pStats = &stats.Stats{}
 		}
 		observePeriod = mdutil.GetDuration(md, "observePeriod")
+		netnsIn = mdutil.GetString(md, "netns")
+		netnsOut = mdutil.GetString(md, "netns.out")
 	}
 
 	listenOpts := []listener.Option{
@@ -143,6 +148,27 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		listenOpts = append(listenOpts,
 			listener.ChainOption(chainGroup(cfg.Listener.Chain, cfg.Listener.ChainGroup)),
 		)
+	}
+
+	if netnsIn != "" {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
+		originNs, err := netns.Get()
+		if err != nil {
+			return nil, fmt.Errorf("netns.Get(): %v", err)
+		}
+		defer netns.Set(originNs)
+
+		ns, err := netns.GetFromName(netnsIn)
+		if err != nil {
+			return nil, fmt.Errorf("netns.GetFromName(%s): %v", netnsIn, err)
+		}
+		defer ns.Close()
+
+		if err := netns.Set(ns); err != nil {
+			return nil, fmt.Errorf("netns.Set(%s): %v", netnsIn, err)
+		}
 	}
 
 	var ln listener.IListener
@@ -208,6 +234,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		chain.RetriesRouterOption(cfg.Handler.Retries),
 		// chain.TimeoutRouterOption(10*time.Second),
 		chain.InterfaceRouterOption(ifce),
+		chain.NetnsRouterOption(netnsOut),
 		chain.SockOptsRouterOption(sockOpts),
 		chain.ResolverRouterOption(app.Runtime.ResolverRegistry().Get(cfg.Resolver)),
 		chain.HostMapperRouterOption(app.Runtime.HostsRegistry().Get(cfg.Hosts)),
