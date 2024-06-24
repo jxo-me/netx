@@ -7,8 +7,8 @@ toolchain go1.22.0
 require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/api v0.0.7
-	github.com/jxo-me/netx/core v0.0.7
-	github.com/jxo-me/netx/x v0.0.11
+	github.com/jxo-me/netx/core v0.0.9
+	github.com/jxo-me/netx/x v0.0.13
 )
 
 require (
@@ -41,7 +41,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jxo-me/gfbot v0.1.17 // indirect
 	github.com/jxo-me/netx/gosocks4 v0.0.1 // indirect
-	github.com/jxo-me/netx/gosocks5 v0.0.1 // indirect
+	github.com/jxo-me/netx/gosocks5 v0.0.2 // indirect
 	github.com/jxo-me/netx/plugin v0.0.6 // indirect
 	github.com/jxo-me/netx/relay v0.0.2 // indirect
 	github.com/jxo-me/netx/tls-dissector v0.0.1 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.2 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/vishvananda/netlink v1.1.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
+	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.8 // indirect
 	github.com/xtaci/smux v1.5.24 // indirect
 	github.com/xtaci/tcpraw v1.2.25 // indirect
