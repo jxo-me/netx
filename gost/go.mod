@@ -7,8 +7,8 @@ toolchain go1.22.0
 require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/api v0.0.7
-	github.com/jxo-me/netx/core v0.0.9
-	github.com/jxo-me/netx/x v0.0.13
+	github.com/jxo-me/netx/core v0.0.10
+	github.com/jxo-me/netx/x v0.0.14
 )
 
 require (
