@@ -3,7 +3,7 @@ package wg
 import (
 	"time"
 
-	md "github.com/go-gost/core/metadata"
+	md "github.com/jxo-me/netx/core/metadata"
 )
 
 const (
@@ -18,6 +18,6 @@ type metadata struct {
 	dialTimeout time.Duration
 }
 
-func (d *wgDialer) parseMetadata(md md.Metadata) (err error) {
+func (d *wgDialer) parseMetadata(md md.IMetaData) (err error) {
 	return
 }
