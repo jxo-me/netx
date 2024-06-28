@@ -201,7 +201,6 @@ func (r *Router) dial(ctx context.Context, network, address string) (conn net.Co
 			NetnsDialOption(r.options.Netns),
 			SockOptsDialOption(r.options.SockOpts),
 			LoggerDialOption(r.options.Logger),
-			TimeoutDialOption(r.options.Timeout),
 		)
 		if err == nil {
 			break
