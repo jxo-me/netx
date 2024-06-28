@@ -4,6 +4,15 @@ go 1.22
 
 toolchain go1.22.0
 
+replace (
+	github.com/jxo-me/netx/core => ../core
+	github.com/jxo-me/netx/gosocks4 => ../gosocks4
+	github.com/jxo-me/netx/gosocks5 => ../gosocks5
+	github.com/jxo-me/netx/plugin => ../plugin
+	github.com/jxo-me/netx/relay => ../relay
+	github.com/jxo-me/netx/tls-dissector => ../tls-dissector
+)
+
 require (
 	github.com/judwhite/go-svc v1.2.1
 	github.com/jxo-me/netx/api v0.0.7

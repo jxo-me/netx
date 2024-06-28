@@ -6,7 +6,6 @@ import (
 	"net"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
@@ -145,7 +144,6 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		chain.InterfaceTransportOption(cfg.Interface),
 		chain.NetnsTransportOption(cfg.Netns),
 		chain.SockOptsTransportOption(sockOpts),
-		chain.TimeoutTransportOption(10*time.Second),
 	)
 
 	opts := []chain.NodeOption{
@@ -175,6 +173,7 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		}
 		opts = append(opts, chain.NodeFilterOption(settings))
 	}
+
 	if cfg.HTTP != nil {
 		settings := &chain.HTTPNodeSettings{
 			Host:   cfg.HTTP.Host,

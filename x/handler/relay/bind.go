@@ -10,6 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
@@ -50,7 +51,10 @@ func (h *relayHandler) bindTCP(ctx context.Context, conn net.Conn, network, addr
 		Status:  relay.StatusOK,
 	}
 
-	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
+	lc := xnet.ListenConfig{
+		Netns: h.options.Netns,
+	}
+	ln, err := lc.Listen(ctx, network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		log.Error(err)
 		resp.Status = relay.StatusServiceUnavailable
@@ -129,10 +133,10 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 		Status:  relay.StatusOK,
 	}
 
-	var pc net.PacketConn
-	var err error
-	bindAddr, _ := net.ResolveUDPAddr(network, address)
-	pc, err = net.ListenUDP(network, bindAddr)
+	lc := xnet.ListenConfig{
+		Netns: h.options.Netns,
+	}
+	pc, err := lc.ListenPacket(ctx, network, address)
 	if err != nil {
 		log.Error(err)
 		return err

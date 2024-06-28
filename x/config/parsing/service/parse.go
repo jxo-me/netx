@@ -62,17 +62,13 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		"handler":  cfg.Handler.Type,
 	})
 
-	listenerLogger := serviceLogger.WithFields(map[string]any{
-		"kind": "listener",
-	})
-
 	tlsCfg := cfg.Listener.TLS
 	if tlsCfg == nil {
 		tlsCfg = &config.TLSConfig{}
 	}
 	tlsConfig, err := tls_util.LoadServerConfig(tlsCfg)
 	if err != nil {
-		listenerLogger.Error(err)
+		serviceLogger.Error(err)
 		return nil, err
 	}
 	if tlsConfig == nil {
@@ -106,6 +102,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	var pStats *stats.Stats
 	var observePeriod time.Duration
 	var netnsIn, netnsOut string
+	var dialTimeout time.Duration
 	if cfg.Metadata != nil {
 		md := metadata.NewMetadata(cfg.Metadata)
 		ppv = mdutil.GetInt(md, parsing.MDKeyProxyProtocol)
@@ -129,25 +126,42 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		observePeriod = mdutil.GetDuration(md, "observePeriod")
 		netnsIn = mdutil.GetString(md, "netns")
 		netnsOut = mdutil.GetString(md, "netns.out")
+		dialTimeout = mdutil.GetDuration(md, "dialTimeout")
+	}
+
+	listenerLogger := serviceLogger.WithFields(map[string]any{
+		"kind": "listener",
+	})
+
+	routerOpts := []chain.RouterOption{
+		chain.TimeoutRouterOption(dialTimeout),
+		chain.InterfaceRouterOption(ifce),
+		chain.NetnsRouterOption(netnsOut),
+		chain.SockOptsRouterOption(sockOpts),
+		chain.ResolverRouterOption(app.Runtime.ResolverRegistry().Get(cfg.Resolver)),
+		chain.HostMapperRouterOption(app.Runtime.HostsRegistry().Get(cfg.Hosts)),
+		chain.LoggerRouterOption(listenerLogger),
+	}
+	if !ignoreChain {
+		routerOpts = append(routerOpts,
+			chain.ChainRouterOption(chainGroup(cfg.Listener.Chain, cfg.Listener.ChainGroup)),
+		)
 	}
 
 	listenOpts := []listener.Option{
 		listener.AddrOption(cfg.Addr),
+		listener.RouterOption(chain.NewRouter(routerOpts...)),
 		listener.AutherOption(auther),
 		listener.AuthOption(auth_parser.Info(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
 		listener.AdmissionOption(admission.AdmissionGroup(admissions...)),
 		listener.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Limiter)),
 		listener.ConnLimiterOption(app.Runtime.ConnLimiterRegistry().Get(cfg.CLimiter)),
-		listener.LoggerOption(listenerLogger),
 		listener.ServiceOption(cfg.Name),
 		listener.ProxyProtocolOption(ppv),
 		listener.StatsOption(pStats),
-	}
-	if !ignoreChain {
-		listenOpts = append(listenOpts,
-			listener.ChainOption(chainGroup(cfg.Listener.Chain, cfg.Listener.ChainGroup)),
-		)
+		listener.NetnsOption(netnsIn),
+		listener.LoggerOption(listenerLogger),
 	}
 
 	if netnsIn != "" {
@@ -230,9 +244,9 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		})
 	}
 
-	routerOpts := []chain.RouterOption{
+	routerOpts = []chain.RouterOption{
 		chain.RetriesRouterOption(cfg.Handler.Retries),
-		// chain.TimeoutRouterOption(10*time.Second),
+		chain.TimeoutRouterOption(dialTimeout),
 		chain.InterfaceRouterOption(ifce),
 		chain.NetnsRouterOption(netnsOut),
 		chain.SockOptsRouterOption(sockOpts),
@@ -246,12 +260,11 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 			chain.ChainRouterOption(chainGroup(cfg.Handler.Chain, cfg.Handler.ChainGroup)),
 		)
 	}
-	router := chain.NewRouter(routerOpts...)
 
 	var h handler.IHandler
 	if rf := app.Runtime.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
 		h = rf(
-			handler.RouterOption(router),
+			handler.RouterOption(chain.NewRouter(routerOpts...)),
 			handler.AutherOption(auther),
 			handler.AuthOption(auth_parser.Info(cfg.Handler.Auth)),
 			handler.BypassOption(bypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
@@ -261,6 +274,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 			handler.ObserverOption(app.Runtime.ObserverRegistry().Get(cfg.Handler.Observer)),
 			handler.LoggerOption(handlerLogger),
 			handler.ServiceOption(cfg.Name),
+			handler.NetnsOption(netnsIn),
 		)
 	} else {
 		return nil, fmt.Errorf("unknown handler: %s", cfg.Handler.Type)

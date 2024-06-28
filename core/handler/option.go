@@ -25,6 +25,7 @@ type Options struct {
 	Logger      logger.ILogger
 	Observer    observer.IObserver
 	Service     string
+	Netns       string
 }
 
 type Option func(opts *Options)
@@ -86,6 +87,12 @@ func ObserverOption(observer observer.IObserver) Option {
 func ServiceOption(service string) Option {
 	return func(opts *Options) {
 		opts.Service = service
+	}
+}
+
+func NetnsOption(netns string) Option {
+	return func(opts *Options) {
+		opts.Netns = netns
 	}
 }
 

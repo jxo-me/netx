@@ -8,7 +8,7 @@ import (
 
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 )
 
@@ -31,7 +31,10 @@ func (h *socks5Handler) handleMuxBind(ctx context.Context, conn net.Conn, networ
 }
 
 func (h *socks5Handler) muxBindLocal(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
-	ln, err := net.Listen(network, address) // strict mode: if the port already in use, it will return error
+	lc := xnet.ListenConfig{
+		Netns: h.options.Netns,
+	}
+	ln, err := lc.Listen(ctx, network, address) // strict mode: if the port already in use, it will return error
 	if err != nil {
 		log.Error(err)
 		reply := gosocks5.NewReply(gosocks5.Failure, nil)
@@ -125,7 +128,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 
 			t := time.Now()
 			log.Debugf("%s <-> %s", c.LocalAddr(), c.RemoteAddr())
-			netpkg.Transport(sc, c)
+			xnet.Transport(sc, c)
 			log.WithFields(map[string]any{"duration": time.Since(t)}).
 				Debugf("%s >-< %s", c.LocalAddr(), c.RemoteAddr())
 		}(rc)
