@@ -6,6 +6,7 @@ toolchain go1.22.0
 
 replace (
 	github.com/jxo-me/netx/core => ../core
+	github.com/jxo-me/netx/x => ../x
 	github.com/jxo-me/netx/gosocks4 => ../gosocks4
 	github.com/jxo-me/netx/gosocks5 => ../gosocks5
 	github.com/jxo-me/netx/plugin => ../plugin
