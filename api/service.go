@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
-	telebot "github.com/jxo-me/gfbot"
 	"github.com/jxo-me/netx/api/bot"
 	"github.com/jxo-me/netx/api/handler"
 	"github.com/jxo-me/netx/core/api"
@@ -111,10 +110,10 @@ func apiService(ln net.Listener, options options, b *api.TGBot) (s *ghttp.Server
 			if b.Bot != nil {
 				// bot routers
 				for key, handlerFunc := range bot.Router().List {
-					b.Bot.Handle(key, handlerFunc.(telebot.HandlerFunc))
+					b.Bot.Handle(key, handlerFunc)
 				}
 				for key, handlerFunc := range bot.Router().Btns {
-					b.Bot.Handle(key, handlerFunc.(telebot.HandlerFunc))
+					b.Bot.Handle(key, handlerFunc)
 				}
 			}
 		}
