@@ -1,6 +1,8 @@
 module github.com/jxo-me/netx/gost
 
-go 1.20
+go 1.22
+
+toolchain go1.22.4
 
 replace (
 	github.com/jxo-me/netx/api => ../api
@@ -49,7 +51,7 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grokify/html-strip-tags-go v0.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/jxo-me/gfbot v0.1.18 // indirect
+	github.com/jxo-me/gfbot v0.1.19 // indirect
 	github.com/jxo-me/netx/gosocks4 v0.0.1 // indirect
 	github.com/jxo-me/netx/gosocks5 v0.0.2 // indirect
 	github.com/jxo-me/netx/plugin v0.0.6 // indirect
@@ -106,10 +108,10 @@ require (
 	github.com/xtaci/tcpraw v1.2.25 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	github.com/zalando/go-keyring v0.2.4 // indirect
-	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/metric v1.14.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.14.0 // indirect
-	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	go.opentelemetry.io/otel v1.24.0 // indirect
+	go.opentelemetry.io/otel/metric v1.24.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect

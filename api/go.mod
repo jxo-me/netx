@@ -1,10 +1,12 @@
 module github.com/jxo-me/netx/api
 
-go 1.20
+go 1.22
+
+toolchain go1.22.4
 
 require (
 	github.com/gogf/gf/v2 v2.7.2
-	github.com/jxo-me/gfbot v0.1.18
+	github.com/jxo-me/gfbot v0.1.19
 	github.com/jxo-me/netx/core v0.0.10
 	github.com/jxo-me/netx/x v0.0.14
 	gopkg.in/yaml.v3 v3.0.1
@@ -55,10 +57,10 @@ require (
 	github.com/vishvananda/netlink v1.1.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
-	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/metric v1.14.0 // indirect
+	go.opentelemetry.io/otel v1.24.0 // indirect
+	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.14.0 // indirect
-	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
