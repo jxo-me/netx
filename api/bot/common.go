@@ -27,11 +27,11 @@ import (
 	"strings"
 	"time"
 
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/limiter/conn"
 	"github.com/jxo-me/netx/x/limiter/traffic"
 	mdx "github.com/jxo-me/netx/x/metadata"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 var (
