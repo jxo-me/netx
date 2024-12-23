@@ -9,7 +9,7 @@ replace github.com/jxo-me/netx/x => ../x
 require (
 	github.com/gogf/gf/v2 v2.8.3
 	github.com/jxo-me/gfbot v0.1.19
-	github.com/jxo-me/netx/x v0.0.14
+	github.com/jxo-me/netx/x v0.0.16
 )
 
 require (
