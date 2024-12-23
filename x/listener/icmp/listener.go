@@ -40,7 +40,7 @@ func NewListener(opts ...listener.Option) listener.IListener {
 	}
 }
 
-func NewListener6(opts ...listener.Option) listener.Listener {
+func NewListener6(opts ...listener.Option) listener.IListener {
 	options := listener.Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -52,7 +52,7 @@ func NewListener6(opts ...listener.Option) listener.Listener {
 	}
 }
 
-func (l *icmpListener) Init(md md.Metadata) (err error) {
+func (l *icmpListener) Init(md md.IMetaData) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}

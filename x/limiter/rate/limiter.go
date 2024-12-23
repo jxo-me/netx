@@ -1,6 +1,7 @@
 package rate
 
 import (
+	"errors"
 	"sort"
 	"time"
 

@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/limiter/conn"
 	"github.com/jxo-me/netx/core/limiter/rate"
 	"github.com/jxo-me/netx/core/limiter/traffic"
@@ -32,7 +33,7 @@ type trafficLimiterWrapper struct {
 	r    *TrafficLimiterRegistry
 }
 
-func (w *trafficLimiterWrapper) In(ctx context.Context, key string, opts ...traffic.Option) traffic.ILimiter {
+func (w *trafficLimiterWrapper) In(ctx context.Context, key string, opts ...limiter.Option) traffic.ILimiter {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil
@@ -40,7 +41,7 @@ func (w *trafficLimiterWrapper) In(ctx context.Context, key string, opts ...traf
 	return v.In(ctx, key, opts...)
 }
 
-func (w *trafficLimiterWrapper) Out(ctx context.Context, key string, opts ...traffic.Option) traffic.ILimiter {
+func (w *trafficLimiterWrapper) Out(ctx context.Context, key string, opts ...limiter.Option) traffic.ILimiter {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil

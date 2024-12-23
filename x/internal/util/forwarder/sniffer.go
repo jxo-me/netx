@@ -50,10 +50,10 @@ type HandleOptions struct {
 
 	HTTPKeepalive  bool
 	Node           *chain.Node
-	Hop            hop.Hop
-	Bypass         bypass.Bypass
+	Hop            hop.IHop
+	Bypass         bypass.IBypass
 	RecorderObject *xrecorder.HandlerRecorderObject
-	Log            logger.Logger
+	Log            logger.ILogger
 }
 
 type HandleOption func(opts *HandleOptions)
@@ -76,13 +76,13 @@ func WithNode(node *chain.Node) HandleOption {
 	}
 }
 
-func WithHop(hop hop.Hop) HandleOption {
+func WithHop(hop hop.IHop) HandleOption {
 	return func(opts *HandleOptions) {
 		opts.Hop = hop
 	}
 }
 
-func WithBypass(bypass bypass.Bypass) HandleOption {
+func WithBypass(bypass bypass.IBypass) HandleOption {
 	return func(opts *HandleOptions) {
 		opts.Bypass = bypass
 	}
@@ -94,7 +94,7 @@ func WithRecorderObject(ro *xrecorder.HandlerRecorderObject) HandleOption {
 	}
 }
 
-func WithLog(log logger.Logger) HandleOption {
+func WithLog(log logger.ILogger) HandleOption {
 	return func(opts *HandleOptions) {
 		opts.Log = log
 	}
@@ -104,7 +104,7 @@ type Sniffer struct {
 	Websocket           bool
 	WebsocketSampleRate float64
 
-	Recorder        recorder.Recorder
+	Recorder        recorder.IRecorder
 	RecorderOptions *recorder.Options
 
 	// MITM TLS termination
@@ -112,7 +112,7 @@ type Sniffer struct {
 	PrivateKey         crypto.PrivateKey
 	NegotiatedProtocol string
 	CertPool           tls_util.CertPool
-	MitmBypass         bypass.Bypass
+	MitmBypass         bypass.IBypass
 
 	ReadTimeout time.Duration
 }
@@ -559,7 +559,7 @@ func upgradeType(h http.Header) string {
 	return h.Get("Upgrade")
 }
 
-func (h *Sniffer) handleUpgradeResponse(ctx context.Context, rw io.ReadWriter, cc io.ReadWriter, req *http.Request, res *http.Response, ro *xrecorder.HandlerRecorderObject, log logger.Logger) error {
+func (h *Sniffer) handleUpgradeResponse(ctx context.Context, rw io.ReadWriter, cc io.ReadWriter, req *http.Request, res *http.Response, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	reqUpType := upgradeType(req.Header)
 	resUpType := upgradeType(res.Header)
 	if !strings.EqualFold(reqUpType, resUpType) {
@@ -578,7 +578,7 @@ func (h *Sniffer) handleUpgradeResponse(ctx context.Context, rw io.ReadWriter, c
 	return xnet.Transport(rw, cc)
 }
 
-func (h *Sniffer) sniffingWebsocketFrame(ctx context.Context, rw, cc io.ReadWriter, ro *xrecorder.HandlerRecorderObject, log logger.Logger) error {
+func (h *Sniffer) sniffingWebsocketFrame(ctx context.Context, rw, cc io.ReadWriter, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	errc := make(chan error, 1)
 
 	sampleRate := h.WebsocketSampleRate
@@ -1027,10 +1027,10 @@ func (h *Sniffer) terminateTLS(ctx context.Context, conn, cc net.Conn, clientHel
 
 type h2Handler struct {
 	transport       http.RoundTripper
-	recorder        recorder.Recorder
+	recorder        recorder.IRecorder
 	recorderOptions *recorder.Options
 	recorderObject  *xrecorder.HandlerRecorderObject
-	log             logger.Logger
+	log             logger.ILogger
 }
 
 func (h *h2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

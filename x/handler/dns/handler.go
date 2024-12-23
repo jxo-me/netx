@@ -218,7 +218,7 @@ func (h *dnsHandler) checkRateLimit(addr net.Addr) bool {
 	return true
 }
 
-func (h *dnsHandler) request(ctx context.Context, msg []byte, ro *xrecorder.HandlerRecorderObject, log logger.Logger) ([]byte, error) {
+func (h *dnsHandler) request(ctx context.Context, msg []byte, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) ([]byte, error) {
 	mq := dns.Msg{}
 	if err := mq.Unpack(msg); err != nil {
 		log.Error(err)
@@ -344,7 +344,7 @@ func (h *dnsHandler) exchange(ctx context.Context, ex exchanger.Exchanger, mq *d
 }
 
 // lookup host mapper
-func (h *dnsHandler) lookupHosts(ctx context.Context, r *dns.Msg, log logger.Logger) (m *dns.Msg) {
+func (h *dnsHandler) lookupHosts(ctx context.Context, r *dns.Msg, log logger.ILogger) (m *dns.Msg) {
 	if h.hostMapper == nil ||
 		r.Question[0].Qclass != dns.ClassINET ||
 		(r.Question[0].Qtype != dns.TypeA && r.Question[0].Qtype != dns.TypeAAAA) {

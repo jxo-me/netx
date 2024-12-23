@@ -38,7 +38,7 @@ type metricService struct {
 	cclose chan struct{}
 }
 
-func NewService(network, addr string, opts ...Option) (service.Service, error) {
+func NewService(network, addr string, opts ...Option) (service.IService, error) {
 	if network == "" {
 		network = "tcp"
 	}

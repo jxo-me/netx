@@ -38,7 +38,7 @@ type socks4Handler struct {
 	md       metadata
 	options  handler.Options
 	stats    *stats_util.HandlerStats
-	limiter  traffic.TrafficLimiter
+	limiter  traffic.ITrafficLimiter
 	cancel   context.CancelFunc
 	recorder recorder.RecorderObject
 	certPool tls_util.CertPool
@@ -186,7 +186,7 @@ func (h *socks4Handler) Close() error {
 	return nil
 }
 
-func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, ro *xrecorder.HandlerRecorderObject, log logger.Logger) error {
+func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	addr := req.Addr.String()
 
 	log = log.WithFields(map[string]any{
