@@ -5,16 +5,18 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 type tcpListener struct {
@@ -61,7 +63,11 @@ func (l *tcpListener) Init(md md.IMetaData) (err error) {
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = stats.WrapListener(ln, l.options.Stats)
 	ln = admission.WrapListener(l.options.Admission, ln)
-	ln = limiter.WrapListener(l.options.TrafficLimiter, ln)
+	ln = limiter_wrapper.WrapListener(
+		l.options.Service,
+		ln,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+	)
 	ln = climiter.WrapListener(l.options.ConnLimiter, ln)
 	l.ln = ln
 
@@ -69,7 +75,22 @@ func (l *tcpListener) Init(md md.IMetaData) (err error) {
 }
 
 func (l *tcpListener) Accept() (conn net.Conn, err error) {
-	return l.ln.Accept()
+	conn, err = l.ln.Accept()
+	if err != nil {
+		return
+	}
+
+	conn = limiter_wrapper.WrapConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		conn.RemoteAddr().String(),
+		limiter.ScopeOption(limiter.ScopeConn),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+		limiter.SrcOption(conn.RemoteAddr().String()),
+	)
+
+	return
 }
 
 func (l *tcpListener) Addr() net.Addr {

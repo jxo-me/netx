@@ -4,8 +4,8 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/x/internal/util/mux"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 type metadata struct {

@@ -13,7 +13,7 @@ import (
 	"github.com/jxo-me/netx/gosocks4"
 	"github.com/jxo-me/netx/gosocks5"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 )
 
 type autoHandler struct {
@@ -97,7 +97,7 @@ func (h *autoHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 		return err
 	}
 
-	conn = netpkg.NewBufferReaderConn(conn, br)
+	conn = xnet.NewReadWriteConn(br, conn, conn)
 	switch b[0] {
 	case gosocks4.Ver4: // socks4
 		if h.socks4Handler != nil {

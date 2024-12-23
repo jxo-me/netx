@@ -4,22 +4,25 @@ import (
 	"context"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/jxo-me/netx/core/chain"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 type rudpListener struct {
 	laddr   net.Addr
 	ln      net.Listener
-	router  *chain.Router
 	closed  chan struct{}
 	logger  logger.ILogger
 	md      metadata
@@ -55,11 +58,6 @@ func (l *rudpListener) Init(md md.IMetaData) (err error) {
 		l.laddr = &bindAddr{addr: l.options.Addr}
 	}
 
-	l.router = l.options.Router
-	if l.router == nil {
-		l.router = chain.NewRouter(chain.LoggerRouterOption(l.logger))
-	}
-
 	return
 }
 
@@ -72,7 +70,7 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 
 	ln := l.getListener()
 	if ln == nil {
-		ln, err = l.router.Bind(
+		ln, err = l.options.Router.Bind(
 			context.Background(), "udp", l.laddr.String(),
 			chain.BacklogBindOption(l.md.backlog),
 			chain.UDPConnTTLBindOption(l.md.ttl),
@@ -82,6 +80,14 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 		if err != nil {
 			return nil, listener.NewAcceptError(err)
 		}
+
+		ln = limiter_wrapper.WrapListener(
+			l.options.Service,
+			ln,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		)
+		ln = climiter.WrapListener(l.options.ConnLimiter, ln)
+
 		l.setListener(ln)
 	}
 
@@ -103,7 +109,14 @@ func (l *rudpListener) Accept() (conn net.Conn, err error) {
 		uc := metrics.WrapUDPConn(l.options.Service, pc)
 		uc = stats.WrapUDPConn(uc, l.options.Stats)
 		uc = admission.WrapUDPConn(l.options.Admission, uc)
-		conn = limiter.WrapUDPConn(l.options.TrafficLimiter, uc)
+		conn = limiter_wrapper.WrapUDPConn(
+			uc,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			"",
+			limiter.ScopeOption(limiter.ScopeConn),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(conn.LocalAddr().Network()),
+		)
 	}
 
 	return

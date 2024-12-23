@@ -16,5 +16,3 @@ type IHandler interface {
 type IForwarder interface {
 	Forward(hop.IHop)
 }
-
-type NewHandler func(opts ...Option) IHandler

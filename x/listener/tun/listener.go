@@ -5,15 +5,17 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/router"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	mdx "github.com/jxo-me/netx/x/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 type tunListener struct {
@@ -88,7 +90,14 @@ func (l *tunListener) listenLoop() {
 			}
 			c = metrics.WrapConn(l.options.Service, c)
 			c = stats.WrapConn(c, l.options.Stats)
-			c = limiter.WrapConn(l.options.TrafficLimiter, c)
+			c = limiter_wrapper.WrapConn(
+				c,
+				limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+				c.RemoteAddr().String(),
+				limiter.ScopeOption(limiter.ScopeService),
+				limiter.ServiceOption(l.options.Service),
+				limiter.NetworkOption(c.LocalAddr().Network()),
+			)
 			c = withMetadata(mdx.NewMetadata(map[string]any{
 				"config": l.md.config,
 			}), c)

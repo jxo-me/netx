@@ -13,8 +13,6 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
 	"github.com/jxo-me/netx/x/internal/util/mux"
-	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 )
 
@@ -40,8 +38,6 @@ func (l *tcpListener) Init(md md.IMetaData) (err error) {
 	ln = proxyproto.WrapListener(l.options.ProxyProtocol, ln, 10*time.Second)
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = admission.WrapListener(l.options.Admission, ln)
-	ln = limiter.WrapListener(l.options.TrafficLimiter, ln)
-	ln = climiter.WrapListener(l.options.ConnLimiter, ln)
 	l.ln = ln
 
 	return

@@ -1,7 +1,9 @@
 package unix
 
 import (
+	"bufio"
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"net"
@@ -12,14 +14,23 @@ import (
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer/stats"
+	"github.com/jxo-me/netx/core/recorder"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	xio "github.com/jxo-me/netx/x/internal/io"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	"github.com/jxo-me/netx/x/internal/util/sniffing"
+	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 type unixHandler struct {
-	hop     hop.IHop
-	router  *chain.Router
-	md      metadata
-	options handler.Options
+	hop      hop.IHop
+	md       metadata
+	options  handler.Options
+	recorder recorder.RecorderObject
+	certPool tls_util.CertPool
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -38,9 +49,15 @@ func (h *unixHandler) Init(md md.IMetaData) (err error) {
 		return
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
+	}
+
+	if h.md.certificate != nil && h.md.privateKey != nil {
+		h.certPool = tls_util.NewMemoryCertPool()
 	}
 
 	return
@@ -51,36 +68,121 @@ func (h *unixHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
-func (h *unixHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *unixHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) (err error) {
 	defer conn.Close()
 
-	log := h.options.Logger
+	start := time.Now()
 
-	log = log.WithFields(map[string]any{
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		Network:    "unix",
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+	ro.ClientIP, _, _ = net.SplitHostPort(conn.RemoteAddr().String())
+
+	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
+	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+
+	pStats := stats.Stats{}
+	conn = stats_wrapper.WrapConn(conn, &pStats)
+
+	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.InputBytes = pStats.Get(stats.KindInputBytes)
+		ro.OutputBytes = pStats.Get(stats.KindOutputBytes)
+		ro.Duration = time.Since(start)
+		if err := ro.Record(ctx, h.recorder.Recorder); err != nil {
+			log.Errorf("record: %v", err)
+		}
+
+		log.WithFields(map[string]any{
+			"duration":    time.Since(start),
+			"inputBytes":  ro.InputBytes,
+			"outputBytes": ro.OutputBytes,
+		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
+	}()
 
 	if h.hop != nil {
 		target := h.hop.Select(ctx)
 		if target == nil {
-			err := errors.New("target not available")
+			err = errors.New("target not available")
 			log.Error(err)
 			return err
 		}
 		log = log.WithFields(map[string]any{
 			"node": target.Name,
 			"dst":  target.Addr,
+			"host": target.Addr,
 		})
-		return h.forwardUnix(ctx, conn, target, log)
+		ro.Host = target.Addr
+
+		return h.forwardUnix(ctx, conn, target, ro, log)
 	}
 
-	cc, err := h.router.Dial(ctx, "tcp", "@")
+	cc, err := h.options.Router.Dial(ctx, "tcp", "@")
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 	defer cc.Close()
+
+	if h.md.sniffing {
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
+		}
+
+		br := bufio.NewReader(conn)
+		proto, _ := sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Time{})
+		}
+
+		dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+			return cc, nil
+		}
+		dialTLS := func(ctx context.Context, network, address string, cfg *tls.Config) (net.Conn, error) {
+			return cc, nil
+		}
+		sniffer := &sniffing.Sniffer{
+			Recorder:           h.recorder.Recorder,
+			RecorderOptions:    h.recorder.Options,
+			Certificate:        h.md.certificate,
+			PrivateKey:         h.md.privateKey,
+			NegotiatedProtocol: h.md.alpn,
+			CertPool:           h.certPool,
+			MitmBypass:         h.md.mitmBypass,
+			ReadTimeout:        h.md.readTimeout,
+		}
+
+		conn = xnet.NewReadWriteConn(br, conn, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			return sniffer.HandleHTTP(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		case sniffing.ProtoTLS:
+			return sniffer.HandleTLS(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		}
+	}
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.LocalAddr(), "@")
@@ -92,12 +194,12 @@ func (h *unixHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 	return nil
 }
 
-func (h *unixHandler) forwardUnix(ctx context.Context, conn net.Conn, target *chain.Node, log logger.ILogger) (err error) {
+func (h *unixHandler) forwardUnix(ctx context.Context, conn net.Conn, target *chain.Node, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) (err error) {
 	log.Debugf("%s >> %s", conn.LocalAddr(), target.Addr)
 	var cc io.ReadWriteCloser
 
-	if opts := h.router.Options(); opts != nil && opts.Chain != nil {
-		cc, err = h.router.Dial(ctx, "unix", target.Addr)
+	if opts := h.options.Router.Options(); opts != nil && opts.Chain != nil {
+		cc, err = h.options.Router.Dial(ctx, "unix", target.Addr)
 	} else {
 		cc, err = (&net.Dialer{}).DialContext(ctx, "unix", target.Addr)
 	}
@@ -107,9 +209,35 @@ func (h *unixHandler) forwardUnix(ctx context.Context, conn net.Conn, target *ch
 	}
 	defer cc.Close()
 
+	var rw io.ReadWriter = conn
+	if h.md.sniffing {
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
+		}
+
+		br := bufio.NewReader(conn)
+		proto, _ := sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Time{})
+		}
+
+		rw = xio.NewReadWriter(br, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			ro2 := &xrecorder.HandlerRecorderObject{}
+			*ro2 = *ro
+			ro.Time = time.Time{}
+			return h.handleHTTP(ctx, rw, cc, ro2, log)
+		case sniffing.ProtoTLS:
+			return h.handleTLS(ctx, rw, cc, ro, log)
+		}
+	}
+
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.LocalAddr(), target.Addr)
-	xnet.Transport(conn, cc)
+	xnet.Transport(rw, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.LocalAddr(), target.Addr)

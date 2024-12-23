@@ -42,5 +42,3 @@ func (e *AcceptError) Temporary() bool {
 func (e *AcceptError) Unwrap() error {
 	return e.err
 }
-
-type NewListener func(opts ...Option) IListener

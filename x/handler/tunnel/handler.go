@@ -5,19 +5,23 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	xservice "github.com/jxo-me/netx/x/service"
 )
@@ -28,18 +32,21 @@ var (
 	ErrTunnelID           = errors.New("invalid tunnel ID")
 	ErrTunnelNotAvailable = errors.New("tunnel not available")
 	ErrUnauthorized       = errors.New("unauthorized")
-	ErrRateLimit          = errors.New("rate limiting exceeded")
+	ErrTunnelRoute        = errors.New("no route to host")
+	ErrPrivateTunnel      = errors.New("private tunnel")
 )
 
 type tunnelHandler struct {
-	id       string
-	options  handler.Options
-	pool     *ConnectorPool
-	recorder recorder.IRecorder
-	epSvc    service.IService
-	ep       *entrypoint
-	md       metadata
-	log      logger.ILogger
+	id      string
+	options handler.Options
+	pool    *ConnectorPool
+	epSvc   service.IService
+	ep      *entrypoint
+	md      metadata
+	log     logger.ILogger
+	stats   *stats_util.HandlerStats
+	limiter traffic.ITrafficLimiter
+	cancel  context.CancelFunc
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -67,29 +74,48 @@ func (h *tunnelHandler) Init(md md.IMetaData) (err error) {
 	h.log = h.options.Logger.WithFields(map[string]any{
 		"node": h.id,
 	})
-
-	if opts := h.options.Router.Options(); opts != nil {
-		for _, ro := range opts.Recorders {
-			if ro.Record == xrecorder.RecorderServiceHandlerTunnel {
-				h.recorder = ro.Recorder
-				break
-			}
-		}
-	}
-
-	h.pool = NewConnectorPool(h.id, h.md.sd)
+	h.pool = NewConnectorPool(h.id)
 
 	h.ep = &entrypoint{
 		node:    h.id,
+		service: h.options.Service,
 		pool:    h.pool,
 		ingress: h.md.ingress,
 		sd:      h.md.sd,
 		log: h.log.WithFields(map[string]any{
 			"kind": "entrypoint",
 		}),
+		sniffingWebsocket:   h.md.sniffingWebsocket,
+		websocketSampleRate: h.md.sniffingWebsocketSampleRate,
+	}
+	h.ep.transport = &http.Transport{
+		DialContext:           h.ep.dial,
+		IdleConnTimeout:       30 * time.Second,
+		ResponseHeaderTimeout: h.md.entryPointReadTimeout,
+		DisableKeepAlives:     !h.md.entryPointKeepalive,
+		DisableCompression:    !h.md.entryPointCompression,
+	}
+
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.ep.recorder = ro
+			break
+		}
 	}
 	if err = h.initEntrypoint(); err != nil {
 		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	h.cancel = cancel
+
+	if h.options.Observer != nil {
+		h.stats = stats_util.NewHandlerStats(h.options.Service)
+		go h.observeStats(ctx)
+	}
+
+	if limiter := h.options.Limiter; limiter != nil {
+		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
 	}
 
 	return nil
@@ -151,6 +177,7 @@ func (h *tunnelHandler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 	log := h.log.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
@@ -165,7 +192,7 @@ func (h *tunnelHandler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 	}()
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return ErrRateLimit
+		return rate_limiter.ErrRateLimit
 	}
 
 	if h.md.readTimeout > 0 {
@@ -259,6 +286,15 @@ func (h *tunnelHandler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 
 // Close implements io.Closer interface.
 func (h *tunnelHandler) Close() error {
+	if h.epSvc != nil {
+		h.epSvc.Close()
+	}
+	h.pool.Close()
+
+	if h.cancel != nil {
+		h.cancel()
+	}
+
 	return nil
 }
 
@@ -272,4 +308,22 @@ func (h *tunnelHandler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
+}
+
+func (h *tunnelHandler) observeStats(ctx context.Context) {
+	if h.options.Observer == nil {
+		return
+	}
+
+	ticker := time.NewTicker(h.md.observePeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			h.options.Observer.Observe(ctx, h.stats.Events())
+		case <-ctx.Done():
+			return
+		}
+	}
 }

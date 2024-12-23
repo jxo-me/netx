@@ -4,22 +4,23 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 const (
 	defaultTTL            = 5 * time.Second
-	defaultReadBufferSize = 1024
+	defaultReadBufferSize = 8192
 	defaultReadQueueSize  = 128
 	defaultBacklog        = 128
 )
 
 type metadata struct {
-	readBufferSize int
-	readQueueSize  int
-	backlog        int
-	keepalive      bool
-	ttl            time.Duration
+	readBufferSize         int
+	readQueueSize          int
+	backlog                int
+	keepalive              bool
+	ttl                    time.Duration
+	limiterRefreshInterval time.Duration
 }
 
 func (l *udpListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -50,6 +51,14 @@ func (l *udpListener) parseMetadata(md mdata.IMetaData) (err error) {
 		l.md.backlog = defaultBacklog
 	}
 	l.md.keepalive = mdutil.GetBool(md, keepalive)
+
+	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if l.md.limiterRefreshInterval == 0 {
+		l.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if l.md.limiterRefreshInterval < time.Second {
+		l.md.limiterRefreshInterval = time.Second
+	}
 
 	return
 }

@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/jxo-me/netx/core/observer"
-	"github.com/jxo-me/netx/x/stats"
+	"github.com/jxo-me/netx/core/observer/stats"
 )
 
 type HandlerStats struct {

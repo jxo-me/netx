@@ -1,23 +1,32 @@
 package v4
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer/stats"
+	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/gosocks4"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	xnet "github.com/jxo-me/netx/x/internal/net"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	"github.com/jxo-me/netx/x/internal/util/sniffing"
 	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
-	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
-	"github.com/jxo-me/netx/x/stats"
-	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
+	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 var (
@@ -26,11 +35,13 @@ var (
 )
 
 type socks4Handler struct {
-	router  *chain.Router
-	md      metadata
-	options handler.Options
-	stats   *stats_util.HandlerStats
-	cancel  context.CancelFunc
+	md       metadata
+	options  handler.Options
+	stats    *stats_util.HandlerStats
+	limiter  traffic.TrafficLimiter
+	cancel   context.CancelFunc
+	recorder recorder.RecorderObject
+	certPool tls_util.CertPool
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -41,7 +52,6 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &socks4Handler{
 		options: options,
-		stats:   stats_util.NewHandlerStats(options.Service),
 	}
 }
 
@@ -50,40 +60,85 @@ func (h *socks4Handler) Init(md md.IMetaData) (err error) {
 		return err
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	h.cancel = cancel
 
 	if h.options.Observer != nil {
+		h.stats = stats_util.NewHandlerStats(h.options.Service)
 		go h.observeStats(ctx)
+	}
+
+	if limiter := h.options.Limiter; limiter != nil {
+		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
+	}
+
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
+	}
+
+	if h.md.certificate != nil && h.md.privateKey != nil {
+		h.certPool = tls_util.NewMemoryCertPool()
 	}
 
 	return nil
 }
 
-func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) (err error) {
 	defer conn.Close()
 
 	start := time.Now()
 
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		Network:    "tcp",
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+
+	ro.ClientIP = conn.RemoteAddr().String()
+	if clientAddr := ctxvalue.ClientAddrFromContext(ctx); clientAddr != "" {
+		ro.ClientIP = string(clientAddr)
+	}
+	if h, _, _ := net.SplitHostPort(ro.ClientIP); h != "" {
+		ro.ClientIP = h
+	}
+
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
+		"client": ro.ClientIP,
 	})
-
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+
+	pStats := stats.Stats{}
+	conn = stats_wrapper.WrapConn(conn, &pStats)
+
 	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.InputBytes = pStats.Get(stats.KindInputBytes)
+		ro.OutputBytes = pStats.Get(stats.KindOutputBytes)
+		ro.Duration = time.Since(start)
+		if err := ro.Record(ctx, h.recorder.Recorder); err != nil {
+			log.Errorf("record: %v", err)
+		}
+
 		log.WithFields(map[string]any{
-			"duration": time.Since(start),
+			"duration":    time.Since(start),
+			"inputBytes":  ro.InputBytes,
+			"outputBytes": ro.OutputBytes,
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return nil
+		return rate_limiter.ErrRateLimit
 	}
 
 	if h.md.readTimeout > 0 {
@@ -95,23 +150,26 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 		log.Error(err)
 		return err
 	}
+
+	ro.Host = req.Addr.String()
 	log.Trace(req)
 
 	conn.SetReadDeadline(time.Time{})
 
 	if h.options.Auther != nil {
-		id, ok := h.options.Auther.Authenticate(ctx, string(req.Userid), "")
+		clientID, ok := h.options.Auther.Authenticate(ctx, string(req.Userid), "")
 		if !ok {
 			resp := gosocks4.NewReply(gosocks4.RejectedUserid, nil)
 			log.Trace(resp)
 			return resp.Write(conn)
 		}
-		ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(id))
+		ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(clientID))
+		ro.ClientID = clientID
 	}
 
 	switch req.Cmd {
 	case gosocks4.CmdConnect:
-		return h.handleConnect(ctx, conn, req, log)
+		return h.handleConnect(ctx, conn, req, ro, log)
 	case gosocks4.CmdBind:
 		return h.handleBind(ctx, conn, req)
 	default:
@@ -128,11 +186,12 @@ func (h *socks4Handler) Close() error {
 	return nil
 }
 
-func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, log logger.ILogger) error {
+func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *gosocks4.Request, ro *xrecorder.HandlerRecorderObject, log logger.Logger) error {
 	addr := req.Addr.String()
 
 	log = log.WithFields(map[string]any{
-		"dst": addr,
+		"dst":  addr,
+		"host": addr,
 	})
 	log.Debugf("%s >> %s", conn.RemoteAddr(), addr)
 
@@ -148,7 +207,9 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr})
 	}
 
-	cc, err := h.router.Dial(ctx, "tcp", addr)
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", addr)
+	ro.Route = buf.String()
 	if err != nil {
 		resp := gosocks4.NewReply(gosocks4.Failed, nil)
 		log.Trace(resp)
@@ -165,27 +226,87 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		return err
 	}
 
-	clientID := ctxvalue.ClientIDFromContext(ctx)
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
-		traffic.NetworkOption("tcp"),
-		traffic.AddrOption(addr),
-		traffic.ClientOption(string(clientID)),
-		traffic.SrcOption(conn.RemoteAddr().String()),
-	)
-	if h.options.Observer != nil {
-		pstats := h.stats.Stats(string(clientID))
-		pstats.Add(stats.KindTotalConns, 1)
-		pstats.Add(stats.KindCurrentConns, 1)
-		defer pstats.Add(stats.KindCurrentConns, -1)
-		rw = stats_wrapper.WrapReadWriter(rw, pstats)
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		rw := traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			conn,
+			string(clientID),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.ServiceOption(h.options.Service),
+			limiter.NetworkOption("tcp"),
+			limiter.AddrOption(addr),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
+		conn = xnet.NewReadWriteConn(rw, rw, conn)
+	}
+
+	if h.md.sniffing {
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
+		}
+
+		br := bufio.NewReader(conn)
+		proto, _ := sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Time{})
+		}
+
+		dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+			return cc, nil
+		}
+		dialTLS := func(ctx context.Context, network, address string, cfg *tls.Config) (net.Conn, error) {
+			return cc, nil
+		}
+		sniffer := &sniffing.Sniffer{
+			Websocket:           h.md.sniffingWebsocket,
+			WebsocketSampleRate: h.md.sniffingWebsocketSampleRate,
+			Recorder:            h.recorder.Recorder,
+			RecorderOptions:     h.recorder.Options,
+			Certificate:         h.md.certificate,
+			PrivateKey:          h.md.privateKey,
+			NegotiatedProtocol:  h.md.alpn,
+			CertPool:            h.certPool,
+			MitmBypass:          h.md.mitmBypass,
+			ReadTimeout:         h.md.readTimeout,
+		}
+
+		conn = xnet.NewReadWriteConn(br, conn, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			return sniffer.HandleHTTP(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		case sniffing.ProtoTLS:
+			return sniffer.HandleTLS(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		}
 	}
 
 	t := time.Now()
-	log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-	netpkg.Transport(rw, cc)
+	log.Infof("%s <-> %s", conn.RemoteAddr(), ro.Host)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
-	}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
+	}).Infof("%s >-< %s", conn.RemoteAddr(), ro.Host)
 
 	return nil
 }
@@ -212,11 +333,7 @@ func (h *socks4Handler) observeStats(ctx context.Context) {
 		return
 	}
 
-	d := h.md.observePeriod
-	if d < time.Millisecond {
-		d = 5 * time.Second
-	}
-	ticker := time.NewTicker(d)
+	ticker := time.NewTicker(h.md.observePeriod)
 	defer ticker.Stop()
 
 	for {

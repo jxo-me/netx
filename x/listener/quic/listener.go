@@ -3,16 +3,20 @@ package quic
 import (
 	"context"
 	"net"
+	"strings"
+	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	quic_util "github.com/jxo-me/netx/x/internal/util/quic"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"github.com/quic-go/quic-go"
 )
 
@@ -43,15 +47,14 @@ func (l *quicListener) Init(md md.IMetaData) (err error) {
 
 	addr := l.options.Addr
 	if _, _, err := net.SplitHostPort(addr); err != nil {
-		addr = net.JoinHostPort(addr, "0")
+		addr = net.JoinHostPort(strings.Trim(addr, "[]"), "0")
 	}
 
 	network := "udp"
-	if xnet.IsIPv4(l.options.Addr) {
+	if xnet.IsIPv4(addr) {
 		network = "udp4"
 	}
-	var laddr *net.UDPAddr
-	laddr, err = net.ResolveUDPAddr(network, addr)
+	laddr, err := net.ResolveUDPAddr(network, addr)
 	if err != nil {
 		return
 	}
@@ -65,11 +68,23 @@ func (l *quicListener) Init(md md.IMetaData) (err error) {
 		conn = quic_util.CipherPacketConn(conn, l.md.cipherKey)
 	}
 
+	conn = metrics.WrapPacketConn(l.options.Service, conn)
+	conn = stats.WrapPacketConn(conn, l.options.Stats)
+	conn = admission.WrapPacketConn(l.options.Admission, conn)
+	conn = limiter_wrapper.WrapPacketConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		"",
+		limiter.ScopeOption(limiter.ScopeService),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+	)
+
 	config := &quic.Config{
 		KeepAlivePeriod:      l.md.keepAlivePeriod,
 		HandshakeIdleTimeout: l.md.handshakeTimeout,
 		MaxIdleTimeout:       l.md.maxIdleTimeout,
-		Versions: []quic.VersionNumber{
+		Versions: []quic.Version{
 			quic.Version1,
 			quic.Version2,
 		},
@@ -77,7 +92,7 @@ func (l *quicListener) Init(md md.IMetaData) (err error) {
 	}
 
 	tlsCfg := l.options.TLSConfig
-	tlsCfg.NextProtos = []string{"http/3", "quic/v1"}
+	tlsCfg.NextProtos = []string{"h3", "quic/v1"}
 
 	ln, err := quic.ListenEarly(conn, tlsCfg, config)
 	if err != nil {
@@ -97,10 +112,15 @@ func (l *quicListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
-		conn = metrics.WrapConn(l.options.Service, conn)
-		conn = stats.WrapConn(conn, l.options.Stats)
-		conn = admission.WrapConn(l.options.Admission, conn)
-		conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
+		conn = limiter_wrapper.WrapConn(
+			conn,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			conn.RemoteAddr().String(),
+			limiter.ScopeOption(limiter.ScopeConn),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(conn.LocalAddr().Network()),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

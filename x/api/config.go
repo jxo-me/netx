@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/service"
-	"github.com/jxo-me/netx/x/stats"
 )
 
 type serviceStatus interface {

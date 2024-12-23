@@ -41,7 +41,7 @@ func (s *Server) Close() error {
 	return s.Srv.Shutdown()
 }
 
-func NewService(addr string, opts ...Option) (api.IApi, error) {
+func NewService(network, addr string, opts ...Option) (api.IApi, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err

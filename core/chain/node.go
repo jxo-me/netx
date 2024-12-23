@@ -1,13 +1,15 @@
 package chain
 
 import (
+	"regexp"
+
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/hosts"
 	"github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/resolver"
+	"github.com/jxo-me/netx/core/routing"
 	"github.com/jxo-me/netx/core/selector"
-	"regexp"
 )
 
 type NodeFilterSettings struct {
@@ -21,11 +23,19 @@ type HTTPURLRewriteSetting struct {
 	Replacement string
 }
 
+type HTTPBodyRewriteSettings struct {
+	Type        string
+	Pattern     *regexp.Regexp
+	Replacement []byte
+}
+
 type HTTPNodeSettings struct {
-	Host    string
-	Header  map[string]string
-	Auther  auth.IAuthenticator
-	Rewrite []HTTPURLRewriteSetting
+	Host                string
+	RequestHeader       map[string]string
+	ResponseHeader      map[string]string
+	Auther              auth.IAuthenticator
+	RewriteURL          []HTTPURLRewriteSetting
+	RewriteResponseBody []HTTPBodyRewriteSettings
 }
 
 type TLSNodeSettings struct {
@@ -35,12 +45,13 @@ type TLSNodeSettings struct {
 		MinVersion   string
 		MaxVersion   string
 		CipherSuites []string
+		ALPN         []string
 	}
 }
 
 type NodeOptions struct {
 	Network    string
-	Transport  *Transport
+	Transport  Transporter
 	Bypass     bypass.IBypass
 	Resolver   resolver.IResolver
 	HostMapper hosts.IHostMapper
@@ -48,11 +59,13 @@ type NodeOptions struct {
 	HTTP       *HTTPNodeSettings
 	TLS        *TLSNodeSettings
 	Metadata   metadata.IMetaData
+	Matcher    routing.Matcher
+	Priority   int
 }
 
 type NodeOption func(*NodeOptions)
 
-func TransportNodeOption(tr *Transport) NodeOption {
+func TransportNodeOption(tr Transporter) NodeOption {
 	return func(o *NodeOptions) {
 		o.Transport = tr
 	}
@@ -103,6 +116,18 @@ func TLSNodeOption(tlsSettings *TLSNodeSettings) NodeOption {
 func MetadataNodeOption(md metadata.IMetaData) NodeOption {
 	return func(o *NodeOptions) {
 		o.Metadata = md
+	}
+}
+
+func MatcherNodeOption(matcher routing.Matcher) NodeOption {
+	return func(o *NodeOptions) {
+		o.Matcher = matcher
+	}
+}
+
+func PriorityNodeOption(priority int) NodeOption {
+	return func(o *NodeOptions) {
+		o.Priority = priority
 	}
 }
 

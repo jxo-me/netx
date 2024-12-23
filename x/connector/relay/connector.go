@@ -10,6 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/relay"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
 )
 
@@ -39,6 +40,7 @@ func (c *relayConnector) Connect(ctx context.Context, conn net.Conn, network, ad
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

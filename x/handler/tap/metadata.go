@@ -2,7 +2,7 @@ package tap
 
 import (
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 type metadata struct {

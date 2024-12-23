@@ -1,4 +1,4 @@
-package forward
+package direct
 
 import (
 	"context"
@@ -6,9 +6,11 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 type directConnector struct {
+	md      metadata
 	options connector.Options
 }
 
@@ -24,7 +26,7 @@ func NewConnector(opts ...connector.Option) connector.IConnector {
 }
 
 func (c *directConnector) Init(md md.IMetaData) (err error) {
-	return nil
+	return c.parseMetadata(md)
 }
 
 func (c *directConnector) Connect(ctx context.Context, _ net.Conn, network, address string, opts ...connector.ConnectOption) (net.Conn, error) {
@@ -33,7 +35,11 @@ func (c *directConnector) Connect(ctx context.Context, _ net.Conn, network, addr
 		opt(&cOpts)
 	}
 
-	conn, err := cOpts.NetDialer.Dial(ctx, network, address)
+	if c.md.action == "reject" {
+		return &conn{}, nil
+	}
+
+	conn, err := cOpts.Dialer.Dial(ctx, network, address)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +57,7 @@ func (c *directConnector) Connect(ctx context.Context, _ net.Conn, network, addr
 		"local":   localAddr,
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

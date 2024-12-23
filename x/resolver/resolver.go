@@ -9,6 +9,7 @@ import (
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/resolver"
+	xchain "github.com/jxo-me/netx/x/chain"
 	resolver_util "github.com/jxo-me/netx/x/internal/util/resolver"
 	"github.com/jxo-me/netx/x/resolver/exchanger"
 	"github.com/miekg/dns"
@@ -67,7 +68,7 @@ func NewResolver(nameservers []NameServer, opts ...Option) (resolver.IResolver, 
 		ex, err := exchanger.NewExchanger(
 			addr,
 			exchanger.RouterOption(
-				chain.NewRouter(
+				xchain.NewRouter(
 					chain.ChainRouterOption(server.Chain),
 					chain.LoggerRouterOption(options.logger),
 				),
@@ -169,7 +170,7 @@ func (r *localResolver) lookupCache(ctx context.Context, server *NameServer, hos
 	lookup := func(t uint16, host string) (ips []net.IP, ttl time.Duration, ok bool) {
 		mq := dns.Msg{}
 		mq.SetQuestion(dns.Fqdn(host), t)
-		mr, ttl := r.cache.Load(resolver_util.NewCacheKey(&mq.Question[0]))
+		mr, ttl := r.cache.Load(ctx, resolver_util.NewCacheKey(&mq.Question[0]))
 		if mr == nil {
 			return
 		}
@@ -222,14 +223,14 @@ func (r *localResolver) resolveIPs(ctx context.Context, server *NameServer, mq *
 	}
 
 	key := resolver_util.NewCacheKey(&mq.Question[0])
-	mr, ttl := r.cache.Load(key)
+	mr, ttl := r.cache.Load(ctx, key)
 	if ttl <= 0 {
 		resolver_util.AddSubnetOpt(mq, server.ClientIP)
 		mr, err = r.exchange(ctx, server.exchanger, mq)
 		if err != nil {
 			return
 		}
-		r.cache.Store(key, mr, server.TTL)
+		r.cache.Store(ctx, key, mr, server.TTL)
 
 		if r.options.logger.IsLevelEnabled(logger.TraceLevel) {
 			r.options.logger.Trace(mr.String())

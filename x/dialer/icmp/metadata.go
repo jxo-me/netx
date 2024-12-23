@@ -4,7 +4,7 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 type metadata struct {
@@ -14,21 +14,14 @@ type metadata struct {
 }
 
 func (d *icmpDialer) parseMetadata(md mdata.IMetaData) (err error) {
-	const (
-		keepAlive        = "keepAlive"
-		keepAlivePeriod  = "ttl"
-		handshakeTimeout = "handshakeTimeout"
-		maxIdleTimeout   = "maxIdleTimeout"
-	)
-
-	if mdutil.GetBool(md, keepAlive) {
-		d.md.keepAlivePeriod = mdutil.GetDuration(md, keepAlivePeriod)
+	if mdutil.GetBool(md, "keepalive") {
+		d.md.keepAlivePeriod = mdutil.GetDuration(md, "ttl")
 		if d.md.keepAlivePeriod <= 0 {
 			d.md.keepAlivePeriod = 10 * time.Second
 		}
 	}
-	d.md.handshakeTimeout = mdutil.GetDuration(md, handshakeTimeout)
-	d.md.maxIdleTimeout = mdutil.GetDuration(md, maxIdleTimeout)
+	d.md.handshakeTimeout = mdutil.GetDuration(md, "handshakeTimeout")
+	d.md.maxIdleTimeout = mdutil.GetDuration(md, "maxIdleTimeout")
 
 	return
 }

@@ -7,20 +7,22 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	xauth "github.com/jxo-me/netx/x/auth"
+	xbypass "github.com/jxo-me/netx/x/bypass"
+	xchain "github.com/jxo-me/netx/x/chain"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
 	auth_parser "github.com/jxo-me/netx/x/config/parsing/auth"
 	bypass_parser "github.com/jxo-me/netx/x/config/parsing/bypass"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	mdx "github.com/jxo-me/netx/x/metadata"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
+	"github.com/jxo-me/netx/x/routing"
 )
 
 func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.Node, error) {
@@ -139,7 +141,7 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		}
 	}
 
-	tr := chain.NewTransport(d, cr,
+	tr := xchain.NewTransport(d, cr,
 		chain.AddrTransportOption(cfg.Addr),
 		chain.InterfaceTransportOption(cfg.Interface),
 		chain.NetnsTransportOption(cfg.Netns),
@@ -148,7 +150,7 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 
 	opts := []chain.NodeOption{
 		chain.TransportNodeOption(tr),
-		chain.BypassNodeOption(bypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
+		chain.BypassNodeOption(xbypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
 		chain.ResoloverNodeOption(app.Runtime.ResolverRegistry().Get(cfg.Resolver)),
 		chain.HostMapperNodeOption(app.Runtime.HostsRegistry().Get(cfg.Hosts)),
 		chain.MetadataNodeOption(nm),
@@ -174,10 +176,33 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 		opts = append(opts, chain.NodeFilterOption(settings))
 	}
 
+	if cfg.Matcher != nil {
+		priority := cfg.Matcher.Priority
+
+		if rule := strings.TrimSpace(cfg.Matcher.Rule); rule != "" {
+			if matcher, err := routing.NewMatcher(rule); err == nil {
+				log.Debugf("new matcher for node %s with rule %s", cfg.Name, cfg.Matcher.Rule)
+				if priority == 0 {
+					priority = len(cfg.Matcher.Rule)
+				}
+				opts = append(opts, chain.MatcherNodeOption(matcher))
+			} else {
+				log.Error(err)
+				priority = -1
+			}
+		}
+
+		opts = append(opts, chain.PriorityNodeOption(priority))
+	}
+
 	if cfg.HTTP != nil {
 		settings := &chain.HTTPNodeSettings{
-			Host:   cfg.HTTP.Host,
-			Header: cfg.HTTP.Header,
+			Host:           cfg.HTTP.Host,
+			RequestHeader:  cfg.HTTP.RequestHeader,
+			ResponseHeader: cfg.HTTP.ResponseHeader,
+		}
+		if settings.RequestHeader == nil {
+			settings.RequestHeader = cfg.HTTP.Header
 		}
 
 		if auth := cfg.HTTP.Auth; auth != nil && auth.Username != "" {
@@ -190,11 +215,25 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 				})),
 			)
 		}
-		for _, v := range cfg.HTTP.Rewrite {
+
+		rewriteURL := cfg.HTTP.RewriteURL
+		if rewriteURL == nil {
+			rewriteURL = cfg.HTTP.Rewrite
+		} 
+		for _, v := range rewriteURL {
 			if pattern, _ := regexp.Compile(v.Match); pattern != nil {
-				settings.Rewrite = append(settings.Rewrite, chain.HTTPURLRewriteSetting{
+				settings.RewriteURL = append(settings.RewriteURL, chain.HTTPURLRewriteSetting{
 					Pattern:     pattern,
 					Replacement: v.Replacement,
+				})
+			}
+		}
+		for _, v := range cfg.HTTP.RewriteBody {
+			if pattern, _ := regexp.Compile(v.Match); pattern != nil {
+				settings.RewriteResponseBody = append(settings.RewriteResponseBody, chain.HTTPBodyRewriteSettings{
+					Type:        v.Type,
+					Pattern:     pattern,
+					Replacement: []byte(v.Replacement),
 				})
 			}
 		}
@@ -210,6 +249,7 @@ func ParseNode(hop string, cfg *config.NodeConfig, log logger.ILogger) (*chain.N
 			tlsCfg.Options.MinVersion = o.MinVersion
 			tlsCfg.Options.MaxVersion = o.MaxVersion
 			tlsCfg.Options.CipherSuites = o.CipherSuites
+			tlsCfg.Options.ALPN = o.ALPN
 		}
 		opts = append(opts, chain.TLSNodeOption(tlsCfg))
 	}

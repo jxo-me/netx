@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
 	"net"
 	"sync"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
 	md "github.com/jxo-me/netx/core/metadata"
-	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/songgao/water/waterutil"
 )
 
@@ -24,7 +25,6 @@ var (
 type tunHandler struct {
 	hop     hop.IHop
 	routes  sync.Map
-	router  *chain.Router
 	md      metadata
 	options handler.Options
 }
@@ -43,11 +43,6 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 func (h *tunHandler) Init(md md.IMetaData) (err error) {
 	if err = h.parseMetadata(md); err != nil {
 		return
-	}
-
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
 	}
 
 	return
@@ -75,6 +70,7 @@ func (h *tunHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	log = log.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())

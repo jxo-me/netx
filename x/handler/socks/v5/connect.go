@@ -1,25 +1,31 @@
 package v5
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/limiter/traffic"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/gosocks5"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
-	"github.com/jxo-me/netx/x/stats"
-	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
+	xnet "github.com/jxo-me/netx/x/internal/net"
+	"github.com/jxo-me/netx/x/internal/util/sniffing"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
-func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
+func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, network, address string, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
-		"dst": fmt.Sprintf("%s/%s", address, network),
-		"cmd": "connect",
+		"dst":  fmt.Sprintf("%s/%s", address, network),
+		"cmd":  "connect",
+		"host": address,
 	})
 	log.Debugf("%s >> %s", conn.RemoteAddr(), address)
 
@@ -35,14 +41,15 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, networ
 		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: address})
 	}
 
-	cc, err := h.router.Dial(ctx, network, address)
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), network, address)
+	ro.Route = buf.String()
 	if err != nil {
 		resp := gosocks5.NewReply(gosocks5.NetUnreachable, nil)
 		log.Trace(resp)
 		resp.Write(conn)
 		return err
 	}
-
 	defer cc.Close()
 
 	resp := gosocks5.NewReply(gosocks5.Succeeded, nil)
@@ -52,24 +59,84 @@ func (h *socks5Handler) handleConnect(ctx context.Context, conn net.Conn, networ
 		return err
 	}
 
-	clientID := ctxvalue.ClientIDFromContext(ctx)
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
-		traffic.NetworkOption(network),
-		traffic.AddrOption(address),
-		traffic.ClientOption(string(clientID)),
-		traffic.SrcOption(conn.RemoteAddr().String()),
-	)
-	if h.options.Observer != nil {
-		pstats := h.stats.Stats(string(clientID))
-		pstats.Add(stats.KindTotalConns, 1)
-		pstats.Add(stats.KindCurrentConns, 1)
-		defer pstats.Add(stats.KindCurrentConns, -1)
-		rw = stats_wrapper.WrapReadWriter(rw, pstats)
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		rw := traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			conn,
+			string(clientID),
+			limiter.ServiceOption(h.options.Service),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.NetworkOption(network),
+			limiter.AddrOption(address),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
+		conn = xnet.NewReadWriteConn(rw, rw, conn)
+	}
+
+	if h.md.sniffing {
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
+		}
+
+		br := bufio.NewReader(conn)
+		proto, _ := sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Time{})
+		}
+
+		dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+			return cc, nil
+		}
+		dialTLS := func(ctx context.Context, network, address string, cfg *tls.Config) (net.Conn, error) {
+			return cc, nil
+		}
+		sniffer := &sniffing.Sniffer{
+			Websocket:           h.md.sniffingWebsocket,
+			WebsocketSampleRate: h.md.sniffingWebsocketSampleRate,
+			Recorder:            h.recorder.Recorder,
+			RecorderOptions:     h.recorder.Options,
+			Certificate:         h.md.certificate,
+			PrivateKey:          h.md.privateKey,
+			NegotiatedProtocol:  h.md.alpn,
+			CertPool:            h.certPool,
+			MitmBypass:          h.md.mitmBypass,
+			ReadTimeout:         h.md.readTimeout,
+		}
+
+		conn = xnet.NewReadWriteConn(br, conn, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			return sniffer.HandleHTTP(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		case sniffing.ProtoTLS:
+			return sniffer.HandleTLS(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		}
 	}
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
-	netpkg.Transport(rw, cc)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), address)

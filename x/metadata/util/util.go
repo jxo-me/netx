@@ -8,6 +8,19 @@ import (
 	"github.com/jxo-me/netx/core/metadata"
 )
 
+func IsExists(md metadata.IMetaData, keys ...string) bool {
+	if md == nil {
+		return false
+	}
+
+	for _, key := range keys {
+		if md.IsExists(key) {
+			return true
+		}
+	}
+	return false
+}
+
 func GetBool(md metadata.IMetaData, keys ...string) (v bool) {
 	if md == nil {
 		return

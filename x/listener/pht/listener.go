@@ -4,16 +4,19 @@ package pht
 
 import (
 	"net"
+	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	pht_util "github.com/jxo-me/netx/x/internal/util/pht"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 type phtListener struct {
@@ -89,7 +92,15 @@ func (l *phtListener) Accept() (conn net.Conn, err error) {
 	conn = metrics.WrapConn(l.options.Service, conn)
 	conn = stats.WrapConn(conn, l.options.Stats)
 	conn = admission.WrapConn(l.options.Admission, conn)
-	conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
+	conn = limiter_wrapper.WrapConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		conn.RemoteAddr().String(),
+		limiter.ScopeOption(limiter.ScopeConn),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+		limiter.SrcOption(conn.RemoteAddr().String()),
+	)
 	return
 }
 

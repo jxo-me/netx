@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jxo-me/netx/core/ingress"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/core/sd"
 	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/util/mux"
@@ -36,11 +37,15 @@ func (h *tunnelHandler) handleBind(ctx context.Context, conn net.Conn, network, 
 	v := md5.Sum([]byte(tunnelID.String()))
 	endpoint := hex.EncodeToString(v[:8])
 
-	addr := address
-	host, port, _ := net.SplitHostPort(addr)
-	if host == "" {
-		addr = net.JoinHostPort(endpoint, port)
+	host, port, _ := net.SplitHostPort(address)
+	if host == "" || h.md.ingress == nil {
+		host = endpoint
+	} else if host != endpoint {
+		if rule := h.md.ingress.GetRule(ctx, host); rule != nil && rule.Endpoint != tunnelID.String() {
+			host = endpoint
+		}
 	}
+	addr := net.JoinHostPort(host, port)
 
 	af := &relay.AddrFeature{}
 	err = af.ParseFrom(addr)
@@ -60,7 +65,19 @@ func (h *tunnelHandler) handleBind(ctx context.Context, conn net.Conn, network, 
 		return
 	}
 
-	h.pool.Add(tunnelID, NewConnector(connectorID, tunnelID, h.id, session, h.md.sd), h.md.tunnelTTL)
+	var stats *stats.Stats
+	if h.stats != nil {
+		stats = h.stats.Stats(tunnelID.String())
+	}
+
+	c := NewConnector(connectorID, tunnelID, h.id, session, &ConnectorOptions{
+		service: h.options.Service,
+		sd:      h.md.sd,
+		stats:   stats,
+		limiter: h.limiter,
+	})
+
+	h.pool.Add(tunnelID, c, h.md.tunnelTTL)
 	if h.md.ingress != nil {
 		h.md.ingress.SetRule(ctx, &ingress.Rule{
 			Hostname: endpoint,

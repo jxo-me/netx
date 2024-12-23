@@ -5,11 +5,13 @@ import (
 	"net"
 	"sync"
 	"time"
+	"os"
 
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
 	ssh_util "github.com/jxo-me/netx/x/internal/util/ssh"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 type sshdDialer struct {
@@ -59,7 +61,7 @@ func (d *sshdDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 			opt(&options)
 		}
 
-		conn, err = options.NetDialer.Dial(ctx, "tcp", addr)
+		conn, err = options.Dialer.Dial(ctx, "tcp", addr)
 		if err != nil {
 			return
 		}
@@ -101,6 +103,11 @@ func (d *sshdDialer) initSession(ctx context.Context, addr string, conn net.Conn
 	}
 	if d.md.signer != nil {
 		config.Auth = append(config.Auth, ssh.PublicKeys(d.md.signer))
+	}
+	socket := os.Getenv("SSH_AUTH_SOCK")
+	if agentConn, err := net.Dial("unix", socket); err == nil {
+		agentClient := agent.NewClient(agentConn)
+		config.Auth = append(config.Auth, ssh.PublicKeysCallback(agentClient.Signers))
 	}
 
 	sshConn, chans, reqs, err := ssh.NewClientConn(conn, addr, &config)

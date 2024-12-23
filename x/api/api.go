@@ -53,8 +53,11 @@ type server struct {
 	cclose chan struct{}
 }
 
-func NewService(addr string, opts ...Option) (service.IService, error) {
-	ln, err := net.Listen("tcp", addr)
+func NewService(network, addr string, opts ...Option) (service.Service, error) {
+	if network == "" {
+		network = "tcp"
+	}
+	ln, err := net.Listen(network, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -68,12 +71,12 @@ func NewService(addr string, opts ...Option) (service.IService, error) {
 
 	r := gin.New()
 	r.Use(
-		cors.New(cors.Config{
+		cors.New((cors.Config{
 			AllowAllOrigins:     true,
 			AllowMethods:        []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowHeaders:        []string{"*"},
 			AllowPrivateNetwork: true,
-		}),
+		})),
 		gin.Recovery(),
 	)
 	if options.accessLog {

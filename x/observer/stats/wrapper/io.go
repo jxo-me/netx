@@ -3,7 +3,7 @@ package wrapper
 import (
 	"io"
 
-	"github.com/jxo-me/netx/x/stats"
+	"github.com/jxo-me/netx/core/observer/stats"
 )
 
 // readWriter is an io.ReadWriter with Stats.

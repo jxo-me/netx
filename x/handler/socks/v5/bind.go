@@ -8,7 +8,6 @@ import (
 
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 )
 
@@ -139,7 +138,7 @@ func (h *socks5Handler) serveBind(ctx context.Context, conn net.Conn, ln net.Lis
 
 		start := time.Now()
 		log.Debugf("%s <-> %s", rc.LocalAddr(), rc.RemoteAddr())
-		netpkg.Transport(pc2, rc)
+		xnet.Transport(pc2, rc)
 		log.WithFields(map[string]any{"duration": time.Since(start)}).
 			Debugf("%s >-< %s", rc.LocalAddr(), rc.RemoteAddr())
 

@@ -3,10 +3,11 @@ package tap
 import (
 	"net"
 	"strings"
+	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	tap_util "github.com/jxo-me/netx/x/internal/util/tap"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 const (
@@ -14,7 +15,8 @@ const (
 )
 
 type metadata struct {
-	config *tap_util.Config
+	config                 *tap_util.Config
+	limiterRefreshInterval time.Duration
 }
 
 func (l *tapListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -70,6 +72,14 @@ func (l *tapListener) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 
 	l.md.config = config
+
+	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if l.md.limiterRefreshInterval == 0 {
+		l.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if l.md.limiterRefreshInterval < time.Second {
+		l.md.limiterRefreshInterval = time.Second
+	}
 
 	return
 }

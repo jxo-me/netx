@@ -6,6 +6,7 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 type forwardConnector struct {
@@ -33,6 +34,7 @@ func (c *forwardConnector) Connect(ctx context.Context, conn net.Conn, network, 
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

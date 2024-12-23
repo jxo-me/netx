@@ -7,6 +7,7 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	ssh_util "github.com/jxo-me/netx/x/internal/util/ssh"
 )
 
@@ -35,6 +36,7 @@ func (c *sshdConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

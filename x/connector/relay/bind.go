@@ -6,10 +6,10 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/jxo-me/netx/core/common/net/udp"
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
+	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
 )
@@ -73,7 +73,7 @@ func (c *relayConnector) bindUDP(ctx context.Context, conn net.Conn, network, ad
 			ReadQueueSize:  opts.UDPDataQueueSize,
 			ReadBufferSize: opts.UDPDataBufferSize,
 			TTL:            opts.UDPConnTTL,
-			KeepAlive:      true,
+			Keepalive:      true,
 			Logger:         log,
 		})
 

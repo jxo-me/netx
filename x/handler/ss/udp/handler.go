@@ -1,26 +1,30 @@
 package ss
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/common/bufpool"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/recorder"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/util/relay"
 	"github.com/jxo-me/netx/x/internal/util/ss"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
 type ssuHandler struct {
-	cipher  core.Cipher
-	router  *chain.Router
-	md      metadata
-	options handler.Options
+	cipher   core.Cipher
+	md       metadata
+	options  handler.Options
+	recorder recorder.RecorderObject
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -48,32 +52,52 @@ func (h *ssuHandler) Init(md md.IMetaData) (err error) {
 		}
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
 	}
 
 	return
 }
 
-func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) (err error) {
 	defer conn.Close()
 
 	start := time.Now()
+
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		Network:    "udp",
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+	ro.ClientIP, _, _ = net.SplitHostPort(conn.RemoteAddr().String())
+
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.Duration = time.Since(start)
+		ro.Record(ctx, h.recorder.Recorder)
+
 		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return nil
+		return rate_limiter.ErrRateLimit
 	}
 
 	pc, ok := conn.(net.PacketConn)
@@ -92,7 +116,9 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	}
 
 	// obtain a udp connection
-	c, err := h.router.Dial(ctx, "udp", "") // UDP association
+	var buf bytes.Buffer
+	c, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "udp", "") // UDP association
+	ro.Route = buf.String()
 	if err != nil {
 		log.Error(err)
 		return err
@@ -108,14 +134,14 @@ func (h *ssuHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.LocalAddr(), cc.LocalAddr())
-	h.relayPacket(pc, cc, log)
+	h.relayPacket(ctx, pc, cc, ro, log)
 	log.WithFields(map[string]any{"duration": time.Since(t)}).
 		Infof("%s >-< %s", conn.LocalAddr(), cc.LocalAddr())
 
 	return nil
 }
 
-func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.ILogger) (err error) {
+func (h *ssuHandler) relayPacket(ctx context.Context, pc1, pc2 net.PacketConn, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) (err error) {
 	bufSize := h.md.bufferSize
 	errc := make(chan error, 2)
 
@@ -130,7 +156,11 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.ILogger) (e
 					return err
 				}
 
-				if h.options.Bypass != nil && h.options.Bypass.Contains(context.Background(), addr.Network(), addr.String()) {
+				if ro.Host == "" {
+					ro.Host = addr.String()
+				}
+
+				if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, addr.Network(), addr.String()) {
 					log.Warn("bypass: ", addr)
 					return nil
 				}
@@ -162,7 +192,7 @@ func (h *ssuHandler) relayPacket(pc1, pc2 net.PacketConn, log logger.ILogger) (e
 					return err
 				}
 
-				if h.options.Bypass != nil && h.options.Bypass.Contains(context.Background(), raddr.Network(), raddr.String()) {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, raddr.Network(), raddr.String()) {
 					log.Warn("bypass: ", raddr)
 					return nil
 				}

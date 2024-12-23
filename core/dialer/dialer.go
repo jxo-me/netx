@@ -20,5 +20,3 @@ type IHandshaker interface {
 type IMultiplexer interface {
 	Multiplex() bool
 }
-
-type NewDialer func(opts ...Option) IDialer

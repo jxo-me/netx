@@ -8,6 +8,7 @@ import (
 
 	"github.com/jxo-me/netx/core/connector"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/util/relay"
 	"github.com/jxo-me/netx/x/internal/util/ss"
 	"github.com/shadowsocks/go-shadowsocks2/core"
@@ -50,6 +51,7 @@ func (c *ssuConnector) Connect(ctx context.Context, conn net.Conn, network, addr
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

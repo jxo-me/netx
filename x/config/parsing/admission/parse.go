@@ -59,6 +59,7 @@ func ParseAdmission(cfg *config.AdmissionConfig) admission.IAdmission {
 		opts = append(opts, xadmission.RedisLoaderOption(loader.RedisSetLoader(
 			cfg.Redis.Addr,
 			loader.DBRedisLoaderOption(cfg.Redis.DB),
+			loader.UsernameRedisLoaderOption(cfg.Redis.Username),
 			loader.PasswordRedisLoaderOption(cfg.Redis.Password),
 			loader.KeyRedisLoaderOption(cfg.Redis.Key),
 		)))

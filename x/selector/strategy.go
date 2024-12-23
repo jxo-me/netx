@@ -10,9 +10,9 @@ import (
 
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/core/selector"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 type roundRobinStrategy[T any] struct {

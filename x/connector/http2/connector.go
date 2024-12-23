@@ -15,6 +15,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 type http2Connector struct {
@@ -43,6 +44,7 @@ func (c *http2Connector) Connect(ctx context.Context, conn net.Conn, network, ad
 		"remote":  conn.RemoteAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

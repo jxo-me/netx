@@ -5,11 +5,13 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/recorder"
 )
 
 type tcpRecorderOptions struct {
 	timeout time.Duration
+	log     logger.ILogger
 }
 
 type TCPRecorderOption func(opts *tcpRecorderOptions)
@@ -20,9 +22,16 @@ func TimeoutTCPRecorderOption(timeout time.Duration) TCPRecorderOption {
 	}
 }
 
+func LogTCPRecorderOption(log logger.ILogger) TCPRecorderOption {
+	return func(opts *tcpRecorderOptions) {
+		opts.log = log
+	}
+}
+
 type tcpRecorder struct {
 	addr   string
 	dialer *net.Dialer
+	log    logger.ILogger
 }
 
 // TCPRecorder records data to TCP service.
@@ -37,6 +46,7 @@ func TCPRecorder(addr string, opts ...TCPRecorderOption) recorder.IRecorder {
 		dialer: &net.Dialer{
 			Timeout: options.timeout,
 		},
+		log: options.log,
 	}
 }
 

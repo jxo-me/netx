@@ -2,19 +2,24 @@ package service
 
 import (
 	"fmt"
-	"github.com/jxo-me/netx/core/admission"
+	"github.com/jxo-me/netx/x/app"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/jxo-me/netx/core/auth"
-	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/core/selector"
 	"github.com/jxo-me/netx/core/service"
-	"github.com/jxo-me/netx/x/app"
+	xadmission "github.com/jxo-me/netx/x/admission"
+	xauth "github.com/jxo-me/netx/x/auth"
+	xbypass "github.com/jxo-me/netx/x/bypass"
 	xchain "github.com/jxo-me/netx/x/chain"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
@@ -24,15 +29,11 @@ import (
 	hop_parser "github.com/jxo-me/netx/x/config/parsing/hop"
 	logger_parser "github.com/jxo-me/netx/x/config/parsing/logger"
 	selector_parser "github.com/jxo-me/netx/x/config/parsing/selector"
-	xnet "github.com/jxo-me/netx/x/internal/net"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	"github.com/jxo-me/netx/x/metadata"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 	xservice "github.com/jxo-me/netx/x/service"
-	"github.com/jxo-me/netx/x/stats"
 	"github.com/vishvananda/netns"
-	"runtime"
-	"strings"
-	"time"
 )
 
 func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
@@ -73,6 +74,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 	if tlsConfig == nil {
 		tlsConfig = parsing.DefaultTLSConfig().Clone()
+		tls_util.SetTLSOptions(tlsConfig, tlsCfg.Options)
 	}
 
 	authers := auth_parser.List(cfg.Listener.Auther, cfg.Listener.Authers...)
@@ -83,7 +85,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 	var auther auth.IAuthenticator
 	if len(authers) > 0 {
-		auther = auth.AuthenticatorGroup(authers...)
+		auther = xauth.AuthenticatorGroup(authers...)
 	}
 
 	admissions := admission_parser.List(cfg.Admission, cfg.Admissions...)
@@ -150,11 +152,11 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 
 	listenOpts := []listener.Option{
 		listener.AddrOption(cfg.Addr),
-		listener.RouterOption(chain.NewRouter(routerOpts...)),
+		listener.RouterOption(xchain.NewRouter(routerOpts...)),
 		listener.AutherOption(auther),
 		listener.AuthOption(auth_parser.Info(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
-		listener.AdmissionOption(admission.AdmissionGroup(admissions...)),
+		listener.AdmissionOption(xadmission.AdmissionGroup(admissions...)),
 		listener.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Limiter)),
 		listener.ConnLimiterOption(app.Runtime.ConnLimiterRegistry().Get(cfg.CLimiter)),
 		listener.ServiceOption(cfg.Name),
@@ -174,9 +176,15 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		}
 		defer netns.Set(originNs)
 
-		ns, err := netns.GetFromName(netnsIn)
+		var ns netns.NsHandle
+
+		if strings.HasPrefix(netnsIn, "/") {
+			ns, err = netns.GetFromPath(netnsIn)
+		} else {
+			ns, err = netns.GetFromName(netnsIn)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("netns.GetFromName(%s): %v", netnsIn, err)
+			return nil, fmt.Errorf("netns.Get(%s): %v", netnsIn, err)
 		}
 		defer ns.Close()
 
@@ -216,6 +224,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 	if tlsConfig == nil {
 		tlsConfig = parsing.DefaultTLSConfig().Clone()
+		tls_util.SetTLSOptions(tlsConfig, tlsCfg.Options)
 	}
 
 	authers = auth_parser.List(cfg.Handler.Auther, cfg.Handler.Authers...)
@@ -227,7 +236,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 
 	auther = nil
 	if len(authers) > 0 {
-		auther = auth.AuthenticatorGroup(authers...)
+		auther = xauth.AuthenticatorGroup(authers...)
 	}
 
 	var recorders []recorder.RecorderObject
@@ -240,6 +249,8 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 				Direction:       mdutil.GetBool(md, parsing.MDKeyRecorderDirection),
 				TimestampFormat: mdutil.GetString(md, parsing.MDKeyRecorderTimestampFormat),
 				Hexdump:         mdutil.GetBool(md, parsing.MDKeyRecorderHexdump),
+				HTTPBody:        mdutil.GetBool(md, parsing.MDKeyRecorderHTTPBody),
+				MaxBodySize:     mdutil.GetInt(md, parsing.MDKeyRecorderHTTPMaxBodySize),
 			},
 		})
 	}
@@ -264,14 +275,15 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	var h handler.IHandler
 	if rf := app.Runtime.HandlerRegistry().Get(cfg.Handler.Type); rf != nil {
 		h = rf(
-			handler.RouterOption(chain.NewRouter(routerOpts...)),
+			handler.RouterOption(xchain.NewRouter(routerOpts...)),
 			handler.AutherOption(auther),
 			handler.AuthOption(auth_parser.Info(cfg.Handler.Auth)),
-			handler.BypassOption(bypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
+			handler.BypassOption(xbypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
 			handler.TLSConfigOption(tlsConfig),
 			handler.RateLimiterOption(app.Runtime.RateLimiterRegistry().Get(cfg.RLimiter)),
 			handler.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Handler.Limiter)),
 			handler.ObserverOption(app.Runtime.ObserverRegistry().Get(cfg.Handler.Observer)),
+			handler.RecordersOption(recorders...),
 			handler.LoggerOption(handlerLogger),
 			handler.ServiceOption(cfg.Name),
 			handler.NetnsOption(netnsIn),
@@ -298,7 +310,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	}
 
 	s := xservice.NewService(cfg.Name, ln, h,
-		xservice.AdmissionOption(admission.AdmissionGroup(admissions...)),
+		xservice.AdmissionOption(xadmission.AdmissionGroup(admissions...)),
 		xservice.PreUpOption(preUp),
 		xservice.PreDownOption(preDown),
 		xservice.PostUpOption(postUp),
@@ -332,50 +344,42 @@ func parseForwarder(cfg *config.ForwarderConfig, log logger.ILogger) (hop.IHop, 
 		Selector: cfg.Selector,
 	}
 	for _, node := range cfg.Nodes {
-		if node != nil {
-			addrs := xnet.AddrPortRange(node.Addr).Addrs()
-			if len(addrs) == 0 {
-				addrs = append(addrs, node.Addr)
-			}
-			for i, addr := range addrs {
-				name := node.Name
-				if i > 0 {
-					name = fmt.Sprintf("%s-%d", node.Name, i)
-				}
+		if node == nil {
+			continue
+		}
 
-				filter := node.Filter
-				if filter == nil {
-					if node.Protocol != "" || node.Host != "" || node.Path != "" {
-						filter = &config.NodeFilterConfig{
-							Protocol: node.Protocol,
-							Host:     node.Host,
-							Path:     node.Path,
-						}
-					}
+		filter := node.Filter
+		if filter == nil {
+			if node.Protocol != "" || node.Host != "" || node.Path != "" {
+				filter = &config.NodeFilterConfig{
+					Protocol: node.Protocol,
+					Host:     node.Host,
+					Path:     node.Path,
 				}
-
-				httpCfg := node.HTTP
-				if node.Auth != nil {
-					if httpCfg == nil {
-						httpCfg = &config.HTTPNodeConfig{}
-					}
-					if httpCfg.Auth == nil {
-						httpCfg.Auth = node.Auth
-					}
-				}
-				hc.Nodes = append(hc.Nodes, &config.NodeConfig{
-					Name:     name,
-					Addr:     addr,
-					Network:  node.Network,
-					Bypass:   node.Bypass,
-					Bypasses: node.Bypasses,
-					Filter:   filter,
-					HTTP:     httpCfg,
-					TLS:      node.TLS,
-					Metadata: node.Metadata,
-				})
 			}
 		}
+
+		httpCfg := node.HTTP
+		if node.Auth != nil {
+			if httpCfg == nil {
+				httpCfg = &config.HTTPNodeConfig{}
+			}
+			if httpCfg.Auth == nil {
+				httpCfg.Auth = node.Auth
+			}
+		}
+		hc.Nodes = append(hc.Nodes, &config.NodeConfig{
+			Name:     node.Name,
+			Addr:     node.Addr,
+			Network:  node.Network,
+			Bypass:   node.Bypass,
+			Bypasses: node.Bypasses,
+			Filter:   filter,
+			Matcher:  node.Matcher,
+			HTTP:     httpCfg,
+			TLS:      node.TLS,
+			Metadata: node.Metadata,
+		})
 	}
 	return hop_parser.ParseHop(&hc, log)
 }

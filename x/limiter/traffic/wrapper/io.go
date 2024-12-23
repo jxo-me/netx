@@ -4,25 +4,21 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"time"
 
-	limiter "github.com/jxo-me/netx/core/limiter/traffic"
+	"github.com/jxo-me/netx/core/limiter"
+	"github.com/jxo-me/netx/core/limiter/traffic"
 )
 
 // readWriter is an io.ReadWriter with traffic limiter supported.
 type readWriter struct {
 	io.ReadWriter
-	rbuf       bytes.Buffer
-	limiter    limiter.ITrafficLimiter
-	limiterIn  limiter.ILimiter
-	limiterOut limiter.ILimiter
-	expIn      int64
-	expOut     int64
-	opts       []limiter.Option
-	key        string
+	rbuf    bytes.Buffer
+	limiter traffic.ITrafficLimiter
+	opts    []limiter.Option
+	key     string
 }
 
-func WrapReadWriter(limiter limiter.ITrafficLimiter, rw io.ReadWriter, opts ...limiter.Option) io.ReadWriter {
+func WrapReadWriter(limiter traffic.ITrafficLimiter, rw io.ReadWriter, key string, opts ...limiter.Option) io.ReadWriter {
 	if limiter == nil {
 		return rw
 	}
@@ -31,36 +27,13 @@ func WrapReadWriter(limiter limiter.ITrafficLimiter, rw io.ReadWriter, opts ...l
 		ReadWriter: rw,
 		limiter:    limiter,
 		opts:       opts,
+		key:        key,
 	}
-}
-
-func (p *readWriter) getInLimiter() limiter.ILimiter {
-	now := time.Now().UnixNano()
-	// cache the limiter for 60s
-	if p.limiter != nil && time.Duration(now-p.expIn) > 60*time.Second {
-		if lim := p.limiter.In(context.Background(), p.key, p.opts...); lim != nil {
-			p.limiterIn = lim
-		}
-		p.expIn = now
-	}
-	return p.limiterIn
-}
-
-func (p *readWriter) getOutLimiter() limiter.ILimiter {
-	now := time.Now().UnixNano()
-	// cache the limiter for 60s
-	if p.limiter != nil && time.Duration(now-p.expOut) > 60*time.Second {
-		if lim := p.limiter.Out(context.Background(), p.key, p.opts...); lim != nil {
-			p.limiterOut = lim
-		}
-		p.expOut = now
-	}
-	return p.limiterOut
 }
 
 func (p *readWriter) Read(b []byte) (n int, err error) {
-	limiter := p.getInLimiter()
-	if limiter == nil {
+	limiter := p.limiter.In(context.Background(), p.key, p.opts...)
+	if limiter == nil || limiter.Limit() <= 0 {
 		return p.ReadWriter.Read(b)
 	}
 
@@ -89,8 +62,8 @@ func (p *readWriter) Read(b []byte) (n int, err error) {
 }
 
 func (p *readWriter) Write(b []byte) (n int, err error) {
-	limiter := p.getOutLimiter()
-	if limiter == nil {
+	limiter := p.limiter.Out(context.Background(), p.key, p.opts...)
+	if limiter == nil || limiter.Limit() <= 0 {
 		return p.ReadWriter.Write(b)
 	}
 

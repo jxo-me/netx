@@ -2,16 +2,19 @@ package ftcp
 
 import (
 	"net"
+	"time"
 
-	"github.com/jxo-me/netx/core/common/net/udp"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	"github.com/jxo-me/netx/x/internal/net/udp"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"github.com/xtaci/tcpraw"
 )
 
@@ -50,7 +53,14 @@ func (l *ftcpListener) Init(md md.IMetaData) (err error) {
 	conn = metrics.WrapPacketConn(l.options.Service, conn)
 	conn = stats.WrapPacketConn(conn, l.options.Stats)
 	conn = admission.WrapPacketConn(l.options.Admission, conn)
-	conn = limiter.WrapPacketConn(l.options.TrafficLimiter, conn)
+	conn = limiter_wrapper.WrapPacketConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		"",
+		limiter.ScopeOption(limiter.ScopeService),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+	)
 
 	l.ln = udp.NewListener(
 		conn,
@@ -59,14 +69,29 @@ func (l *ftcpListener) Init(md md.IMetaData) (err error) {
 			ReadQueueSize:  l.md.readQueueSize,
 			ReadBufferSize: l.md.readBufferSize,
 			TTL:            l.md.ttl,
-			KeepAlive:      true,
+			Keepalive:      true,
 			Logger:         l.logger,
 		})
 	return
 }
 
 func (l *ftcpListener) Accept() (conn net.Conn, err error) {
-	return l.ln.Accept()
+	conn, err = l.ln.Accept()
+	if err != nil {
+		return
+	}
+
+	conn = limiter_wrapper.WrapConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		conn.RemoteAddr().String(),
+		limiter.ScopeOption(limiter.ScopeConn),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+		limiter.SrcOption(conn.RemoteAddr().String()),
+	)
+
+	return
 }
 
 func (l *ftcpListener) Addr() net.Addr {

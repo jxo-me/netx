@@ -6,7 +6,7 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 const (
@@ -14,11 +14,12 @@ const (
 )
 
 type metadata struct {
-	probeResistance *probeResistance
-	header          http.Header
-	hash            string
-	authBasicRealm  string
-	observePeriod   time.Duration
+	probeResistance        *probeResistance
+	header                 http.Header
+	hash                   string
+	authBasicRealm         string
+	observePeriod          time.Duration
+	limiterRefreshInterval time.Duration
 }
 
 func (h *http2Handler) parseMetadata(md mdata.IMetaData) error {
@@ -42,7 +43,21 @@ func (h *http2Handler) parseMetadata(md mdata.IMetaData) error {
 	h.md.hash = mdutil.GetString(md, "hash")
 	h.md.authBasicRealm = mdutil.GetString(md, "authBasicRealm")
 
-	h.md.observePeriod = mdutil.GetDuration(md, "observePeriod")
+	h.md.observePeriod = mdutil.GetDuration(md, "observePeriod", "observer.observePeriod")
+	if h.md.observePeriod == 0 {
+		h.md.observePeriod = 5 * time.Second
+	}
+	if h.md.observePeriod < time.Second {
+		h.md.observePeriod = time.Second
+	}
+
+	h.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if h.md.limiterRefreshInterval == 0 {
+		h.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if h.md.limiterRefreshInterval < time.Second {
+		h.md.limiterRefreshInterval = time.Second
+	}
 
 	return nil
 }

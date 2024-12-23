@@ -4,15 +4,17 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	kcp_util "github.com/jxo-me/netx/x/internal/util/kcp"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
@@ -73,7 +75,14 @@ func (l *kcpListener) Init(md md.IMetaData) (err error) {
 	conn = metrics.WrapUDPConn(l.options.Service, conn)
 	conn = stats.WrapUDPConn(conn, l.options.Stats)
 	conn = admission.WrapUDPConn(l.options.Admission, conn)
-	conn = limiter.WrapUDPConn(l.options.TrafficLimiter, conn)
+	conn = limiter_wrapper.WrapUDPConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		"",
+		limiter.ScopeOption(limiter.ScopeService),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+	)
 
 	ln, err := kcp.ServeConn(
 		kcp_util.BlockCrypt(config.Key, config.Crypt, kcp_util.DefaultSalt),
@@ -108,6 +117,15 @@ func (l *kcpListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
+		conn = limiter_wrapper.WrapConn(
+			conn,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			conn.RemoteAddr().String(),
+			limiter.ScopeOption(limiter.ScopeConn),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(conn.LocalAddr().Network()),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

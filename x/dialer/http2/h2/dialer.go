@@ -87,15 +87,15 @@ func (d *h2Dialer) Dial(ctx context.Context, address string, opts ...dialer.Dial
 		if d.h2c {
 			client.Transport = &http2.Transport{
 				AllowHTTP: true,
-				DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-					return options.NetDialer.Dial(ctx, network, addr)
+				DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+					return options.Dialer.Dial(ctx, network, addr)
 				},
 			}
 		} else {
 			client.Transport = &http.Transport{
 				TLSClientConfig: d.options.TLSConfig,
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-					return options.NetDialer.Dial(ctx, network, addr)
+					return options.Dialer.Dial(ctx, network, addr)
 				},
 				ForceAttemptHTTP2:     true,
 				MaxIdleConns:          100,
@@ -120,14 +120,11 @@ func (d *h2Dialer) Dial(ctx context.Context, address string, opts ...dialer.Dial
 	}
 	pr, pw := io.Pipe()
 	req := &http.Request{
-		Method:     http.MethodConnect,
-		URL:        &url.URL{Scheme: scheme, Host: host},
-		Header:     d.md.header,
-		ProtoMajor: 2,
-		ProtoMinor: 0,
-		Body:       pr,
-		Host:       host,
-		// ContentLength: -1,
+		Method: http.MethodConnect,
+		URL:    &url.URL{Scheme: scheme, Host: host},
+		Header: d.md.header,
+		Body:   pr,
+		Host:   host,
 	}
 	if req.Header == nil {
 		req.Header = make(http.Header)

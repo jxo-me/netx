@@ -6,7 +6,7 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 	"github.com/mitchellh/go-homedir"
 	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/ssh"

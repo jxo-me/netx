@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/util/mux"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 var (
@@ -55,6 +55,9 @@ func (c *tunnelConnector) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 	if c.md.muxCfg.Version == 0 {
 		c.md.muxCfg.Version = 2
+	}
+	if c.md.muxCfg.MaxStreamBuffer == 0 {
+		c.md.muxCfg.MaxStreamBuffer = 1048576
 	}
 
 	return

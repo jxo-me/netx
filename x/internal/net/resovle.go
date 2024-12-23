@@ -1,4 +1,4 @@
-package chain
+package net
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/jxo-me/netx/core/hosts"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/resolver"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 )
 
 func Resolve(ctx context.Context, network, addr string, r resolver.IResolver, hosts hosts.IHostMapper, log logger.ILogger) (string, error) {
@@ -19,6 +20,13 @@ func Resolve(ctx context.Context, network, addr string, r resolver.IResolver, ho
 	if host == "" {
 		return addr, nil
 	}
+
+	if log == nil {
+		log = logger.Default()
+	}
+	log = log.WithFields(map[string]any{
+		"sid": ctxvalue.SidFromContext(ctx),
+	})
 
 	if hosts != nil {
 		if ips, _ := hosts.Lookup(ctx, network, host); len(ips) > 0 {

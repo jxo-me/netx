@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"net/url"
 
-	"github.com/jxo-me/netx/core/common/net/dialer"
+	xnet "github.com/jxo-me/netx/core/common/net"
 	"github.com/jxo-me/netx/core/logger"
 )
 
@@ -42,8 +42,8 @@ func ProxyProtocolOption(ppv int) Option {
 }
 
 type DialOptions struct {
-	Host      string
-	NetDialer *dialer.NetDialer
+	Host   string
+	Dialer xnet.Dialer
 }
 
 type DialOption func(opts *DialOptions)
@@ -54,9 +54,9 @@ func HostDialOption(host string) DialOption {
 	}
 }
 
-func NetDialerDialOption(netd *dialer.NetDialer) DialOption {
+func NetDialerDialOption(dialer xnet.Dialer) DialOption {
 	return func(opts *DialOptions) {
-		opts.NetDialer = netd
+		opts.Dialer = dialer
 	}
 }
 

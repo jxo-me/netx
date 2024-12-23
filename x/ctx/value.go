@@ -1,6 +1,11 @@
 package ctx
 
-import "context"
+import (
+	"bytes"
+	"context"
+
+	"github.com/jxo-me/netx/core/logger"
+)
 
 // clientAddrKey saves the client address.
 type clientAddrKey struct{}
@@ -72,5 +77,35 @@ func ContextWithClientID(ctx context.Context, clientID ClientID) context.Context
 
 func ClientIDFromContext(ctx context.Context) ClientID {
 	v, _ := ctx.Value(keyClientID).(ClientID)
+	return v
+}
+
+type bufferKey struct{}
+
+var (
+	keyBuffer = &bufferKey{}
+)
+
+func ContextWithBuffer(ctx context.Context, buffer *bytes.Buffer) context.Context {
+	return context.WithValue(ctx, keyBuffer, buffer)
+}
+
+func BufferFromContext(ctx context.Context) *bytes.Buffer {
+	v, _ := ctx.Value(keyBuffer).(*bytes.Buffer)
+	return v
+}
+
+type loggerKey struct{}
+
+var (
+	keyLogger = &loggerKey{}
+)
+
+func ContextWithLogger(ctx context.Context, log logger.ILogger) context.Context {
+	return context.WithValue(ctx, keyLogger, log)
+}
+
+func LoggerFromContext(ctx context.Context) logger.ILogger {
+	v, _ := ctx.Value(keyLogger).(logger.ILogger)
 	return v
 }

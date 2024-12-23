@@ -6,23 +6,33 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 )
 
 type WebsocketConn interface {
 	net.Conn
 	WriteMessage(int, []byte) error
 	ReadMessage() (int, []byte, error)
+	xnet.ClientAddr
 }
 
 type websocketConn struct {
 	*websocket.Conn
-	rb  []byte
-	mux sync.Mutex
+	rb         []byte
+	clientAddr net.Addr
+	mux        sync.Mutex
 }
 
 func Conn(conn *websocket.Conn) WebsocketConn {
 	return &websocketConn{
 		Conn: conn,
+	}
+}
+
+func ConnWithClientAddr(conn *websocket.Conn, clientAddr net.Addr) WebsocketConn {
+	return &websocketConn{
+		Conn:       conn,
+		clientAddr: clientAddr,
 	}
 }
 
@@ -65,4 +75,8 @@ func (c *websocketConn) SetWriteDeadline(t time.Time) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	return c.Conn.SetWriteDeadline(t)
+}
+
+func (c *websocketConn) ClientAddr() net.Addr {
+	return c.clientAddr
 }

@@ -2,14 +2,21 @@ package tunnel
 
 import (
 	"context"
+	"net"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jxo-me/netx/core/limiter"
+	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/sd"
 	"github.com/jxo-me/netx/relay"
 	"github.com/jxo-me/netx/x/internal/util/mux"
+
+	"github.com/google/uuid"
+	"github.com/jxo-me/netx/core/observer/stats"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"github.com/jxo-me/netx/x/selector"
 )
 
@@ -17,40 +24,59 @@ const (
 	MaxWeight uint8 = 0xff
 )
 
+type ConnectorOptions struct {
+	service string
+	sd      sd.ISD
+	stats   *stats.Stats
+	limiter traffic.ITrafficLimiter
+}
+
 type Connector struct {
 	id   relay.ConnectorID
 	tid  relay.TunnelID
 	node string
-	sd   sd.ISD
-	t    time.Time
 	s    *mux.Session
+	t    time.Time
+	opts *ConnectorOptions
+	log  logger.ILogger
 }
 
-func NewConnector(id relay.ConnectorID, tid relay.TunnelID, node string, s *mux.Session, sd sd.ISD) *Connector {
+func NewConnector(id relay.ConnectorID, tid relay.TunnelID, node string, s *mux.Session, opts *ConnectorOptions) *Connector {
+	if opts == nil {
+		opts = &ConnectorOptions{}
+	}
+
 	c := &Connector{
 		id:   id,
 		tid:  tid,
 		node: node,
-		sd:   sd,
-		t:    time.Now(),
 		s:    s,
+		t:    time.Now(),
+		opts: opts,
+		log: logger.Default().WithFields(map[string]any{
+			"node":      node,
+			"tunnel":    tid.String(),
+			"connector": id.String(),
+		}),
 	}
-	go c.accept()
+
+	go c.waitClose()
 	return c
 }
 
-func (c *Connector) accept() {
+func (c *Connector) waitClose() {
 	for {
 		conn, err := c.s.Accept()
 		if err != nil {
-			logger.Default().Errorf("connector %s: %v", c.id, err)
-			c.s.Close()
-			if c.sd != nil {
-				c.sd.Deregister(context.Background(), &sd.Service{
+			c.log.Errorf("connector %s: %v", c.id, err)
+			c.Close()
+			if c.opts.sd != nil {
+				c.opts.sd.Deregister(context.Background(), &sd.Service{
 					ID:   c.id.String(),
 					Name: c.tid.String(),
 					Node: c.node,
 				})
+				c.log.Debugf("deregister connector %s from sd", c.id.String())
 			}
 			return
 		}
@@ -62,8 +88,49 @@ func (c *Connector) ID() relay.ConnectorID {
 	return c.id
 }
 
-func (c *Connector) Session() *mux.Session {
-	return c.s
+func (c *Connector) GetConn() (net.Conn, error) {
+	if c == nil || c.s == nil {
+		return nil, nil
+	}
+
+	conn, err := c.s.GetConn()
+	if err != nil {
+		return nil, err
+	}
+
+	conn = stats_wrapper.WrapConn(conn, c.opts.stats)
+
+	network := "tcp"
+	if c.id.IsUDP() {
+		network = "udp"
+	}
+	conn = traffic_wrapper.WrapConn(
+		conn,
+		c.opts.limiter,
+		c.tid.String(),
+		limiter.ScopeOption(limiter.ScopeClient),
+		limiter.ServiceOption(c.opts.service),
+		limiter.ClientOption(c.tid.String()),
+		limiter.NetworkOption(network),
+		limiter.SrcOption(conn.RemoteAddr().String()),
+	)
+	return conn, nil
+}
+
+func (c *Connector) Close() error {
+	if c == nil || c.s == nil {
+		return nil
+	}
+
+	return c.s.Close()
+}
+
+func (c *Connector) IsClosed() bool {
+	if c == nil || c.s == nil {
+		return true
+	}
+
+	return c.s.IsClosed()
 }
 
 type Tunnel struct {
@@ -73,9 +140,7 @@ type Tunnel struct {
 	t          time.Time
 	close      chan struct{}
 	mu         sync.RWMutex
-	sd         sd.ISD
 	ttl        time.Duration
-	rw         *selector.RandomWeighted[*Connector]
 }
 
 func NewTunnel(node string, tid relay.TunnelID, ttl time.Duration) *Tunnel {
@@ -85,17 +150,12 @@ func NewTunnel(node string, tid relay.TunnelID, ttl time.Duration) *Tunnel {
 		t:     time.Now(),
 		close: make(chan struct{}),
 		ttl:   ttl,
-		rw:    selector.NewRandomWeighted[*Connector](),
 	}
 	if t.ttl <= 0 {
 		t.ttl = defaultTTL
 	}
 	go t.clean()
 	return t
-}
-
-func (t *Tunnel) WithSD(sd sd.ISD) {
-	t.sd = sd
 }
 
 func (t *Tunnel) ID() relay.TunnelID {
@@ -117,12 +177,18 @@ func (t *Tunnel) GetConnector(network string) *Connector {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	rw := t.rw
-	rw.Reset()
+	if len(t.connectors) == 1 {
+		if t.connectors[0].IsClosed() {
+			return nil
+		}
+		return t.connectors[0]
+	}
+
+	rw := selector.NewRandomWeighted[*Connector]()
 
 	found := false
 	for _, c := range t.connectors {
-		if c.Session().IsClosed() {
+		if c.IsClosed() {
 			continue
 		}
 
@@ -145,6 +211,22 @@ func (t *Tunnel) GetConnector(network string) *Connector {
 	}
 
 	return rw.Next()
+}
+
+func (t *Tunnel) Close() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	select {
+	case <-t.close:
+	default:
+		for _, c := range t.connectors {
+			c.Close()
+		}
+		close(t.close)
+	}
+
+	return nil
 }
 
 func (t *Tunnel) CloseOnIdle() bool {
@@ -174,23 +256,17 @@ func (t *Tunnel) clean() {
 				t.mu.Unlock()
 				break
 			}
+
 			var connectors []*Connector
 			for _, c := range t.connectors {
-				if c.Session().IsClosed() {
-					logger.Default().Debugf("remove tunnel: %s, connector: %s", t.id, c.id)
-					if t.sd != nil {
-						t.sd.Deregister(context.Background(), &sd.Service{
-							ID:   c.id.String(),
-							Name: t.id.String(),
-							Node: t.node,
-						})
-					}
+				if c.IsClosed() {
+					c.log.Debugf("remove connector: %s %s", t.id, c.id)
 					continue
 				}
 
 				connectors = append(connectors, c)
-				if t.sd != nil {
-					t.sd.Renew(context.Background(), &sd.Service{
+				if c.opts.sd != nil {
+					c.opts.sd.Renew(context.Background(), &sd.Service{
 						ID:   c.id.String(),
 						Name: t.id.String(),
 						Node: t.node,
@@ -209,18 +285,21 @@ func (t *Tunnel) clean() {
 
 type ConnectorPool struct {
 	node    string
-	sd      sd.ISD
 	tunnels map[string]*Tunnel
 	mu      sync.RWMutex
+	cancel  context.CancelFunc
 }
 
-func NewConnectorPool(node string, sd sd.ISD) *ConnectorPool {
+func NewConnectorPool(node string) *ConnectorPool {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	p := &ConnectorPool{
 		node:    node,
-		sd:      sd,
 		tunnels: make(map[string]*Tunnel),
+		cancel:  cancel,
 	}
-	go p.closeIdles()
+
+	go p.closeIdles(ctx)
 	return p
 }
 
@@ -233,8 +312,6 @@ func (p *ConnectorPool) Add(tid relay.TunnelID, c *Connector, ttl time.Duration)
 	t := p.tunnels[s]
 	if t == nil {
 		t = NewTunnel(p.node, tid, ttl)
-		t.WithSD(p.sd)
-
 		p.tunnels[s] = t
 	}
 	t.AddConnector(c)
@@ -256,19 +333,45 @@ func (p *ConnectorPool) Get(network string, tid string) *Connector {
 	return t.GetConnector(network)
 }
 
-func (p *ConnectorPool) closeIdles() {
-	ticker := time.NewTicker(1 * time.Hour)
+func (p *ConnectorPool) Close() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.cancel != nil {
+		p.cancel()
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for k, v := range p.tunnels {
+		v.Close()
+		delete(p.tunnels, k)
+	}
+
+	return nil
+}
+
+func (p *ConnectorPool) closeIdles(ctx context.Context) {
+	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		p.mu.Lock()
-		for k, v := range p.tunnels {
-			if v.CloseOnIdle() {
-				delete(p.tunnels, k)
-				logger.Default().Debugf("remove idle tunnel: %s", k)
+	for {
+		select {
+		case <-ticker.C:
+			p.mu.Lock()
+			for k, v := range p.tunnels {
+				if v.CloseOnIdle() {
+					delete(p.tunnels, k)
+					logger.Default().Debugf("remove idle tunnel: %s", k)
+				}
 			}
+			p.mu.Unlock()
+
+		case <-ctx.Done():
+			return
 		}
-		p.mu.Unlock()
 	}
 }
 

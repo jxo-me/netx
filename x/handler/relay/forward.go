@@ -7,14 +7,14 @@ import (
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/limiter/traffic"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/relay"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
-	"github.com/jxo-me/netx/x/stats"
-	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network string, log logger.ILogger) error {
@@ -38,7 +38,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), target.Addr)
 
-	cc, err := h.router.Dial(ctx, network, target.Addr)
+	cc, err := h.options.Router.Dial(ctx, network, target.Addr)
 	if err != nil {
 		// TODO: the router itself may be failed due to the failed node in the router,
 		// the dead marker may be a wrong operation.
@@ -90,11 +90,16 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 	}
 
 	clientID := ctxvalue.ClientIDFromContext(ctx)
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
-		traffic.NetworkOption(network),
-		traffic.AddrOption(target.Addr),
-		traffic.ClientOption(string(clientID)),
-		traffic.SrcOption(conn.RemoteAddr().String()),
+	rw := wrapper.WrapReadWriter(
+		h.limiter,
+		conn,
+		string(clientID),
+		limiter.ServiceOption(h.options.Service),
+		limiter.ScopeOption(limiter.ScopeClient),
+		limiter.NetworkOption(network),
+		limiter.AddrOption(target.Addr),
+		limiter.ClientOption(string(clientID)),
+		limiter.SrcOption(conn.RemoteAddr().String()),
 	)
 	if h.options.Observer != nil {
 		pstats := h.stats.Stats(string(clientID))
@@ -106,7 +111,7 @@ func (h *relayHandler) handleForward(ctx context.Context, conn net.Conn, network
 
 	t := time.Now()
 	log.Debugf("%s <-> %s", conn.RemoteAddr(), target.Addr)
-	netpkg.Transport(rw, cc)
+	xnet.Transport(rw, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Debugf("%s >-< %s", conn.RemoteAddr(), target.Addr)

@@ -3,8 +3,10 @@ package bypass
 import (
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +15,10 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/matcher"
+)
+
+var (
+	ErrBypass = errors.New("bypass")
 )
 
 type options struct {
@@ -266,8 +272,8 @@ func (bp *localBypass) matched(addr string) bool {
 		host = addr
 	}
 
-	if ip := net.ParseIP(host); ip != nil {
-		return bp.cidrMatcher.Match(host)
+	if ip := net.ParseIP(host); ip != nil && bp.cidrMatcher.Match(host) {
+		return true
 	}
 
 	return bp.wildcardMatcher.Match(addr)
@@ -282,4 +288,46 @@ func (bp *localBypass) Close() error {
 		bp.options.redisLoader.Close()
 	}
 	return nil
+}
+
+type bypassGroup struct {
+	bypasses []bypass.IBypass
+}
+
+func BypassGroup(bypasses ...bypass.IBypass) bypass.IBypass {
+	return &bypassGroup{
+		bypasses: bypasses,
+	}
+}
+
+func (p *bypassGroup) Contains(ctx context.Context, network, addr string, opts ...bypass.Option) bool {
+	var whitelist, blacklist []bool
+	for _, bypass := range p.bypasses {
+		result := bypass.Contains(ctx, network, addr, opts...)
+		if bypass.IsWhitelist() {
+			whitelist = append(whitelist, result)
+		} else {
+			blacklist = append(blacklist, result)
+		}
+	}
+	status := false
+	if len(whitelist) > 0 {
+		if slices.Contains(whitelist, false) {
+			status = false
+		} else {
+			status = true
+		}
+	}
+	if !status && len(blacklist) > 0 {
+		if slices.Contains(blacklist, true) {
+			status = true
+		} else {
+			status = false
+		}
+	}
+	return status
+}
+
+func (p *bypassGroup) IsWhitelist() bool {
+	return false
 }

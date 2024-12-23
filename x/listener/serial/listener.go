@@ -5,13 +5,15 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	serial "github.com/jxo-me/netx/x/internal/util/serial"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 type serialListener struct {
@@ -89,12 +91,19 @@ func (l *serialListener) listenLoop() {
 				return err
 			}
 
-			c := serial.NewConn(port, l.addr, cancel)
-			c = metrics.WrapConn(l.options.Service, c)
-			c = stats.WrapConn(c, l.options.Stats)
-			c = limiter.WrapConn(l.options.TrafficLimiter, c)
+			conn := serial.NewConn(port, l.addr, cancel)
+			conn = metrics.WrapConn(l.options.Service, conn)
+			conn = stats.WrapConn(conn, l.options.Stats)
+			conn = limiter_wrapper.WrapConn(
+				conn,
+				limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+				"",
+				limiter.ScopeOption(limiter.ScopeService),
+				limiter.ServiceOption(l.options.Service),
+				limiter.NetworkOption(conn.LocalAddr().Network()),
+			)
 
-			l.cqueue <- c
+			l.cqueue <- conn
 
 			return nil
 		}()

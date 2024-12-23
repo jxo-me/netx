@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/core/selector"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 type failFilter[T any] struct {

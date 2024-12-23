@@ -4,15 +4,18 @@ go 1.22
 
 toolchain go1.22.4
 
+replace (
+	github.com/jxo-me/netx/core => ../core
+	github.com/jxo-me/netx/x => ../x
+	github.com/jxo-me/netx/plugin => ../plugin
+)
+
 require (
 	github.com/gogf/gf/v2 v2.7.2
 	github.com/jxo-me/gfbot v0.1.19
 	github.com/jxo-me/netx/core v0.0.10
 	github.com/jxo-me/netx/x v0.0.14
 	gopkg.in/yaml.v3 v3.0.1
-)
-
-require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/alecthomas/units v0.0.0-20231202071711-9a357b53e9c9 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

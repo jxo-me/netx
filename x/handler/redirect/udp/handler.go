@@ -1,21 +1,28 @@
 package redirect
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	"github.com/jxo-me/netx/core/observer/stats"
+	"github.com/jxo-me/netx/core/recorder"
+	xbypass "github.com/jxo-me/netx/x/bypass"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	xnet "github.com/jxo-me/netx/x/internal/net"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 type redirectHandler struct {
-	router  *chain.Router
-	md      metadata
-	options handler.Options
+	md       metadata
+	options  handler.Options
+	recorder recorder.RecorderObject
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -34,48 +41,83 @@ func (h *redirectHandler) Init(md md.IMetaData) (err error) {
 		return
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
 	}
 
 	return
 }
 
-func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) (err error) {
 	defer conn.Close()
 
 	start := time.Now()
+
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+	ro.ClientIP, _, _ = net.SplitHostPort(conn.RemoteAddr().String())
+
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+
+	pStats := stats.Stats{}
+	conn = stats_wrapper.WrapConn(conn, &pStats)
+
 	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.Duration = time.Since(start)
+		ro.InputBytes = pStats.Get(stats.KindInputBytes)
+		ro.OutputBytes = pStats.Get(stats.KindOutputBytes)
+		if err := ro.Record(ctx, h.recorder.Recorder); err != nil {
+			log.Error("record: %v", err)
+		}
+
 		log.WithFields(map[string]any{
-			"duration": time.Since(start),
+			"duration":    time.Since(start),
+			"inputBytes":  ro.InputBytes,
+			"outputBytes": ro.OutputBytes,
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return nil
+		return rate_limiter.ErrRateLimit
 	}
 
 	dstAddr := conn.LocalAddr()
+	ro.Network = dstAddr.Network()
+	ro.Host = dstAddr.String()
 
 	log = log.WithFields(map[string]any{
-		"dst": fmt.Sprintf("%s/%s", dstAddr, dstAddr.Network()),
+		"dst":  fmt.Sprintf("%s/%s", dstAddr, dstAddr.Network()),
+		"host": dstAddr.String(),
 	})
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), dstAddr)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, dstAddr.Network(), dstAddr.String()) {
+	if h.options.Bypass != nil &&
+		h.options.Bypass.Contains(ctx, dstAddr.Network(), dstAddr.String()) {
 		log.Debug("bypass: ", dstAddr)
-		return nil
+		return xbypass.ErrBypass
 	}
 
-	cc, err := h.router.Dial(ctx, dstAddr.Network(), dstAddr.String())
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), dstAddr.Network(), dstAddr.String())
+	ro.Route = buf.String()
 	if err != nil {
 		log.Error(err)
 		return err
@@ -84,7 +126,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), dstAddr)
-	netpkg.Transport(conn, cc)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), dstAddr)

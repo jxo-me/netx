@@ -4,21 +4,21 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	xbypass "github.com/jxo-me/netx/x/bypass"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/config/parsing"
-	bypass_parser "github.com/jxo-me/netx/x/config/parsing/bypass"
-	node_parser "github.com/jxo-me/netx/x/config/parsing/node"
-	selector_parser "github.com/jxo-me/netx/x/config/parsing/selector"
+	bypassparser "github.com/jxo-me/netx/x/config/parsing/bypass"
+	nodeparser "github.com/jxo-me/netx/x/config/parsing/node"
+	selectorparser "github.com/jxo-me/netx/x/config/parsing/selector"
 	xhop "github.com/jxo-me/netx/x/hop"
 	hopplugin "github.com/jxo-me/netx/x/hop/plugin"
 	"github.com/jxo-me/netx/x/internal/loader"
 	"github.com/jxo-me/netx/x/internal/plugin"
 	"github.com/jxo-me/netx/x/metadata"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
@@ -97,7 +97,7 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 			v.Dialer.Type = "tcp"
 		}
 
-		node, err := node_parser.ParseNode(cfg.Name, v, log)
+		node, err := nodeparser.ParseNode(cfg.Name, v, log)
 		if err != nil {
 			return nil, err
 		}
@@ -106,16 +106,16 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 		}
 	}
 
-	sel := selector_parser.ParseNodeSelector(cfg.Selector)
+	sel := selectorparser.ParseNodeSelector(cfg.Selector)
 	if sel == nil {
-		sel = selector_parser.DefaultNodeSelector()
+		sel = selectorparser.DefaultNodeSelector()
 	}
 
 	opts := []xhop.Option{
 		xhop.NameOption(cfg.Name),
 		xhop.NodeOption(nodes...),
 		xhop.SelectorOption(sel),
-		xhop.BypassOption(bypass.BypassGroup(bypass_parser.List(cfg.Bypass, cfg.Bypasses...)...)),
+		xhop.BypassOption(xbypass.BypassGroup(bypassparser.List(cfg.Bypass, cfg.Bypasses...)...)),
 		xhop.ReloadPeriodOption(cfg.Reload),
 		xhop.LoggerOption(log.WithFields(map[string]any{
 			"kind": "hop",
@@ -130,6 +130,7 @@ func ParseHop(cfg *config.HopConfig, log logger.ILogger) (hop.IHop, error) {
 		opts = append(opts, xhop.RedisLoaderOption(loader.RedisStringLoader(
 			cfg.Redis.Addr,
 			loader.DBRedisLoaderOption(cfg.Redis.DB),
+			loader.UsernameRedisLoaderOption(cfg.Redis.Username),
 			loader.PasswordRedisLoaderOption(cfg.Redis.Password),
 			loader.KeyRedisLoaderOption(cfg.Redis.Key),
 		)))

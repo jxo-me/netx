@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net"
@@ -9,11 +10,13 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/core/logger"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/socks"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
-func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, log logger.ILogger) error {
+func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"cmd": "udp",
 	})
@@ -51,7 +54,9 @@ func (h *httpHandler) handleUDP(ctx context.Context, conn net.Conn, log logger.I
 	}
 
 	// obtain a udp connection
-	c, err := h.router.Dial(ctx, "udp", "") // UDP association
+	var buf bytes.Buffer
+	c, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "udp", "") // UDP association
+	ro.Route = buf.String()
 	if err != nil {
 		log.Error(err)
 		return err

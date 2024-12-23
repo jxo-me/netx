@@ -2,6 +2,7 @@ package recorder
 
 import (
 	"crypto/tls"
+	"net/http"
 	"strings"
 
 	"github.com/jxo-me/netx/core/recorder"
@@ -51,7 +52,14 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	}
 
 	if cfg.HTTP != nil && cfg.HTTP.URL != "" {
-		return xrecorder.HTTPRecorder(cfg.HTTP.URL, xrecorder.TimeoutHTTPRecorderOption(cfg.HTTP.Timeout))
+		h := http.Header{}
+		for k, v := range cfg.HTTP.Header {
+			h.Add(k, v)
+		}
+		return xrecorder.HTTPRecorder(cfg.HTTP.URL,
+			xrecorder.TimeoutHTTPRecorderOption(cfg.HTTP.Timeout),
+			xrecorder.HeaderHTTPRecorderOption(h),
+		)
 	}
 
 	if cfg.Redis != nil &&
@@ -62,18 +70,21 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 			return xrecorder.RedisListRecorder(cfg.Redis.Addr,
 				xrecorder.DBRedisRecorderOption(cfg.Redis.DB),
 				xrecorder.KeyRedisRecorderOption(cfg.Redis.Key),
+				xrecorder.UsernameRedisRecorderOption(cfg.Redis.Username),
 				xrecorder.PasswordRedisRecorderOption(cfg.Redis.Password),
 			)
 		case "sset": // sorted set
 			return xrecorder.RedisSortedSetRecorder(cfg.Redis.Addr,
 				xrecorder.DBRedisRecorderOption(cfg.Redis.DB),
 				xrecorder.KeyRedisRecorderOption(cfg.Redis.Key),
+				xrecorder.UsernameRedisRecorderOption(cfg.Redis.Username),
 				xrecorder.PasswordRedisRecorderOption(cfg.Redis.Password),
 			)
 		default: // redis set
 			return xrecorder.RedisSetRecorder(cfg.Redis.Addr,
 				xrecorder.DBRedisRecorderOption(cfg.Redis.DB),
 				xrecorder.KeyRedisRecorderOption(cfg.Redis.Key),
+				xrecorder.UsernameRedisRecorderOption(cfg.Redis.Username),
 				xrecorder.PasswordRedisRecorderOption(cfg.Redis.Password),
 			)
 		}

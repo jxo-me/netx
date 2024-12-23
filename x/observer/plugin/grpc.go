@@ -6,10 +6,10 @@ import (
 
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/observer"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/plugin/observer/proto"
 	"github.com/jxo-me/netx/x/internal/plugin"
 	"github.com/jxo-me/netx/x/service"
-	"github.com/jxo-me/netx/x/stats"
 	"google.golang.org/grpc"
 )
 

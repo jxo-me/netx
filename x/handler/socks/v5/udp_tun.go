@@ -1,22 +1,24 @@
 package v5
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net"
 	"time"
 
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/gosocks5"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/socks"
-	"github.com/jxo-me/netx/x/stats"
-	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
-func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
+func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network, address string, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	log = log.WithFields(map[string]any{
 		"cmd": "udp-tun",
 	})
@@ -37,7 +39,9 @@ func (h *socks5Handler) handleUDPTun(ctx context.Context, conn net.Conn, network
 		}
 
 		// obtain a udp connection
-		c, err := h.router.Dial(ctx, "udp", "") // UDP association
+		var buf bytes.Buffer
+		c, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "udp", "") // UDP association
+		ro.Route = buf.String()
 		if err != nil {
 			log.Error(err)
 			return err

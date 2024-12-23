@@ -2,10 +2,11 @@ package kcp
 
 import (
 	"encoding/json"
+	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	kcp_util "github.com/jxo-me/netx/x/internal/util/kcp"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 const (
@@ -13,8 +14,9 @@ const (
 )
 
 type metadata struct {
-	config  *kcp_util.Config
-	backlog int
+	config                 *kcp_util.Config
+	backlog                int
+	limiterRefreshInterval time.Duration
 }
 
 func (l *kcpListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -62,6 +64,14 @@ func (l *kcpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	l.md.backlog = mdutil.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
+	}
+
+	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if l.md.limiterRefreshInterval == 0 {
+		l.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if l.md.limiterRefreshInterval < time.Second {
+		l.md.limiterRefreshInterval = time.Second
 	}
 
 	return

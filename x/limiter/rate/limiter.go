@@ -8,6 +8,10 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	ErrRateLimit = errors.New("rate limit")
+)
+
 type rlimiter struct {
 	limiter *rate.Limiter
 }

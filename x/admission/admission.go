@@ -271,3 +271,22 @@ func (p *localAdmission) Close() error {
 	}
 	return nil
 }
+
+type admissionGroup struct {
+	admissions []admission.IAdmission
+}
+
+func AdmissionGroup(admissions ...admission.IAdmission) admission.IAdmission {
+	return &admissionGroup{
+		admissions: admissions,
+	}
+}
+
+func (p *admissionGroup) Admit(ctx context.Context, addr string, opts ...admission.Option) bool {
+	for _, admission := range p.admissions {
+		if admission != nil && !admission.Admit(ctx, addr, opts...) {
+			return false
+		}
+	}
+	return true
+}

@@ -5,11 +5,13 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 )
 
+type NewListener func(opts ...listener.Option) listener.IListener
+
 type ListenerRegistry struct {
-	registry[listener.NewListener]
+	registry[NewListener]
 }
 
-func (r *ListenerRegistry) Register(name string, v listener.NewListener) error {
+func (r *ListenerRegistry) Register(name string, v NewListener) error {
 	if err := r.registry.Register(name, v); err != nil {
 		logger.Default().Fatal(err)
 	}

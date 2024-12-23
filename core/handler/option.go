@@ -12,11 +12,12 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/core/observer"
+	"github.com/jxo-me/netx/core/recorder"
 )
 
 type Options struct {
 	Bypass      bypass.IBypass
-	Router      *chain.Router
+	Router      chain.Router
 	Auth        *url.Userinfo
 	Auther      auth.IAuthenticator
 	RateLimiter rate.IRateLimiter
@@ -24,6 +25,7 @@ type Options struct {
 	TLSConfig   *tls.Config
 	Logger      logger.ILogger
 	Observer    observer.IObserver
+	Recorders   []recorder.RecorderObject
 	Service     string
 	Netns       string
 }
@@ -36,7 +38,7 @@ func BypassOption(bypass bypass.IBypass) Option {
 	}
 }
 
-func RouterOption(router *chain.Router) Option {
+func RouterOption(router chain.Router) Option {
 	return func(opts *Options) {
 		opts.Router = router
 	}
@@ -81,6 +83,12 @@ func LoggerOption(logger logger.ILogger) Option {
 func ObserverOption(observer observer.IObserver) Option {
 	return func(opts *Options) {
 		opts.Observer = observer
+	}
+}
+
+func RecordersOption(recorders ...recorder.RecorderObject) Option {
+	return func(o *Options) {
+		o.Recorders = recorders
 	}
 }
 

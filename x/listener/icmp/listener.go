@@ -3,20 +3,24 @@ package quic
 import (
 	"context"
 	"net"
+	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	icmp_pkg "github.com/jxo-me/netx/x/internal/util/icmp"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"github.com/quic-go/quic-go"
 	"golang.org/x/net/icmp"
 )
 
 type icmpListener struct {
+	ip6     bool
 	ln      quic.EarlyListener
 	cqueue  chan net.Conn
 	errChan chan error
@@ -36,7 +40,19 @@ func NewListener(opts ...listener.Option) listener.IListener {
 	}
 }
 
-func (l *icmpListener) Init(md md.IMetaData) (err error) {
+func NewListener6(opts ...listener.Option) listener.Listener {
+	options := listener.Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+	return &icmpListener{
+		ip6:     true,
+		logger:  options.Logger,
+		options: options,
+	}
+}
+
+func (l *icmpListener) Init(md md.Metadata) (err error) {
 	if err = l.parseMetadata(md); err != nil {
 		return
 	}
@@ -47,28 +63,39 @@ func (l *icmpListener) Init(md md.IMetaData) (err error) {
 	}
 
 	var conn net.PacketConn
-	conn, err = icmp.ListenPacket("ip4:icmp", addr)
+	if l.ip6 {
+		conn, err = icmp.ListenPacket("ip6:ipv6-icmp", addr)
+	} else {
+		conn, err = icmp.ListenPacket("ip4:icmp", addr)
+	}
 	if err != nil {
 		return
 	}
-	conn = icmp_pkg.ServerConn(conn)
+	conn = icmp_pkg.ServerConn(l.ip6, conn)
 	conn = metrics.WrapPacketConn(l.options.Service, conn)
 	conn = stats.WrapPacketConn(conn, l.options.Stats)
 	conn = admission.WrapPacketConn(l.options.Admission, conn)
-	conn = limiter.WrapPacketConn(l.options.TrafficLimiter, conn)
+	conn = limiter_wrapper.WrapPacketConn(
+		conn,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		"",
+		limiter.ScopeOption(limiter.ScopeService),
+		limiter.ServiceOption(l.options.Service),
+		limiter.NetworkOption(conn.LocalAddr().Network()),
+	)
 
 	config := &quic.Config{
 		KeepAlivePeriod:      l.md.keepAlivePeriod,
 		HandshakeIdleTimeout: l.md.handshakeTimeout,
 		MaxIdleTimeout:       l.md.maxIdleTimeout,
-		Versions: []quic.VersionNumber{
+		Versions: []quic.Version{
 			quic.Version1,
 			quic.Version2,
 		},
 	}
 
 	tlsCfg := l.options.TLSConfig
-	tlsCfg.NextProtos = []string{"http/3", "quic/v1"}
+	tlsCfg.NextProtos = []string{"h3", "quic/v1"}
 
 	ln, err := quic.ListenEarly(conn, tlsCfg, config)
 	if err != nil {
@@ -88,6 +115,15 @@ func (l *icmpListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
+		conn = limiter_wrapper.WrapConn(
+			conn,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			conn.RemoteAddr().String(),
+			limiter.ScopeOption(limiter.ScopeConn),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(conn.LocalAddr().Network()),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

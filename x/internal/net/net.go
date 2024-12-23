@@ -3,8 +3,10 @@ package net
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"runtime"
+	"strings"
 	"syscall"
 
 	"github.com/vishvananda/netns"
@@ -48,9 +50,14 @@ func (lc *ListenConfig) Listen(ctx context.Context, network, address string) (ne
 		}
 		defer netns.Set(originNs)
 
-		ns, err := netns.GetFromName(lc.Netns)
+		var ns netns.NsHandle
+		if strings.HasPrefix(lc.Netns, "/") {
+			ns, err = netns.GetFromPath(lc.Netns)
+		} else {
+			ns, err = netns.GetFromName(lc.Netns)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("netns.GetFromName(%s): %v", lc.Netns, err)
+			return nil, fmt.Errorf("netns.Get(%s): %v", lc.Netns, err)
 		}
 		defer ns.Close()
 
@@ -73,9 +80,14 @@ func (lc *ListenConfig) ListenPacket(ctx context.Context, network, address strin
 		}
 		defer netns.Set(originNs)
 
-		ns, err := netns.GetFromName(lc.Netns)
+		var ns netns.NsHandle
+		if strings.HasPrefix(lc.Netns, "/") {
+			ns, err = netns.GetFromPath(lc.Netns)
+		} else {
+			ns, err = netns.GetFromName(lc.Netns)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("netns.GetFromName(%s): %v", lc.Netns, err)
+			return nil, fmt.Errorf("netns.Get(%s): %v", lc.Netns, err)
 		}
 		defer ns.Close()
 
@@ -84,4 +96,26 @@ func (lc *ListenConfig) ListenPacket(ctx context.Context, network, address strin
 		}
 	}
 	return lc.ListenConfig.ListenPacket(ctx, network, address)
+}
+
+type readWriteConn struct {
+	net.Conn
+	r io.Reader
+	w io.Writer
+}
+
+func NewReadWriteConn(r io.Reader, w io.Writer, c net.Conn) net.Conn {
+	return &readWriteConn{
+		Conn: c,
+		r:    r,
+		w:    w,
+	}
+}
+
+func (c *readWriteConn) Read(p []byte) (int, error) {
+	return c.r.Read(p)
+}
+
+func (c *readWriteConn) Write(p []byte) (int, error) {
+	return c.w.Write(p)
 }

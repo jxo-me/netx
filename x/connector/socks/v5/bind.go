@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/jxo-me/netx/core/common/net/udp"
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/gosocks5"
+	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
@@ -87,7 +87,7 @@ func (c *socks5Connector) bindUDP(ctx context.Context, conn net.Conn, network, a
 			ReadQueueSize:  opts.UDPDataQueueSize,
 			ReadBufferSize: opts.UDPDataBufferSize,
 			TTL:            opts.UDPConnTTL,
-			KeepAlive:      true,
+			Keepalive:      true,
 			Logger:         log,
 		})
 

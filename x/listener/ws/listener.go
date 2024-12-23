@@ -3,23 +3,26 @@ package ws
 import (
 	"context"
 	"crypto/tls"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	xhttp "github.com/jxo-me/netx/x/internal/net/http"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
 )
 
 type wsListener struct {
@@ -99,7 +102,11 @@ func (l *wsListener) Init(md md.IMetaData) (err error) {
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = stats.WrapListener(ln, l.options.Stats)
 	ln = admission.WrapListener(l.options.Admission, ln)
-	ln = limiter.WrapListener(l.options.TrafficLimiter, ln)
+	ln = limiter_wrapper.WrapListener(
+		l.options.Service,
+		ln,
+		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+	)
 	ln = climiter.WrapListener(l.options.ConnLimiter, ln)
 
 	if l.tlsEnabled {
@@ -123,6 +130,15 @@ func (l *wsListener) Accept() (conn net.Conn, err error) {
 	var ok bool
 	select {
 	case conn = <-l.cqueue:
+		conn = limiter_wrapper.WrapConn(
+			conn,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			conn.RemoteAddr().String(),
+			limiter.ScopeOption(limiter.ScopeConn),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(conn.LocalAddr().Network()),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed
@@ -156,8 +172,13 @@ func (l *wsListener) upgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var clientAddr net.Addr
+	if clientIP := xhttp.GetClientIP(r); clientIP != nil {
+		clientAddr = &net.IPAddr{IP: clientIP}
+	}
+
 	select {
-	case l.cqueue <- ws_util.Conn(conn):
+	case l.cqueue <- ws_util.ConnWithClientAddr(conn, clientAddr):
 	default:
 		conn.Close()
 		l.logger.Warnf("connection queue is full, client %s discarded", conn.RemoteAddr())

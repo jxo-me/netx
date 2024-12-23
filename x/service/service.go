@@ -15,11 +15,12 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/metrics"
 	"github.com/jxo-me/netx/core/observer"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/core/service"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 	xmetrics "github.com/jxo-me/netx/x/metrics"
-	"github.com/jxo-me/netx/x/stats"
 	"github.com/rs/xid"
 )
 
@@ -187,37 +188,42 @@ func (s *defaultService) Serve() error {
 			s.setState(StateReady)
 		}
 
-		s.status.stats.Add(stats.KindTotalConns, 1)
-
 		clientAddr := conn.RemoteAddr().String()
+		if ca, ok := conn.(xnet.ClientAddr); ok {
+			if addr := ca.ClientAddr(); addr != nil {
+				clientAddr = addr.String()
+			}
+		}
 		clientIP := clientAddr
 		if h, _, _ := net.SplitHostPort(clientAddr); h != "" {
 			clientIP = h
 		}
 
-		ctx := ctxvalue.ContextWithSid(ctx, ctxvalue.Sid(xid.New().String()))
+		sid := xid.New().String()
+		ctx := ctxvalue.ContextWithSid(ctx, ctxvalue.Sid(sid))
 		ctx = ctxvalue.ContextWithClientAddr(ctx, ctxvalue.ClientAddr(clientAddr))
 		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: clientIP})
+
+		log := s.options.logger.WithFields(map[string]any{
+			"sid": sid,
+		})
 
 		for _, rec := range s.options.recorders {
 			if rec.Record == recorder.RecorderServiceClientAddress {
 				if err := rec.Recorder.Record(ctx, []byte(clientIP)); err != nil {
-					s.options.logger.Errorf("record %s: %v", rec.Record, err)
+					log.Errorf("record %s: %v", rec.Record, err)
 				}
 				break
 			}
 		}
 		if s.options.admission != nil &&
-			!s.options.admission.Admit(ctx, conn.RemoteAddr().String()) {
+			!s.options.admission.Admit(ctx, clientAddr) {
 			conn.Close()
-			s.options.logger.Debugf("admission: %s is denied", conn.RemoteAddr())
+			log.Debugf("admission: %s is denied", clientAddr)
 			continue
 		}
 
 		go func() {
-			s.status.stats.Add(stats.KindCurrentConns, 1)
-			defer s.status.stats.Add(stats.KindCurrentConns, -1)
-
 			if v := xmetrics.GetCounter(xmetrics.MetricServiceRequestsCounter,
 				metrics.Labels{"service": s.name, "client": clientIP}); v != nil {
 				v.Inc()
@@ -238,7 +244,7 @@ func (s *defaultService) Serve() error {
 			}
 
 			if err := s.handler.Handle(ctx, conn); err != nil {
-				s.options.logger.Error(err)
+				log.Error(err)
 				if v := xmetrics.GetCounter(xmetrics.MetricServiceHandlerErrorsCounter,
 					metrics.Labels{"service": s.name, "client": clientIP}); v != nil {
 					v.Inc()

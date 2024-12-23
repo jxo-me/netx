@@ -4,12 +4,13 @@ import (
 	"github.com/jxo-me/netx/x/app"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/core/router"
 	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 	xrouter "github.com/jxo-me/netx/x/router"
 )
 
@@ -19,8 +20,9 @@ const (
 )
 
 type metadata struct {
-	config         *tun_util.Config
-	readBufferSize int
+	config                 *tun_util.Config
+	readBufferSize         int
+	limiterRefreshInterval time.Duration
 }
 
 func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -110,6 +112,14 @@ func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 
 	l.md.config = config
+
+	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if l.md.limiterRefreshInterval == 0 {
+		l.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if l.md.limiterRefreshInterval < time.Second {
+		l.md.limiterRefreshInterval = time.Second
+	}
 
 	return
 }

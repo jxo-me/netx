@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"strings"
 	"time"
 
 	"github.com/jxo-me/netx/core/chain"
@@ -19,7 +20,6 @@ import (
 
 type http3Handler struct {
 	hop     hop.IHop
-	router  *chain.Router
 	md      metadata
 	options handler.Options
 }
@@ -40,11 +40,6 @@ func (h *http3Handler) Init(md md.IMetaData) error {
 		return err
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
-	}
-
 	return nil
 }
 
@@ -60,6 +55,7 @@ func (h *http3Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
@@ -89,7 +85,7 @@ func (h *http3Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.ILogger) error {
 	addr := req.Host
 	if _, port, _ := net.SplitHostPort(addr); port == "" {
-		addr = net.JoinHostPort(addr, "80")
+		addr = net.JoinHostPort(strings.Trim(addr, "[]"), "80")
 	}
 
 	if log.IsLevelEnabled(logger.TraceLevel) {
@@ -123,7 +119,8 @@ func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 	}
 
 	log = log.WithFields(map[string]any{
-		"dst": fmt.Sprintf("%s/%s", target.Addr, "tcp"),
+		"dst":  fmt.Sprintf("%s/%s", target.Addr, "tcp"),
+		"host": target.Addr,
 	})
 
 	log.Debugf("%s >> %s", req.RemoteAddr, addr)
@@ -142,7 +139,7 @@ func (h *http3Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				conn, err := h.router.Dial(ctx, network, target.Addr)
+				conn, err := h.options.Router.Dial(ctx, network, target.Addr)
 				if err != nil {
 					log.Error(err)
 					// TODO: the router itself may be failed due to the failed node in the router,

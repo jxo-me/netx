@@ -2,37 +2,35 @@ package local
 
 import (
 	"bufio"
+	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
-	"net/http/httputil"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
-	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/x/config"
+	"github.com/jxo-me/netx/core/observer/stats"
+	"github.com/jxo-me/netx/core/recorder"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
-	xio "github.com/jxo-me/netx/x/internal/io"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/internal/util/forward"
+	"github.com/jxo-me/netx/x/internal/util/forwarder"
+	"github.com/jxo-me/netx/x/internal/util/sniffing"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 type forwardHandler struct {
-	hop     hop.IHop
-	router  *chain.Router
-	md      metadata
-	options handler.Options
+	hop      hop.IHop
+	md       metadata
+	options  handler.Options
+	recorder recorder.RecorderObject
+	certPool tls_util.CertPool
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -51,9 +49,15 @@ func (h *forwardHandler) Init(md md.IMetaData) (err error) {
 		return
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
+	}
+
+	if h.md.certificate != nil && h.md.privateKey != nil {
+		h.certPool = tls_util.NewMemoryCertPool()
 	}
 
 	return
@@ -64,68 +68,133 @@ func (h *forwardHandler) Forward(hop hop.IHop) {
 	h.hop = hop
 }
 
-func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) (err error) {
 	defer conn.Close()
 
 	start := time.Now()
+
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Network:    "tcp",
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+
+	ro.ClientIP = conn.RemoteAddr().String()
+	if clientAddr := ctxvalue.ClientAddrFromContext(ctx); clientAddr != "" {
+		ro.ClientIP = string(clientAddr)
+	} else {
+		ctx = ctxvalue.ContextWithClientAddr(ctx, ctxvalue.ClientAddr(conn.RemoteAddr().String()))
+	}
+
+	if h, _, _ := net.SplitHostPort(ro.ClientIP); h != "" {
+		ro.ClientIP = h
+	}
+
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ro.SID,
+		"client": ro.ClientIP,
 	})
-
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
-	defer func() {
-		log.WithFields(map[string]any{
-			"duration": time.Since(start),
-		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
-	}()
-
-	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return nil
-	}
 
 	network := "tcp"
 	if _, ok := conn.(net.PacketConn); ok {
 		network = "udp"
 	}
+	ro.Network = network
 
-	var rw io.ReadWriter = conn
-	var host string
-	var protocol string
+	pStats := stats.Stats{}
+	conn = stats_wrapper.WrapConn(conn, &pStats)
+
+	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.InputBytes = pStats.Get(stats.KindInputBytes)
+		ro.OutputBytes = pStats.Get(stats.KindOutputBytes)
+		ro.Duration = time.Since(start)
+		if err := ro.Record(ctx, h.recorder.Recorder); err != nil {
+			log.Errorf("record: %v", err)
+		}
+
+		log.WithFields(map[string]any{
+			"duration":    time.Since(start),
+			"inputBytes":  ro.InputBytes,
+			"outputBytes": ro.OutputBytes,
+		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
+	}()
+
+	if !h.checkRateLimit(conn.RemoteAddr()) {
+		return rate_limiter.ErrRateLimit
+	}
+
+	var proto string
 	if network == "tcp" && h.md.sniffing {
 		if h.md.sniffingTimeout > 0 {
 			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
 		}
-		rw, host, protocol, _ = forward.Sniffing(ctx, conn)
-		log.Debugf("sniffing: host=%s, protocol=%s", host, protocol)
+
+		br := bufio.NewReader(conn)
+		proto, _ = sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
 		if h.md.sniffingTimeout > 0 {
 			conn.SetReadDeadline(time.Time{})
 		}
-	}
 
-	if protocol == forward.ProtoHTTP {
-		h.handleHTTP(ctx, rw, conn.RemoteAddr(), log)
-		return nil
-	}
+		dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+			var buf bytes.Buffer
+			cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", address)
+			ro.Route = buf.String()
+			return cc, err
+		}
+		sniffer := &forwarder.Sniffer{
+			Websocket:           h.md.sniffingWebsocket,
+			WebsocketSampleRate: h.md.sniffingWebsocketSampleRate,
+			Recorder:            h.recorder.Recorder,
+			RecorderOptions:     h.recorder.Options,
+			Certificate:         h.md.certificate,
+			PrivateKey:          h.md.privateKey,
+			NegotiatedProtocol:  h.md.alpn,
+			CertPool:            h.certPool,
+			MitmBypass:          h.md.mitmBypass,
+			ReadTimeout:         h.md.readTimeout,
+		}
 
-	if _, _, err := net.SplitHostPort(host); err != nil {
-		host = net.JoinHostPort(host, "0")
-	}
-
-	var target *chain.Node
-	if host != "" {
-		target = &chain.Node{
-			Addr: host,
+		conn = xnet.NewReadWriteConn(br, conn, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			return sniffer.HandleHTTP(ctx, conn,
+				forwarder.WithDial(dial),
+				forwarder.WithHop(h.hop),
+				forwarder.WithBypass(h.options.Bypass),
+				forwarder.WithHTTPKeepalive(h.md.httpKeepalive),
+				forwarder.WithRecorderObject(ro),
+				forwarder.WithLog(log),
+			)
+		case sniffing.ProtoTLS:
+			return sniffer.HandleTLS(ctx, conn,
+				forwarder.WithDial(dial),
+				forwarder.WithHop(h.hop),
+				forwarder.WithBypass(h.options.Bypass),
+				forwarder.WithRecorderObject(ro),
+				forwarder.WithLog(log),
+			)
 		}
 	}
+
+	target := &chain.Node{}
 	if h.hop != nil {
 		target = h.hop.Select(ctx,
-			hop.HostSelectOption(host),
-			hop.ProtocolSelectOption(protocol),
+			hop.ProtocolSelectOption(proto),
 		)
 	}
 	if target == nil {
-		err := errors.New("target not available")
+		err := errors.New("node not available")
 		log.Error(err)
 		return err
 	}
@@ -142,15 +211,19 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 		}
 	}
 
+	ro.Network = network
+	ro.Host = addr
+
 	log = log.WithFields(map[string]any{
-		"host": host,
 		"node": target.Name,
 		"dst":  fmt.Sprintf("%s/%s", addr, network),
 	})
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), addr)
 
-	cc, err := h.router.Dial(ctx, network, addr)
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), network, addr)
+	ro.Route = buf.String()
 	if err != nil {
 		log.Error(err)
 		// TODO: the router itself may be failed due to the failed node in the router,
@@ -160,191 +233,19 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 		}
 		return err
 	}
-	defer cc.Close()
 	if marker := target.Marker(); marker != nil {
 		marker.Reset()
 	}
+	defer cc.Close()
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), target.Addr)
-	xnet.Transport(rw, cc)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), target.Addr)
 
 	return nil
-}
-
-func (h *forwardHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, remoteAddr net.Addr, log logger.ILogger) (err error) {
-	br := bufio.NewReader(rw)
-
-	var cc net.Conn
-	for {
-		resp := &http.Response{
-			ProtoMajor: 1,
-			ProtoMinor: 1,
-			Header:     http.Header{},
-			StatusCode: http.StatusServiceUnavailable,
-		}
-
-		err = func() error {
-			req, err := http.ReadRequest(br)
-			if err != nil {
-				// log.Errorf("read http request: %v", err)
-				return err
-			}
-
-			if log.IsLevelEnabled(logger.TraceLevel) {
-				dump, _ := httputil.DumpRequest(req, false)
-				log.Trace(string(dump))
-			}
-
-			host := req.Host
-			if _, _, err := net.SplitHostPort(host); err != nil {
-				host = net.JoinHostPort(host, "80")
-			}
-			if bp := h.options.Bypass; bp != nil && bp.Contains(ctx, "tcp", host, bypass.WithPathOption(req.RequestURI)) {
-				log.Debugf("bypass: %s %s", host, req.RequestURI)
-				resp.StatusCode = http.StatusForbidden
-				return resp.Write(rw)
-			}
-
-			if addr := getRealClientAddr(req, remoteAddr); addr != remoteAddr {
-				log = log.WithFields(map[string]any{
-					"src": addr.String(),
-				})
-				remoteAddr = addr
-				ctx = ctxvalue.ContextWithClientAddr(ctx, ctxvalue.ClientAddr(remoteAddr.String()))
-			}
-
-			target := &chain.Node{
-				Addr: req.Host,
-			}
-			if h.hop != nil {
-				target = h.hop.Select(ctx,
-					hop.HostSelectOption(req.Host),
-					hop.ProtocolSelectOption(forward.ProtoHTTP),
-					hop.PathSelectOption(req.URL.Path),
-				)
-			}
-			if target == nil {
-				log.Warnf("node for %s not found", req.Host)
-				resp.StatusCode = http.StatusBadGateway
-				return resp.Write(rw)
-			}
-
-			log = log.WithFields(map[string]any{
-				"host": req.Host,
-				"node": target.Name,
-				"dst":  target.Addr,
-			})
-			log.Debugf("find node for host %s -> %s(%s)", req.Host, target.Name, target.Addr)
-
-			if httpSettings := target.Options().HTTP; httpSettings != nil {
-				if auther := httpSettings.Auther; auther != nil {
-					username, password, _ := req.BasicAuth()
-					id, ok := auther.Authenticate(ctx, username, password)
-					if !ok {
-						resp.StatusCode = http.StatusUnauthorized
-						resp.Header.Set("WWW-Authenticate", "Basic")
-						log.Warnf("node %s(%s) 401 unauthorized", target.Name, target.Addr)
-						return resp.Write(rw)
-					}
-					ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(id))
-				}
-
-				if httpSettings.Host != "" {
-					req.Host = httpSettings.Host
-				}
-				for k, v := range httpSettings.Header {
-					req.Header.Set(k, v)
-				}
-
-				for _, re := range httpSettings.Rewrite {
-					if re.Pattern.MatchString(req.URL.Path) {
-						if s := re.Pattern.ReplaceAllString(req.URL.Path, re.Replacement); s != "" {
-							req.URL.Path = s
-							break
-						}
-					}
-				}
-			}
-
-			cc, err = h.router.Dial(ctx, "tcp", target.Addr)
-			if err != nil {
-				// TODO: the router itself may be failed due to the failed node in the router,
-				// the dead marker may be a wrong operation.
-				if marker := target.Marker(); marker != nil {
-					marker.Mark()
-				}
-				log.Warnf("connect to node %s(%s) failed: %v", target.Name, target.Addr, err)
-				return resp.Write(rw)
-			}
-			if marker := target.Marker(); marker != nil {
-				marker.Reset()
-			}
-
-			log.Debugf("connection to node %s(%s)", target.Name, target.Addr)
-
-			if tlsSettings := target.Options().TLS; tlsSettings != nil {
-				cfg := &tls.Config{
-					ServerName:         tlsSettings.ServerName,
-					InsecureSkipVerify: !tlsSettings.Secure,
-				}
-				tls_util.SetTLSOptions(cfg, &config.TLSOptions{
-					MinVersion:   tlsSettings.Options.MinVersion,
-					MaxVersion:   tlsSettings.Options.MaxVersion,
-					CipherSuites: tlsSettings.Options.CipherSuites,
-				})
-				cc = tls.Client(cc, cfg)
-			}
-
-			if err := req.Write(cc); err != nil {
-				cc.Close()
-				log.Warnf("send request to node %s(%s): %v", target.Name, target.Addr, err)
-				return resp.Write(rw)
-			}
-
-			if req.Header.Get("Upgrade") == "websocket" {
-				err := xnet.Transport(cc, xio.NewReadWriter(br, rw))
-				if err == nil {
-					err = io.EOF
-				}
-				return err
-			}
-
-			go func() {
-				defer cc.Close()
-
-				res, err := http.ReadResponse(bufio.NewReader(cc), req)
-				if err != nil {
-					log.Warnf("read response from node %s(%s): %v", target.Name, target.Addr, err)
-					resp.Write(rw)
-					return
-				}
-
-				if log.IsLevelEnabled(logger.TraceLevel) {
-					dump, _ := httputil.DumpResponse(res, false)
-					log.Trace(string(dump))
-				}
-
-				if err = res.Write(rw); err != nil {
-					log.Errorf("write response from node %s(%s): %v", target.Name, target.Addr, err)
-				}
-			}()
-
-			return nil
-		}()
-
-		if err != nil {
-			if cc != nil {
-				cc.Close()
-			}
-			break
-		}
-	}
-
-	return
 }
 
 func (h *forwardHandler) checkRateLimit(addr net.Addr) bool {
@@ -357,35 +258,4 @@ func (h *forwardHandler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
-}
-
-func getRealClientAddr(req *http.Request, raddr net.Addr) net.Addr {
-	if req == nil {
-		return nil
-	}
-	// cloudflare CDN
-	sip := req.Header.Get("CF-Connecting-IP")
-	if sip == "" {
-		ss := strings.Split(req.Header.Get("X-Forwarded-For"), ",")
-		if len(ss) > 0 && ss[0] != "" {
-			sip = ss[0]
-		}
-	}
-	if sip == "" {
-		sip = req.Header.Get("X-Real-Ip")
-	}
-
-	ip := net.ParseIP(sip)
-	if ip == nil {
-		return raddr
-	}
-
-	_, sp, _ := net.SplitHostPort(raddr.String())
-
-	port, _ := strconv.Atoi(sp)
-
-	return &net.TCPAddr{
-		IP:   ip,
-		Port: port,
-	}
 }

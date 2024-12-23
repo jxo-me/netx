@@ -77,6 +77,7 @@ type TLSOptions struct {
 	MinVersion   string   `yaml:"minVersion,omitempty" json:"minVersion,omitempty"`
 	MaxVersion   string   `yaml:"maxVersion,omitempty" json:"maxVersion,omitempty"`
 	CipherSuites []string `yaml:"cipherSuites,omitempty" json:"cipherSuites,omitempty"`
+	ALPN         []string `yaml:"alpn,omitempty" json:"alpn,omitempty"`
 }
 
 type PluginConfig struct {
@@ -110,7 +111,7 @@ type SelectorConfig struct {
 
 type AdmissionConfig struct {
 	Name string `json:"name"`
-	// DEPRECATED by whitelist since beta.4
+	// Deprecated: use whitelist instead
 	Reverse   bool          `yaml:",omitempty" json:"reverse,omitempty"`
 	Whitelist bool          `yaml:",omitempty" json:"whitelist,omitempty"`
 	Matchers  []string      `yaml:",omitempty" json:"matchers,omitempty"`
@@ -123,7 +124,7 @@ type AdmissionConfig struct {
 
 type BypassConfig struct {
 	Name string `json:"name"`
-	// DEPRECATED by whitelist since beta.4
+	// Deprecated: use whitelist instead
 	Reverse   bool          `yaml:",omitempty" json:"reverse,omitempty"`
 	Whitelist bool          `yaml:",omitempty" json:"whitelist,omitempty"`
 	Matchers  []string      `yaml:",omitempty" json:"matchers,omitempty"`
@@ -141,6 +142,7 @@ type FileLoader struct {
 type RedisLoader struct {
 	Addr     string `json:"addr"`
 	DB       int    `yaml:",omitempty" json:"db,omitempty"`
+	Username string `yaml:",omitempty" json:"username,omitempty"`
 	Password string `yaml:",omitempty" json:"password,omitempty"`
 	Key      string `yaml:",omitempty" json:"key,omitempty"`
 	Type     string `yaml:",omitempty" json:"type,omitempty"`
@@ -240,13 +242,15 @@ type TCPRecorder struct {
 }
 
 type HTTPRecorder struct {
-	URL     string        `json:"url" yaml:"url"`
-	Timeout time.Duration `json:"timeout"`
+	URL     string            `yaml:"url" json:"url"`
+	Timeout time.Duration     `yaml:",omitempty" json:"timeout,omitempty"`
+	Header  map[string]string `yaml:",omitempty" json:"header,omitempty"`
 }
 
 type RedisRecorder struct {
 	Addr     string `json:"addr"`
 	DB       int    `yaml:",omitempty" json:"db,omitempty"`
+	Username string `yaml:",omitempty" json:"username,omitempty"`
 	Password string `yaml:",omitempty" json:"password,omitempty"`
 	Key      string `yaml:",omitempty" json:"key,omitempty"`
 	Type     string `yaml:",omitempty" json:"type,omitempty"`
@@ -299,7 +303,7 @@ type HandlerConfig struct {
 }
 
 type ForwarderConfig struct {
-	// DEPRECATED by hop field
+	// Deprecated: use hop instead
 	Name string `yaml:",omitempty" json:"name,omitempty"`
 	// the referenced hop name
 	Hop      string               `yaml:",omitempty" json:"hop,omitempty"`
@@ -313,21 +317,30 @@ type ForwardNodeConfig struct {
 	Network  string   `yaml:",omitempty" json:"network,omitempty"`
 	Bypass   string   `yaml:",omitempty" json:"bypass,omitempty"`
 	Bypasses []string `yaml:",omitempty" json:"bypasses,omitempty"`
-	// DEPRECATED by filter.protocol
+	// Deprecated: use matcher instead
 	Protocol string `yaml:",omitempty" json:"protocol,omitempty"`
-	// DEPRECATED by filter.host
+	// Deprecated: use matcher instead
 	Host string `yaml:",omitempty" json:"host,omitempty"`
-	// DEPRECATED by filter.path
+	// Deprecated: use matcher instead
 	Path string `yaml:",omitempty" json:"path,omitempty"`
-	// DEPRECATED by http.auth
-	Auth     *AuthConfig       `yaml:",omitempty" json:"auth,omitempty"`
-	Filter   *NodeFilterConfig `yaml:",omitempty" json:"filter,omitempty"`
-	HTTP     *HTTPNodeConfig   `yaml:",omitempty" json:"http,omitempty"`
-	TLS      *TLSNodeConfig    `yaml:",omitempty" json:"tls,omitempty"`
-	Metadata map[string]any    `yaml:",omitempty" json:"metadata,omitempty"`
+	// Deprecated: use matcher instead
+	Filter  *NodeFilterConfig  `yaml:",omitempty" json:"filter,omitempty"`
+	Matcher *NodeMatcherConfig `yaml:",omitempty" json:"matcher,omitempty"`
+	// Deprecated: use http.auth instead
+	Auth     *AuthConfig     `yaml:",omitempty" json:"auth,omitempty"`
+	HTTP     *HTTPNodeConfig `yaml:",omitempty" json:"http,omitempty"`
+	TLS      *TLSNodeConfig  `yaml:",omitempty" json:"tls,omitempty"`
+	Metadata map[string]any  `yaml:",omitempty" json:"metadata,omitempty"`
 }
 
 type HTTPURLRewriteConfig struct {
+	Match       string
+	Replacement string
+}
+
+type HTTPBodyRewriteConfig struct {
+	// filter by MIME types
+	Type        string
 	Match       string
 	Replacement string
 }
@@ -338,11 +351,28 @@ type NodeFilterConfig struct {
 	Path     string `yaml:",omitempty" json:"path,omitempty"`
 }
 
+type NodeMatcherConfig struct {
+	Rule     string `yaml:",omitempty" json:"rule,omitempty"`
+	Priority int    `yaml:",omitempty" json:"priority,omitempty"`
+}
+
 type HTTPNodeConfig struct {
-	Host    string                 `yaml:",omitempty" json:"host,omitempty"`
-	Header  map[string]string      `yaml:",omitempty" json:"header,omitempty"`
+	// rewrite host header
+	Host string `yaml:",omitempty" json:"host,omitempty"`
+	// Deprecated: use requestHeader instead
+	Header map[string]string `yaml:",omitempty" json:"header,omitempty"`
+	// additional request header
+	RequestHeader map[string]string `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty"`
+	// additional response header
+	ResponseHeader map[string]string `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty"`
+	// Deprecated: use rewriteURL instead
 	Rewrite []HTTPURLRewriteConfig `yaml:",omitempty" json:"rewrite,omitempty"`
-	Auth    *AuthConfig            `yaml:",omitempty" json:"auth,omitempty"`
+	// rewrite URL
+	RewriteURL []HTTPURLRewriteConfig `yaml:"rewriteURL,omitempty" json:"rewriteURL,omitempty"`
+	// rewrite response body
+	RewriteBody []HTTPBodyRewriteConfig `yaml:"rewriteBody,omitempty" json:"rewriteBody,omitempty"`
+	// HTTP basic auth
+	Auth *AuthConfig `yaml:",omitempty" json:"auth,omitempty"`
 }
 
 type TLSNodeConfig struct {
@@ -372,9 +402,9 @@ type SockOptsConfig struct {
 type ServiceConfig struct {
 	Name string `json:"name"`
 	Addr string `yaml:",omitempty" json:"addr,omitempty"`
-	// DEPRECATED by metadata.interface since beta.5
+	// Deprecated: use metadata.interface instead
 	Interface string `yaml:",omitempty" json:"interface,omitempty"`
-	// DEPRECATED by metadata.so_mark since beta.5
+	// Deprecated: use metadata.so_mark instead
 	SockOpts   *SockOptsConfig   `yaml:"sockopts,omitempty" json:"sockopts,omitempty"`
 	Admission  string            `yaml:",omitempty" json:"admission,omitempty"`
 	Admissions []string          `yaml:",omitempty" json:"admissions,omitempty"`
@@ -447,20 +477,22 @@ type HopConfig struct {
 }
 
 type NodeConfig struct {
-	Name      string            `json:"name"`
-	Addr      string            `yaml:",omitempty" json:"addr,omitempty"`
-	Network   string            `yaml:",omitempty" json:"network,omitempty"`
-	Bypass    string            `yaml:",omitempty" json:"bypass,omitempty"`
-	Bypasses  []string          `yaml:",omitempty" json:"bypasses,omitempty"`
-	Resolver  string            `yaml:",omitempty" json:"resolver,omitempty"`
-	Hosts     string            `yaml:",omitempty" json:"hosts,omitempty"`
-	Connector *ConnectorConfig  `yaml:",omitempty" json:"connector,omitempty"`
-	Dialer    *DialerConfig     `yaml:",omitempty" json:"dialer,omitempty"`
-	Interface string            `yaml:",omitempty" json:"interface,omitempty"`
-	Netns     string            `yaml:",omitempty" json:"netns,omitempty"`
-	SockOpts  *SockOptsConfig   `yaml:"sockopts,omitempty" json:"sockopts,omitempty"`
-	Filter    *NodeFilterConfig `yaml:",omitempty" json:"filter,omitempty"`
-	HTTP      *HTTPNodeConfig   `yaml:",omitempty" json:"http,omitempty"`
-	TLS       *TLSNodeConfig    `yaml:",omitempty" json:"tls,omitempty"`
-	Metadata  map[string]any    `yaml:",omitempty" json:"metadata,omitempty"`
+	Name      string           `json:"name"`
+	Addr      string           `yaml:",omitempty" json:"addr,omitempty"`
+	Network   string           `yaml:",omitempty" json:"network,omitempty"`
+	Bypass    string           `yaml:",omitempty" json:"bypass,omitempty"`
+	Bypasses  []string         `yaml:",omitempty" json:"bypasses,omitempty"`
+	Resolver  string           `yaml:",omitempty" json:"resolver,omitempty"`
+	Hosts     string           `yaml:",omitempty" json:"hosts,omitempty"`
+	Connector *ConnectorConfig `yaml:",omitempty" json:"connector,omitempty"`
+	Dialer    *DialerConfig    `yaml:",omitempty" json:"dialer,omitempty"`
+	Interface string           `yaml:",omitempty" json:"interface,omitempty"`
+	Netns     string           `yaml:",omitempty" json:"netns,omitempty"`
+	SockOpts  *SockOptsConfig  `yaml:"sockopts,omitempty" json:"sockopts,omitempty"`
+	// Deprecated: use matcher instead
+	Filter   *NodeFilterConfig  `yaml:",omitempty" json:"filter,omitempty"`
+	Matcher  *NodeMatcherConfig `yaml:",omitempty" json:"matcher,omitempty"`
+	HTTP     *HTTPNodeConfig    `yaml:",omitempty" json:"http,omitempty"`
+	TLS      *TLSNodeConfig     `yaml:",omitempty" json:"tls,omitempty"`
+	Metadata map[string]any     `yaml:",omitempty" json:"metadata,omitempty"`
 }

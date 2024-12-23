@@ -4,7 +4,7 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 const (
@@ -21,6 +21,8 @@ type metadata struct {
 	maxIdleTimeout   time.Duration
 	handshakeTimeout time.Duration
 	maxStreams       int
+
+	limiterRefreshInterval time.Duration
 }
 
 func (l *wtListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -53,6 +55,14 @@ func (l *wtListener) parseMetadata(md mdata.IMetaData) (err error) {
 	l.md.handshakeTimeout = mdutil.GetDuration(md, handshakeTimeout)
 	l.md.maxIdleTimeout = mdutil.GetDuration(md, maxIdleTimeout)
 	l.md.maxStreams = mdutil.GetInt(md, maxStreams)
+
+	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if l.md.limiterRefreshInterval == 0 {
+		l.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if l.md.limiterRefreshInterval < time.Second {
+		l.md.limiterRefreshInterval = time.Second
+	}
 
 	return
 }

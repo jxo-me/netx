@@ -14,6 +14,7 @@ import (
 	"github.com/jxo-me/netx/core/connector"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
@@ -43,6 +44,7 @@ func (c *httpConnector) Connect(ctx context.Context, conn net.Conn, network, add
 		"remote":  conn.RemoteAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 

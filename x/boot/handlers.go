@@ -1,7 +1,6 @@
 package boot
 
 import (
-	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/x/consts"
 	"github.com/jxo-me/netx/x/handler/auto"
 	"github.com/jxo-me/netx/x/handler/dns"
@@ -26,9 +25,10 @@ import (
 	"github.com/jxo-me/netx/x/handler/tun"
 	"github.com/jxo-me/netx/x/handler/tunnel"
 	"github.com/jxo-me/netx/x/handler/unix"
+	"github.com/jxo-me/netx/x/registry"
 )
 
-var Handlers = map[string]handler.NewHandler{
+var Handlers = map[string]registry.NewHandler{
 	consts.Auto:     auto.NewHandler,
 	consts.Dns:      dns.NewHandler,
 	consts.File:     file.NewHandler,

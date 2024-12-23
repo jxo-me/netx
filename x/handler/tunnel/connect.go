@@ -6,12 +6,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/relay"
-	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 )
 
 func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, conn net.Conn, network, srcAddr string, dstAddr string, tunnelID relay.TunnelID, log logger.ILogger) error {
@@ -19,6 +16,7 @@ func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, c
 		"dst":    fmt.Sprintf("%s/%s", dstAddr, network),
 		"cmd":    "connect",
 		"tunnel": tunnelID.String(),
+		"host":   dstAddr,
 	})
 
 	resp := relay.Response{
@@ -35,18 +33,34 @@ func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, c
 
 	host, _, _ := net.SplitHostPort(dstAddr)
 
-	// client is a public entrypoint.
-	if tunnelID.Equal(h.md.entryPointID) {
-		resp.WriteTo(conn)
-		return h.ep.handle(ctx, conn)
+	var tid relay.TunnelID
+	if ingress := h.md.ingress; ingress != nil && host != "" {
+		if rule := ingress.GetRule(ctx, host); rule != nil {
+			tid = parseTunnelID(rule.Endpoint)
+		}
 	}
 
-	if !h.md.directTunnel {
-		var tid relay.TunnelID
-		if ingress := h.md.ingress; ingress != nil && host != "" {
-			if rule := ingress.GetRule(ctx, host); rule != nil {
-				tid = parseTunnelID(rule.Endpoint)
-			}
+	// visitor is a public entrypoint.
+	if tunnelID.Equal(h.md.entryPointID) {
+		if tid.IsZero() {
+			resp.Status = relay.StatusNetworkUnreachable
+			resp.WriteTo(conn)
+			err := fmt.Errorf("no route to host %s", host)
+			log.Error(err)
+			return err
+		}
+
+		if tid.IsPrivate() {
+			resp.Status = relay.StatusHostUnreachable
+			resp.WriteTo(conn)
+			err := fmt.Errorf("tunnel %s is private for host %s", tid, host)
+			log.Error(err)
+			return err
+		}
+	} else {
+		// direct routing
+		if h.md.directTunnel {
+			tid = tunnelID
 		}
 		if !tid.Equal(tunnelID) {
 			resp.Status = relay.StatusHostUnreachable
@@ -65,7 +79,7 @@ func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, c
 		timeout: 15 * time.Second,
 		log:     log,
 	}
-	cc, node, cid, err := d.Dial(ctx, network, tunnelID.String())
+	cc, node, cid, err := d.Dial(ctx, network, tid.String())
 	if err != nil {
 		log.Error(err)
 		resp.Status = relay.StatusServiceUnavailable
@@ -74,7 +88,7 @@ func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, c
 	}
 	defer cc.Close()
 
-	log.Debugf("new connection to tunnel: %s, connector: %s", tunnelID, cid)
+	log.Debugf("connect to node=%s tunnel=%s connector=%s OK", node, tid, cid)
 
 	if node == h.id {
 		if _, err := resp.WriteTo(conn); err != nil {
@@ -100,16 +114,9 @@ func (h *tunnelHandler) handleConnect(ctx context.Context, req *relay.Request, c
 		req.WriteTo(cc)
 	}
 
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
-		traffic.NetworkOption(network),
-		traffic.AddrOption(dstAddr),
-		traffic.ClientOption(string(ctxvalue.ClientIDFromContext(ctx))),
-		traffic.SrcOption(conn.RemoteAddr().String()),
-	)
-
 	t := time.Now()
 	log.Debugf("%s <-> %s", conn.RemoteAddr(), cc.RemoteAddr())
-	xnet.Transport(rw, cc)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Debugf("%s >-< %s", conn.RemoteAddr(), cc.RemoteAddr())

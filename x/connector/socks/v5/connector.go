@@ -12,6 +12,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/gosocks5"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/util/socks"
 )
 
@@ -91,6 +92,7 @@ func (c *socks5Connector) Connect(ctx context.Context, conn net.Conn, network, a
 		"local":   conn.LocalAddr().String(),
 		"network": network,
 		"address": address,
+		"sid":     string(ctxvalue.SidFromContext(ctx)),
 	})
 	log.Debugf("connect %s/%s", address, network)
 
@@ -199,15 +201,21 @@ func (c *socks5Connector) relayUDP(ctx context.Context, conn net.Conn, addr net.
 	}
 	log.Trace(reply)
 
-	log.Debugf("bind on: %v", reply.Addr)
-
 	if reply.Rep != gosocks5.Succeeded {
 		return nil, errors.New("get socks5 UDP tunnel failure")
 	}
 
-	cc, err := opts.NetDialer.Dial(ctx, "udp", reply.Addr.String())
+	log.Debugf("bind on: %v", reply.Addr)
+
+	cc, err := opts.Dialer.Dial(ctx, "udp", reply.Addr.String())
 	if err != nil {
+		c.options.Logger.Error(err)
 		return nil, err
+	}
+	log.Debugf("%s <- %s -> %s", cc.LocalAddr(), cc.RemoteAddr(), addr)
+
+	if c.md.udpTimeout > 0 {
+		cc.SetReadDeadline(time.Now().Add(c.md.udpTimeout))
 	}
 
 	return &udpRelayConn{

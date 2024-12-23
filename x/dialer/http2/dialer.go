@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	net_dialer "github.com/jxo-me/netx/core/common/net/dialer"
 	"github.com/jxo-me/netx/core/dialer"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	net_dialer "github.com/jxo-me/netx/x/internal/net/dialer"
 	mdx "github.com/jxo-me/netx/x/metadata"
 )
 
@@ -67,7 +67,7 @@ func (d *http2Dialer) Dial(ctx context.Context, address string, opts ...dialer.D
 
 		{
 			// Check whether the connection is established properly
-			netd := options.NetDialer
+			netd := options.Dialer
 			if netd == nil {
 				netd = net_dialer.DefaultNetDialer
 			}
@@ -82,7 +82,7 @@ func (d *http2Dialer) Dial(ctx context.Context, address string, opts ...dialer.D
 			Transport: &http.Transport{
 				TLSClientConfig: d.options.TLSConfig,
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-					netd := options.NetDialer
+					netd := options.Dialer
 					if netd == nil {
 						netd = net_dialer.DefaultNetDialer
 					}

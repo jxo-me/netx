@@ -49,7 +49,7 @@ func (d *obfsHTTPDialer) Dial(ctx context.Context, addr string, opts ...dialer.D
 		opt(options)
 	}
 
-	conn, err := options.NetDialer.Dial(ctx, "tcp", addr)
+	conn, err := options.Dialer.Dial(ctx, "tcp", addr)
 	if err != nil {
 		d.logger.Error(err)
 	}

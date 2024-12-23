@@ -4,7 +4,7 @@ import (
 	"time"
 
 	mdata "github.com/jxo-me/netx/core/metadata"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 )
 
 const (
@@ -15,7 +15,8 @@ const (
 )
 
 type metadata struct {
-	ttl time.Duration
+	ttl                    time.Duration
+	limiterRefreshInterval time.Duration
 
 	readBufferSize int
 	readQueueSize  int
@@ -47,6 +48,14 @@ func (l *ftcpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	l.md.backlog = mdutil.GetInt(md, backlog)
 	if l.md.backlog <= 0 {
 		l.md.backlog = defaultBacklog
+	}
+
+	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	if l.md.limiterRefreshInterval == 0 {
+		l.md.limiterRefreshInterval = 30 * time.Second
+	}
+	if l.md.limiterRefreshInterval < time.Second {
+		l.md.limiterRefreshInterval = time.Second
 	}
 
 	return

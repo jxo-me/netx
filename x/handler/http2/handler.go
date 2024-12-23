@@ -18,26 +18,33 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer/stats"
+	"github.com/jxo-me/netx/core/recorder"
+	xbypass "github.com/jxo-me/netx/x/bypass"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xio "github.com/jxo-me/netx/x/internal/io"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	xnet "github.com/jxo-me/netx/x/internal/net"
+	xhttp "github.com/jxo-me/netx/x/internal/net/http"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
-	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
-	"github.com/jxo-me/netx/x/stats"
-	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 type http2Handler struct {
-	router  *chain.Router
-	md      metadata
-	options handler.Options
-	stats   *stats_util.HandlerStats
-	cancel  context.CancelFunc
+	md       metadata
+	options  handler.Options
+	stats    *stats_util.HandlerStats
+	limiter  traffic.ITrafficLimiter
+	cancel   context.CancelFunc
+	recorder recorder.RecorderObject
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -57,42 +64,69 @@ func (h *http2Handler) Init(md md.IMetaData) error {
 		return err
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	h.cancel = cancel
 
 	if h.options.Observer != nil {
+		h.stats = stats_util.NewHandlerStats(h.options.Service)
 		go h.observeStats(ctx)
 	}
+
+	if limiter := h.options.Limiter; limiter != nil {
+		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
+	}
+
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
+	}
+
 	return nil
 }
 
-func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) error {
+func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handler.HandleOption) (err error) {
 	defer conn.Close()
 
 	start := time.Now()
+
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Network:    "tcp",
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+	ro.ClientIP, _, _ = net.SplitHostPort(conn.RemoteAddr().String())
+
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
+		"client": ro.ClientIP,
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.Duration = time.Since(start)
+		ro.Record(ctx, h.recorder.Recorder)
+
 		log.WithFields(map[string]any{
 			"duration": time.Since(start),
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return nil
+		return rate_limiter.ErrRateLimit
 	}
 
 	v, ok := conn.(md.IMetaDatable)
 	if !ok || v == nil {
-		err := errors.New("wrong connection type")
+		err = errors.New("wrong connection type")
 		log.Error(err)
 		return err
 	}
@@ -101,6 +135,7 @@ func (h *http2Handler) Handle(ctx context.Context, conn net.Conn, opts ...handle
 	return h.roundTrip(ctx,
 		md.Get("w").(http.ResponseWriter),
 		md.Get("r").(*http.Request),
+		ro,
 		log,
 	)
 }
@@ -115,7 +150,7 @@ func (h *http2Handler) Close() error {
 // NOTE: there is an issue (golang/go#43989) will cause the client hangs
 // when server returns an non-200 status code,
 // May be fixed in go1.18.
-func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, log logger.ILogger) error {
+func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
 	// Try to get the actual host.
 	// Compatible with GOST 2.x.
 	if v := req.Header.Get("Gost-Target"); v != "" {
@@ -123,25 +158,29 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			req.Host = h
 		}
 	}
-	req.Header.Del("Gost-Target")
-
 	if v := req.Header.Get("X-Gost-Target"); v != "" {
 		if h, err := h.decodeServerName(v); err == nil {
 			req.Host = h
 		}
 	}
-	req.Header.Del("X-Gost-Target")
 
-	addr := req.Host
-	if _, port, _ := net.SplitHostPort(addr); port == "" {
-		addr = net.JoinHostPort(addr, "80")
+	if clientIP := xhttp.GetClientIP(req); clientIP != nil {
+		ro.ClientIP = clientIP.String()
 	}
 
+	host := req.Host
+	if _, port, _ := net.SplitHostPort(host); port == "" {
+		host = net.JoinHostPort(strings.Trim(host, "[]"), "80")
+	}
+	ro.Host = host
+
 	fields := map[string]any{
-		"dst": addr,
+		"dst":  host,
+		"host": host,
 	}
 	if u, _, _ := h.basicProxyAuth(req.Header.Get("Proxy-Authorization")); u != "" {
 		fields["user"] = u
+		ro.ClientID = u
 	}
 	log = log.WithFields(fields)
 
@@ -149,7 +188,7 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		dump, _ := httputil.DumpRequest(req, false)
 		log.Trace(string(dump))
 	}
-	log.Debugf("%s >> %s", req.RemoteAddr, addr)
+	log.Debugf("%s >> %s", req.RemoteAddr, host)
 
 	for k := range h.md.header {
 		w.Header().Set(k, h.md.header.Get(k))
@@ -158,44 +197,69 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 	resp := &http.Response{
 		ProtoMajor: 2,
 		ProtoMinor: 0,
-		Header:     http.Header{},
+		Header:     w.Header(),
 		Body:       io.NopCloser(bytes.NewReader([]byte{})),
 	}
 
+	ro.HTTP = &xrecorder.HTTPRecorderObject{
+		Host:   req.Host,
+		Proto:  req.Proto,
+		Scheme: req.URL.Scheme,
+		Method: req.Method,
+		URI:    req.RequestURI,
+		Request: xrecorder.HTTPRequestRecorderObject{
+			ContentLength: req.ContentLength,
+			Header:        req.Header.Clone(),
+		},
+	}
+	defer func() {
+		ro.HTTP.StatusCode = resp.StatusCode
+		ro.HTTP.Response.Header = resp.Header
+	}()
+
 	clientID, ok := h.authenticate(ctx, w, req, resp, log)
 	if !ok {
-		return nil
+		return errors.New("authentication failed")
 	}
 	ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(clientID))
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", addr) {
-		w.WriteHeader(http.StatusForbidden)
-		log.Debug("bypass: ", addr)
-		return nil
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host) {
+		resp.StatusCode = http.StatusForbidden
+		w.WriteHeader(resp.StatusCode)
+		log.Debug("bypass: ", host)
+		return xbypass.ErrBypass
 	}
 
 	// delete the proxy related headers.
 	req.Header.Del("Proxy-Authorization")
 	req.Header.Del("Proxy-Connection")
+	req.Header.Del("Gost-Target")
+	req.Header.Del("X-Gost-Target")
 
 	switch h.md.hash {
 	case "host":
-		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr})
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: host})
 	}
 
-	cc, err := h.router.Dial(ctx, "tcp", addr)
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", host)
+	ro.Route = buf.String()
 	if err != nil {
 		log.Error(err)
-		w.WriteHeader(http.StatusServiceUnavailable)
+		resp.StatusCode = http.StatusServiceUnavailable
+		w.WriteHeader(resp.StatusCode)
 		return err
 	}
 	defer cc.Close()
 
 	if req.Method == http.MethodConnect {
+		resp.StatusCode = http.StatusOK
 		w.WriteHeader(http.StatusOK)
 		if fw, ok := w.(http.Flusher); ok {
 			fw.Flush()
 		}
+
+		rw := xio.NewReadWriter(req.Body, flushWriter{w})
 
 		// compatible with HTTP1.x
 		if hj, ok := w.(http.Hijacker); ok && req.ProtoMajor == 1 {
@@ -203,26 +267,25 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 			conn, _, err := hj.Hijack()
 			if err != nil {
 				log.Error(err)
+				resp.StatusCode = http.StatusInternalServerError
 				w.WriteHeader(http.StatusInternalServerError)
 				return err
 			}
 			defer conn.Close()
 
-			start := time.Now()
-			log.Infof("%s <-> %s", conn.RemoteAddr(), addr)
-			netpkg.Transport(conn, cc)
-			log.WithFields(map[string]any{
-				"duration": time.Since(start),
-			}).Infof("%s >-< %s", conn.RemoteAddr(), addr)
-
-			return nil
+			rw = conn
 		}
 
-		rw := wrapper.WrapReadWriter(h.options.Limiter, xio.NewReadWriter(req.Body, flushWriter{w}),
-			traffic.NetworkOption("tcp"),
-			traffic.AddrOption(addr),
-			traffic.ClientOption(clientID),
-			traffic.SrcOption(req.RemoteAddr),
+		rw = traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			rw,
+			clientID,
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.ServiceOption(h.options.Service),
+			limiter.NetworkOption("tcp"),
+			limiter.AddrOption(host),
+			limiter.ClientOption(clientID),
+			limiter.SrcOption(req.RemoteAddr),
 		)
 		if h.options.Observer != nil {
 			pstats := h.stats.Stats(clientID)
@@ -233,15 +296,17 @@ func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req
 		}
 
 		start := time.Now()
-		log.Infof("%s <-> %s", req.RemoteAddr, addr)
-		netpkg.Transport(rw, cc)
+		log.Infof("%s <-> %s", req.RemoteAddr, host)
+		xnet.Transport(rw, cc)
 		log.WithFields(map[string]any{
 			"duration": time.Since(start),
-		}).Infof("%s >-< %s", req.RemoteAddr, addr)
+		}).Infof("%s >-< %s", req.RemoteAddr, host)
 		return nil
 	}
 
 	// TODO: forward request
+	resp.StatusCode = http.StatusBadRequest
+	w.WriteHeader(resp.StatusCode)
 	return nil
 }
 
@@ -414,11 +479,7 @@ func (h *http2Handler) observeStats(ctx context.Context) {
 		return
 	}
 
-	d := h.md.observePeriod
-	if d < time.Millisecond {
-		d = 5 * time.Second
-	}
-	ticker := time.NewTicker(d)
+	ticker := time.NewTicker(h.md.observePeriod)
 	defer ticker.Stop()
 
 	for {

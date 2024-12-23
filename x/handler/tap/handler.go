@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	tap_util "github.com/jxo-me/netx/x/internal/util/tap"
 	"io"
 	"net"
 	"os"
@@ -16,8 +17,8 @@ import (
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/util/ss"
-	tap_util "github.com/jxo-me/netx/x/internal/util/tap"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/shadowsocks/go-shadowsocks2/shadowaead"
 	"github.com/songgao/water/waterutil"
@@ -59,11 +60,6 @@ func (h *tapHandler) Init(md md.IMetaData) (err error) {
 		}
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
-	}
-
 	return
 }
 
@@ -88,6 +84,7 @@ func (h *tapHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 	log = log.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
@@ -130,7 +127,7 @@ func (h *tapHandler) handleLoop(ctx context.Context, conn net.Conn, addr net.Add
 			var pc net.PacketConn
 
 			if addr != nil {
-				cc, err := h.router.Dial(ctx, addr.Network(), "")
+				cc, err := h.options.Router.Dial(ctx, addr.Network(), "")
 				if err != nil {
 					return err
 				}

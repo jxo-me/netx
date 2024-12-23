@@ -17,6 +17,7 @@ import (
 )
 
 type icmpDialer struct {
+	ip6          bool
 	sessions     map[string]*quicSession
 	sessionMutex sync.Mutex
 	logger       logger.ILogger
@@ -37,6 +38,19 @@ func NewDialer(opts ...dialer.Option) dialer.IDialer {
 	}
 }
 
+func NewDialer6(opts ...dialer.Option) dialer.IDialer {
+	options := dialer.Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &icmpDialer{
+		ip6:      true,
+		sessions: make(map[string]*quicSession),
+		logger:   options.Logger,
+		options:  options,
+	}
+}
 func (d *icmpDialer) Init(md md.IMetaData) (err error) {
 	if err = d.parseMetadata(md); err != nil {
 		return
@@ -66,7 +80,11 @@ func (d *icmpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 		}
 
 		var pc net.PacketConn
-		pc, err = icmp.ListenPacket("ip4:icmp", "")
+		if d.ip6 {
+			pc, err = icmp.ListenPacket("ip6:ipv6-icmp", "")
+		} else {
+			pc, err = icmp.ListenPacket("ip4:icmp", "")
+		}
 		if err != nil {
 			return
 		}
@@ -76,7 +94,7 @@ func (d *icmpDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 			id = rand.New(rand.NewSource(time.Now().UnixNano())).Intn(math.MaxUint16) + 1
 			raddr.Port = id
 		}
-		pc = icmp_pkg.ClientConn(pc, id)
+		pc = icmp_pkg.ClientConn(d.ip6, pc, id)
 
 		session, err = d.initSession(ctx, raddr, pc)
 		if err != nil {
@@ -103,14 +121,14 @@ func (d *icmpDialer) initSession(ctx context.Context, addr net.Addr, conn net.Pa
 		KeepAlivePeriod:      d.md.keepAlivePeriod,
 		HandshakeIdleTimeout: d.md.handshakeTimeout,
 		MaxIdleTimeout:       d.md.maxIdleTimeout,
-		Versions: []quic.VersionNumber{
+		Versions: []quic.Version{
 			quic.Version1,
 			quic.Version2,
 		},
 	}
 
 	tlsCfg := d.options.TLSConfig
-	tlsCfg.NextProtos = []string{"http/3", "quic/v1"}
+	tlsCfg.NextProtos = []string{"h3", "quic/v1"}
 
 	session, err := quic.DialEarly(ctx, conn, addr, tlsCfg, quicConfig)
 	if err != nil {

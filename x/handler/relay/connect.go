@@ -1,25 +1,31 @@
 package relay
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"time"
 
-	"github.com/jxo-me/netx/core/limiter/traffic"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/relay"
+	xbypass "github.com/jxo-me/netx/x/bypass"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	serial "github.com/jxo-me/netx/x/internal/util/serial"
-	"github.com/jxo-me/netx/x/limiter/traffic/wrapper"
-	"github.com/jxo-me/netx/x/stats"
-	stats_wrapper "github.com/jxo-me/netx/x/stats/wrapper"
+	"github.com/jxo-me/netx/x/internal/util/sniffing"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
-func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) (err error) {
+func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) (err error) {
 	if network == "unix" || network == "serial" {
 		if host, _, _ := net.SplitHostPort(address); host != "" {
 			address = host
@@ -27,8 +33,9 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	}
 
 	log = log.WithFields(map[string]any{
-		"dst": fmt.Sprintf("%s/%s", address, network),
-		"cmd": "connect",
+		"dst":  fmt.Sprintf("%s/%s", address, network),
+		"cmd":  "connect",
+		"host": address,
 	})
 
 	log.Debugf("%s >> %s/%s", conn.RemoteAddr(), address, network)
@@ -49,8 +56,8 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, network, address) {
 		log.Debug("bypass: ", address)
 		resp.Status = relay.StatusForbidden
-		_, err = resp.WriteTo(conn)
-		return
+		resp.WriteTo(conn)
+		return xbypass.ErrBypass
 	}
 
 	switch h.md.hash {
@@ -58,15 +65,23 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: address})
 	}
 
-	var cc io.ReadWriteCloser
-
+	var cc net.Conn
 	switch network {
 	case "unix":
 		cc, err = (&net.Dialer{}).DialContext(ctx, "unix", address)
 	case "serial":
-		cc, err = serial.OpenPort(serial.ParseConfigFromAddr(address))
+		var port io.ReadWriteCloser
+		port, err = serial.OpenPort(serial.ParseConfigFromAddr(address))
+		if err == nil {
+			cc = &serialConn{
+				ReadWriteCloser: port,
+				port:            address,
+			}
+		}
 	default:
-		cc, err = h.router.Dial(ctx, network, address)
+		var buf bytes.Buffer
+		cc, err = h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), network, address)
+		ro.Route = buf.String()
 	}
 	if err != nil {
 		resp.Status = relay.StatusNetworkUnreachable
@@ -107,27 +122,128 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 		}
 	}
 
-	clientID := ctxvalue.ClientIDFromContext(ctx)
-	rw := wrapper.WrapReadWriter(h.options.Limiter, conn,
-		traffic.NetworkOption(network),
-		traffic.AddrOption(address),
-		traffic.ClientOption(string(clientID)),
-		traffic.SrcOption(conn.RemoteAddr().String()),
-	)
-	if h.options.Observer != nil {
-		pstats := h.stats.Stats(string(clientID))
-		pstats.Add(stats.KindTotalConns, 1)
-		pstats.Add(stats.KindCurrentConns, 1)
-		defer pstats.Add(stats.KindCurrentConns, -1)
-		rw = stats_wrapper.WrapReadWriter(rw, pstats)
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		rw := traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			conn,
+			string(clientID),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.ServiceOption(h.options.Service),
+			limiter.NetworkOption(network),
+			limiter.AddrOption(address),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
+		conn = xnet.NewReadWriteConn(rw, rw, conn)
+	}
+
+	if h.md.sniffing {
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
+		}
+
+		br := bufio.NewReader(conn)
+		proto, _ := sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
+		if h.md.sniffingTimeout > 0 {
+			conn.SetReadDeadline(time.Time{})
+		}
+
+		dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+			return cc, nil
+		}
+		dialTLS := func(ctx context.Context, network, address string, cfg *tls.Config) (net.Conn, error) {
+			return cc, nil
+		}
+		sniffer := &sniffing.Sniffer{
+			Websocket:           h.md.sniffingWebsocket,
+			WebsocketSampleRate: h.md.sniffingWebsocketSampleRate,
+			Recorder:            h.recorder.Recorder,
+			RecorderOptions:     h.recorder.Options,
+			Certificate:         h.md.certificate,
+			PrivateKey:          h.md.privateKey,
+			NegotiatedProtocol:  h.md.alpn,
+			CertPool:            h.certPool,
+			MitmBypass:          h.md.mitmBypass,
+			ReadTimeout:         h.md.readTimeout,
+		}
+
+		conn = xnet.NewReadWriteConn(br, conn, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			return sniffer.HandleHTTP(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		case sniffing.ProtoTLS:
+			return sniffer.HandleTLS(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		}
 	}
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), address)
-	xnet.Transport(rw, cc)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), address)
 
 	return nil
+}
+
+type serialConn struct {
+	io.ReadWriteCloser
+	port string
+}
+
+func (c *serialConn) LocalAddr() net.Addr {
+	return &serialAddr{
+		port: "@",
+	}
+}
+
+func (c *serialConn) RemoteAddr() net.Addr {
+	return &serialAddr{
+		port: c.port,
+	}
+}
+
+func (c *serialConn) SetDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *serialConn) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *serialConn) SetWriteDeadline(t time.Time) error {
+	return nil
+}
+
+type serialAddr struct {
+	port string
+}
+
+func (a *serialAddr) Network() string {
+	return "serial"
+}
+
+func (a *serialAddr) String() string {
+	return a.port
 }

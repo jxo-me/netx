@@ -2,21 +2,26 @@ package dns
 
 import (
 	"bytes"
+	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"io"
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
-	admission "github.com/jxo-me/netx/x/admission/wrapper"
-	limiter "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
-
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	admission "github.com/jxo-me/netx/x/admission/wrapper"
+	xnet "github.com/jxo-me/netx/x/internal/net"
+	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/stats/wrapper"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"github.com/miekg/dns"
 )
 
@@ -46,48 +51,172 @@ func (l *dnsListener) Init(md md.IMetaData) (err error) {
 		return
 	}
 
-	l.addr, err = net.ResolveTCPAddr("tcp", l.options.Addr)
-	if err != nil {
-		return err
-	}
-
 	switch strings.ToLower(l.md.mode) {
 	case "tcp":
-		l.server = &dns.Server{
-			Net:          "tcp",
-			Addr:         l.options.Addr,
-			Handler:      l,
-			ReadTimeout:  l.md.readTimeout,
-			WriteTimeout: l.md.writeTimeout,
+		l.addr, err = net.ResolveTCPAddr("tcp", l.options.Addr)
+		if err != nil {
+			return
 		}
+
+		network := "tcp"
+		if xnet.IsIPv4(l.options.Addr) {
+			network = "tcp4"
+		}
+
+		lc := net.ListenConfig{}
+		if l.md.mptcp {
+			lc.SetMultipathTCP(true)
+			l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+		}
+
+		var ln net.Listener
+		ln, err = lc.Listen(context.Background(), network, l.options.Addr)
+		if err != nil {
+			return
+		}
+
+		ln = limiter_wrapper.WrapListener(
+			l.options.Service,
+			ln,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		)
+
+		l.server = &dnsServer{
+			server: &dns.Server{
+				Net:          "tcp",
+				Addr:         l.options.Addr,
+				Listener:     ln,
+				Handler:      l,
+				ReadTimeout:  l.md.readTimeout,
+				WriteTimeout: l.md.writeTimeout,
+			},
+		}
+
 	case "tls":
-		l.server = &dns.Server{
-			Net:          "tcp-tls",
-			Addr:         l.options.Addr,
-			Handler:      l,
-			TLSConfig:    l.options.TLSConfig,
-			ReadTimeout:  l.md.readTimeout,
-			WriteTimeout: l.md.writeTimeout,
+		l.addr, err = net.ResolveTCPAddr("tcp", l.options.Addr)
+		if err != nil {
+			return
 		}
+
+		network := "tcp"
+		if xnet.IsIPv4(l.options.Addr) {
+			network = "tcp4"
+		}
+
+		lc := net.ListenConfig{}
+		if l.md.mptcp {
+			lc.SetMultipathTCP(true)
+			l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+		}
+
+		var ln net.Listener
+		ln, err = lc.Listen(context.Background(), network, l.options.Addr)
+		if err != nil {
+			return
+		}
+		ln = tls.NewListener(ln, l.options.TLSConfig)
+
+		ln = limiter_wrapper.WrapListener(
+			l.options.Service,
+			ln,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		)
+
+		l.server = &dnsServer{
+			server: &dns.Server{
+				Net:          "tcp-tls",
+				Addr:         l.options.Addr,
+				Listener:     ln,
+				Handler:      l,
+				TLSConfig:    l.options.TLSConfig,
+				ReadTimeout:  l.md.readTimeout,
+				WriteTimeout: l.md.writeTimeout,
+			},
+		}
+
 	case "https":
+		l.addr, err = net.ResolveTCPAddr("tcp", l.options.Addr)
+		if err != nil {
+			return
+		}
+
+		network := "tcp"
+		if xnet.IsIPv4(l.options.Addr) {
+			network = "tcp4"
+		}
+
+		lc := net.ListenConfig{}
+		if l.md.mptcp {
+			lc.SetMultipathTCP(true)
+			l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+		}
+
+		var ln net.Listener
+		ln, err = lc.Listen(context.Background(), network, l.options.Addr)
+		if err != nil {
+			return
+		}
+		ln = tls.NewListener(ln, l.options.TLSConfig)
+
+		ln = limiter_wrapper.WrapListener(
+			l.options.Service,
+			ln,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		)
+
 		l.server = &dohServer{
 			addr:      l.options.Addr,
 			tlsConfig: l.options.TLSConfig,
+			listener:  ln,
 			server: &http.Server{
 				Handler:      l,
 				ReadTimeout:  l.md.readTimeout,
 				WriteTimeout: l.md.writeTimeout,
 			},
 		}
+
 	default:
 		l.addr, err = net.ResolveUDPAddr("udp", l.options.Addr)
-		l.server = &dns.Server{
-			Net:          "udp",
-			Addr:         l.options.Addr,
-			Handler:      l,
-			UDPSize:      l.md.readBufferSize,
-			ReadTimeout:  l.md.readTimeout,
-			WriteTimeout: l.md.writeTimeout,
+		if err != nil {
+			return
+		}
+
+		network := "udp"
+		if xnet.IsIPv4(l.options.Addr) {
+			network = "udp4"
+		}
+
+		lc := net.ListenConfig{}
+		if l.md.mptcp {
+			lc.SetMultipathTCP(true)
+			l.logger.Debugf("mptcp enabled: %v", lc.MultipathTCP())
+		}
+
+		var pc net.PacketConn
+		pc, err = lc.ListenPacket(context.Background(), network, l.options.Addr)
+		if err != nil {
+			return
+		}
+
+		pc = limiter_wrapper.WrapPacketConn(
+			pc,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			"",
+			limiter.ScopeOption(limiter.ScopeService),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(network),
+		)
+
+		l.server = &dnsServer{
+			server: &dns.Server{
+				Net:          "udp",
+				Addr:         l.options.Addr,
+				PacketConn:   pc,
+				Handler:      l,
+				UDPSize:      l.md.readBufferSize,
+				ReadTimeout:  l.md.readTimeout,
+				WriteTimeout: l.md.writeTimeout,
+			},
 		}
 	}
 
@@ -99,7 +228,7 @@ func (l *dnsListener) Init(md md.IMetaData) (err error) {
 	l.errChan = make(chan error, 1)
 
 	go func() {
-		err := l.server.ListenAndServe()
+		err := l.server.Serve()
 		if err != nil {
 			l.errChan <- err
 		}
@@ -115,7 +244,15 @@ func (l *dnsListener) Accept() (conn net.Conn, err error) {
 		conn = metrics.WrapConn(l.options.Service, conn)
 		conn = stats.WrapConn(conn, l.options.Stats)
 		conn = admission.WrapConn(l.options.Admission, conn)
-		conn = limiter.WrapConn(l.options.TrafficLimiter, conn)
+		conn = limiter_wrapper.WrapConn(
+			conn,
+			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			conn.RemoteAddr().String(),
+			limiter.ScopeOption(limiter.ScopeConn),
+			limiter.ServiceOption(l.options.Service),
+			limiter.NetworkOption(conn.LocalAddr().Network()),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

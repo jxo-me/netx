@@ -5,29 +5,30 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/binary"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
-	"net/http/httputil"
 	"strings"
 	"time"
 
-	"github.com/jxo-me/netx/core/bypass"
-	"github.com/jxo-me/netx/core/chain"
 	"github.com/jxo-me/netx/core/handler"
-	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	dissector "github.com/jxo-me/netx/tls-dissector"
-	xio "github.com/jxo-me/netx/x/internal/io"
-	netpkg "github.com/jxo-me/netx/x/internal/net"
+	"github.com/jxo-me/netx/core/observer/stats"
+	"github.com/jxo-me/netx/core/recorder"
+	xbypass "github.com/jxo-me/netx/x/bypass"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	xnet "github.com/jxo-me/netx/x/internal/net"
+	"github.com/jxo-me/netx/x/internal/util/sniffing"
+	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
+	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 type redirectHandler struct {
-	router  *chain.Router
-	md      metadata
-	options handler.Options
+	md       metadata
+	options  handler.Options
+	recorder recorder.RecorderObject
+	certPool tls_util.CertPool
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -46,9 +47,15 @@ func (h *redirectHandler) Init(md md.IMetaData) (err error) {
 		return
 	}
 
-	h.router = h.options.Router
-	if h.router == nil {
-		h.router = chain.NewRouter(chain.LoggerRouterOption(h.options.Logger))
+	for _, ro := range h.options.Recorders {
+		if ro.Record == xrecorder.RecorderServiceHandler {
+			h.recorder = ro
+			break
+		}
+	}
+
+	if h.md.certificate != nil && h.md.privateKey != nil {
+		h.certPool = tls_util.NewMemoryCertPool()
 	}
 
 	return
@@ -58,20 +65,47 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 	defer conn.Close()
 
 	start := time.Now()
+
+	ro := &xrecorder.HandlerRecorderObject{
+		Service:    h.options.Service,
+		Network:    "tcp",
+		RemoteAddr: conn.RemoteAddr().String(),
+		LocalAddr:  conn.LocalAddr().String(),
+		Time:       start,
+		SID:        string(ctxvalue.SidFromContext(ctx)),
+	}
+	ro.ClientIP, _, _ = net.SplitHostPort(conn.RemoteAddr().String())
+
 	log := h.options.Logger.WithFields(map[string]any{
 		"remote": conn.RemoteAddr().String(),
 		"local":  conn.LocalAddr().String(),
+		"sid":    ctxvalue.SidFromContext(ctx),
 	})
-
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
+
+	pStats := stats.Stats{}
+	conn = stats_wrapper.WrapConn(conn, &pStats)
+
 	defer func() {
+		if err != nil {
+			ro.Err = err.Error()
+		}
+		ro.InputBytes = pStats.Get(stats.KindInputBytes)
+		ro.OutputBytes = pStats.Get(stats.KindOutputBytes)
+		ro.Duration = time.Since(start)
+		if err := ro.Record(ctx, h.recorder.Recorder); err != nil {
+			log.Errorf("record: %v", err)
+		}
+
 		log.WithFields(map[string]any{
-			"duration": time.Since(start),
+			"duration":    time.Since(start),
+			"inputBytes":  ro.InputBytes,
+			"outputBytes": ro.OutputBytes,
 		}).Infof("%s >< %s", conn.RemoteAddr(), conn.LocalAddr())
 	}()
 
 	if !h.checkRateLimit(conn.RemoteAddr()) {
-		return nil
+		return rate_limiter.ErrRateLimit
 	}
 
 	var dstAddr net.Addr
@@ -86,43 +120,108 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 		}
 	}
 
+	ro.Host = dstAddr.String()
+	ro.Dst = dstAddr.String()
+
 	log = log.WithFields(map[string]any{
-		"dst": fmt.Sprintf("%s/%s", dstAddr, dstAddr.Network()),
+		"dst":  fmt.Sprintf("%s/%s", dstAddr, dstAddr.Network()),
+		"host": dstAddr.String(),
 	})
 
-	var rw io.ReadWriter = conn
 	if h.md.sniffing {
 		if h.md.sniffingTimeout > 0 {
 			conn.SetReadDeadline(time.Now().Add(h.md.sniffingTimeout))
 		}
-		// try to sniff TLS traffic
-		var hdr [dissector.RecordHeaderLen]byte
-		n, err := io.ReadFull(rw, hdr[:])
+
+		br := bufio.NewReader(conn)
+		proto, _ := sniffing.Sniff(ctx, br)
+		ro.Proto = proto
+
 		if h.md.sniffingTimeout > 0 {
 			conn.SetReadDeadline(time.Time{})
 		}
-		rw = xio.NewReadWriter(io.MultiReader(bytes.NewReader(hdr[:n]), rw), rw)
-		tlsVersion := binary.BigEndian.Uint16(hdr[1:3])
-		if err == nil &&
-			hdr[0] == dissector.Handshake &&
-			(tlsVersion >= tls.VersionTLS10 && tlsVersion <= tls.VersionTLS13) {
-			return h.handleHTTPS(ctx, rw, conn.RemoteAddr(), dstAddr, log)
+
+		dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+			var cc net.Conn
+			var err error
+			if address != "" {
+				host, _, _ := net.SplitHostPort(address)
+				if host == "" {
+					host = address
+				}
+				_, port, _ := net.SplitHostPort(dstAddr.String())
+				address = net.JoinHostPort(strings.Trim(host, "[]"), port)
+				ro.Host = address
+
+				var buf bytes.Buffer
+				cc, err = h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", address)
+				ro.Route = buf.String()
+				if err != nil && !h.md.sniffingFallback {
+					return nil, err
+				}
+			}
+
+			if cc == nil {
+				if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", dstAddr.String()) {
+					return nil, xbypass.ErrBypass
+				}
+				var buf bytes.Buffer
+				cc, err = h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", dstAddr.String())
+				ro.Route = buf.String()
+				ro.Host = dstAddr.String()
+			}
+
+			return cc, err
+		}
+		dialTLS := func(ctx context.Context, network, address string, cfg *tls.Config) (net.Conn, error) {
+			return dial(ctx, network, address)
 		}
 
-		// try to sniff HTTP traffic
-		if isHTTP(string(hdr[:])) {
-			return h.handleHTTP(ctx, rw, conn.RemoteAddr(), dstAddr, log)
+		sniffer := &sniffing.Sniffer{
+			Websocket:           h.md.sniffingWebsocket,
+			WebsocketSampleRate: h.md.sniffingWebsocketSampleRate,
+			Recorder:            h.recorder.Recorder,
+			RecorderOptions:     h.recorder.Options,
+			Certificate:         h.md.certificate,
+			PrivateKey:          h.md.privateKey,
+			NegotiatedProtocol:  h.md.alpn,
+			CertPool:            h.certPool,
+			MitmBypass:          h.md.mitmBypass,
+			ReadTimeout:         h.md.readTimeout,
+		}
+
+		conn = xnet.NewReadWriteConn(br, conn, conn)
+		switch proto {
+		case sniffing.ProtoHTTP:
+			return sniffer.HandleHTTP(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithBypass(h.options.Bypass),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
+		case sniffing.ProtoTLS:
+			return sniffer.HandleTLS(ctx, conn,
+				sniffing.WithDial(dial),
+				sniffing.WithDialTLS(dialTLS),
+				sniffing.WithBypass(h.options.Bypass),
+				sniffing.WithRecorderObject(ro),
+				sniffing.WithLog(log),
+			)
 		}
 	}
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), dstAddr)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, dstAddr.Network(), dstAddr.String()) {
+	if h.options.Bypass != nil &&
+		h.options.Bypass.Contains(ctx, dstAddr.Network(), dstAddr.String()) {
 		log.Debug("bypass: ", dstAddr)
-		return nil
+		return xbypass.ErrBypass
 	}
 
-	cc, err := h.router.Dial(ctx, dstAddr.Network(), dstAddr.String())
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), dstAddr.Network(), dstAddr.String())
+	ro.Route = buf.String()
 	if err != nil {
 		log.Error(err)
 		return err
@@ -131,158 +230,12 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 
 	t := time.Now()
 	log.Infof("%s <-> %s", conn.RemoteAddr(), dstAddr)
-	netpkg.Transport(rw, cc)
+	xnet.Transport(conn, cc)
 	log.WithFields(map[string]any{
 		"duration": time.Since(t),
 	}).Infof("%s >-< %s", conn.RemoteAddr(), dstAddr)
 
 	return nil
-}
-
-func (h *redirectHandler) handleHTTP(ctx context.Context, rw io.ReadWriter, raddr, dstAddr net.Addr, log logger.ILogger) error {
-	req, err := http.ReadRequest(bufio.NewReader(rw))
-	if err != nil {
-		return err
-	}
-
-	if log.IsLevelEnabled(logger.TraceLevel) {
-		dump, _ := httputil.DumpRequest(req, false)
-		log.Trace(string(dump))
-	}
-
-	host := req.Host
-	if _, _, err := net.SplitHostPort(host); err != nil {
-		host = net.JoinHostPort(host, "80")
-	}
-	log = log.WithFields(map[string]any{
-		"host": host,
-	})
-
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host, bypass.WithPathOption(req.RequestURI)) {
-		log.Debugf("bypass: %s %s", host, req.RequestURI)
-		return nil
-	}
-
-	cc, err := h.router.Dial(ctx, "tcp", host)
-	if err != nil {
-		log.Error(err)
-	}
-
-	if cc == nil {
-		cc, err = h.router.Dial(ctx, "tcp", dstAddr.String())
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-	}
-	defer cc.Close()
-
-	t := time.Now()
-	log.Infof("%s <-> %s", raddr, host)
-	defer func() {
-		log.WithFields(map[string]any{
-			"duration": time.Since(t),
-		}).Infof("%s >-< %s", raddr, host)
-	}()
-
-	if err := req.Write(cc); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	var rw2 io.ReadWriter = cc
-	if log.IsLevelEnabled(logger.TraceLevel) {
-		var buf bytes.Buffer
-		resp, err := http.ReadResponse(bufio.NewReader(io.TeeReader(cc, &buf)), req)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		defer resp.Body.Close()
-
-		dump, _ := httputil.DumpResponse(resp, false)
-		log.Trace(string(dump))
-
-		rw2 = xio.NewReadWriter(io.MultiReader(&buf, cc), cc)
-	}
-
-	netpkg.Transport(rw, rw2)
-
-	return nil
-}
-
-func (h *redirectHandler) handleHTTPS(ctx context.Context, rw io.ReadWriter, raddr, dstAddr net.Addr, log logger.ILogger) error {
-	buf := new(bytes.Buffer)
-	host, err := h.getServerName(ctx, io.TeeReader(rw, buf))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	var cc io.ReadWriteCloser
-
-	if host != "" {
-		if _, _, err := net.SplitHostPort(host); err != nil {
-			_, port, _ := net.SplitHostPort(dstAddr.String())
-			if port == "" {
-				port = "443"
-			}
-			host = net.JoinHostPort(host, port)
-		}
-		log = log.WithFields(map[string]any{
-			"host": host,
-		})
-
-		if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", host) {
-			log.Debug("bypass: ", host)
-			return nil
-		}
-
-		cc, err = h.router.Dial(ctx, "tcp", host)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	if cc == nil {
-		cc, err = h.router.Dial(ctx, "tcp", dstAddr.String())
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-	}
-	defer cc.Close()
-
-	t := time.Now()
-	log.Infof("%s <-> %s", raddr, host)
-	netpkg.Transport(xio.NewReadWriter(io.MultiReader(buf, rw), rw), cc)
-	log.WithFields(map[string]any{
-		"duration": time.Since(t),
-	}).Infof("%s >-< %s", raddr, host)
-
-	return nil
-}
-
-func (h *redirectHandler) getServerName(ctx context.Context, r io.Reader) (host string, err error) {
-	record, err := dissector.ReadRecord(r)
-	if err != nil {
-		return
-	}
-
-	clientHello := dissector.ClientHelloMsg{}
-	if err = clientHello.Decode(record.Opaque); err != nil {
-		return
-	}
-
-	for _, ext := range clientHello.Extensions {
-		if ext.Type() == dissector.ExtServerName {
-			snExtension := ext.(*dissector.ServerNameExtension)
-			host = snExtension.Name
-			break
-		}
-	}
-
-	return
 }
 
 func (h *redirectHandler) checkRateLimit(addr net.Addr) bool {
@@ -295,16 +248,4 @@ func (h *redirectHandler) checkRateLimit(addr net.Addr) bool {
 	}
 
 	return true
-}
-
-func isHTTP(s string) bool {
-	return strings.HasPrefix(http.MethodGet, s[:3]) ||
-		strings.HasPrefix(http.MethodPost, s[:4]) ||
-		strings.HasPrefix(http.MethodPut, s[:3]) ||
-		strings.HasPrefix(http.MethodDelete, s) ||
-		strings.HasPrefix(http.MethodOptions, s) ||
-		strings.HasPrefix(http.MethodPatch, s) ||
-		strings.HasPrefix(http.MethodHead, s[:4]) ||
-		strings.HasPrefix(http.MethodConnect, s) ||
-		strings.HasPrefix(http.MethodTrace, s)
 }

@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	mdutil "github.com/jxo-me/netx/core/metadata/util"
 	"github.com/jxo-me/netx/x/app"
 	xmd "github.com/jxo-me/netx/x/metadata"
+	mdutil "github.com/jxo-me/netx/x/metadata/util"
 	"net/http"
 	"os"
 	"strings"

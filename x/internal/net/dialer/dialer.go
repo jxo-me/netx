@@ -9,8 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	xnet "github.com/jxo-me/netx/core/common/net"
 	"github.com/jxo-me/netx/core/logger"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
+	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/vishvananda/netns"
 )
 
@@ -19,10 +20,10 @@ const (
 )
 
 var (
-	DefaultNetDialer = &NetDialer{}
+	DefaultNetDialer = &Dialer{}
 )
 
-type NetDialer struct {
+type Dialer struct {
 	Interface string
 	Netns     string
 	Mark      int
@@ -30,7 +31,7 @@ type NetDialer struct {
 	Logger    logger.ILogger
 }
 
-func (d *NetDialer) Dial(ctx context.Context, network, addr string) (conn net.Conn, err error) {
+func (d *Dialer) Dial(ctx context.Context, network, addr string) (conn net.Conn, err error) {
 	if d == nil {
 		d = DefaultNetDialer
 	}
@@ -39,6 +40,9 @@ func (d *NetDialer) Dial(ctx context.Context, network, addr string) (conn net.Co
 	if log == nil {
 		log = logger.Default()
 	}
+	log = log.WithFields(map[string]any{
+		"sid": ctxvalue.SidFromContext(ctx),
+	})
 
 	if d.Netns != "" {
 		runtime.LockOSThread()
@@ -50,9 +54,14 @@ func (d *NetDialer) Dial(ctx context.Context, network, addr string) (conn net.Co
 		}
 		defer netns.Set(originNs)
 
-		ns, err := netns.GetFromName(d.Netns)
+		var ns netns.NsHandle
+		if strings.HasPrefix(d.Netns, "/") {
+			ns, err = netns.GetFromPath(d.Netns)
+		} else {
+			ns, err = netns.GetFromName(d.Netns)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("netns.GetFromName(%s): %v", d.Netns, err)
+			return nil, fmt.Errorf("netns.Get(%s): %v", d.Netns, err)
 		}
 		defer ns.Close()
 
@@ -102,7 +111,7 @@ func (d *NetDialer) Dial(ctx context.Context, network, addr string) (conn net.Co
 	return
 }
 
-func (d *NetDialer) dialOnce(ctx context.Context, network, addr, ifceName string, ifAddr net.Addr, log logger.ILogger) (net.Conn, error) {
+func (d *Dialer) dialOnce(ctx context.Context, network, addr, ifceName string, ifAddr net.Addr, log logger.ILogger) (net.Conn, error) {
 	if ifceName != "" {
 		log.Debugf("interface: %s %v/%s", ifceName, ifAddr, network)
 	}
