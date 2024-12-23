@@ -13,8 +13,8 @@ replace (
 require (
 	github.com/gogf/gf/v2 v2.7.2
 	github.com/jxo-me/gfbot v0.1.19
-	github.com/jxo-me/netx/core v0.0.10
-	github.com/jxo-me/netx/x v0.0.14
+	github.com/jxo-me/netx/core v0.0.11
+	github.com/jxo-me/netx/x v0.0.15
 	gopkg.in/yaml.v3 v3.0.1
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/alecthomas/units v0.0.0-20231202071711-9a357b53e9c9 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grokify/html-strip-tags-go v0.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/jxo-me/netx/plugin v0.0.6 // indirect
+	github.com/jxo-me/netx/plugin v0.0.7 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

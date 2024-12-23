@@ -23,12 +23,12 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/jxo-me/netx/core v0.0.10
-	github.com/jxo-me/netx/gosocks4 v0.0.1
-	github.com/jxo-me/netx/gosocks5 v0.0.2
-	github.com/jxo-me/netx/plugin v0.0.6
-	github.com/jxo-me/netx/relay v0.0.2
-	github.com/jxo-me/netx/tls-dissector v0.0.1
+	github.com/jxo-me/netx/core v0.0.11
+	github.com/jxo-me/netx/gosocks4 v0.0.2
+	github.com/jxo-me/netx/gosocks5 v0.0.3
+	github.com/jxo-me/netx/plugin v0.0.7
+	github.com/jxo-me/netx/relay v0.0.3
+	github.com/jxo-me/netx/tls-dissector v0.0.2
 	github.com/miekg/dns v1.1.61
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible

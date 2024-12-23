@@ -17,9 +17,9 @@ replace (
 
 require (
 	github.com/judwhite/go-svc v1.2.1
-	github.com/jxo-me/netx/api v0.0.7
-	github.com/jxo-me/netx/core v0.0.10
-	github.com/jxo-me/netx/x v0.0.14
+	github.com/jxo-me/netx/api v0.0.8
+	github.com/jxo-me/netx/core v0.0.11
+	github.com/jxo-me/netx/x v0.0.15
 )
 
 require (
