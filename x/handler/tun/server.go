@@ -8,9 +8,9 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/jxo-me/netx/core/common/bufpool"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/router"
+	xip "github.com/jxo-me/netx/x/internal/net/ip"
 	tun_util "github.com/jxo-me/netx/x/internal/util/tun"
 	"github.com/songgao/water/waterutil"
 	"golang.org/x/net/ipv4"
@@ -41,12 +41,10 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 	errc := make(chan error, 1)
 
 	go func() {
+		var b [MaxMessageSize]byte
 		for {
 			err := func() error {
-				b := bufpool.Get(h.md.bufferSize)
-				defer bufpool.Put(b)
-
-				n, err := tun.Read(b)
+				n, err := tun.Read(b[:])
 				if err != nil {
 					return ErrTun
 				}
@@ -63,9 +61,11 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 					}
 					src, dst = header.Src, header.Dst
 
-					log.Tracef("%s >> %s %-4s %d/%-4d %-4x %d",
-						src, dst, ipProtocol(waterutil.IPv4Protocol(b[:n])),
-						header.Len, header.TotalLen, header.ID, header.Flags)
+					if log.IsLevelEnabled(logger.TraceLevel) {
+						log.Tracef("%s >> %s %-4s %d/%-4d %-4x %d",
+							src, dst, xip.Protocol(waterutil.IPv4Protocol(b[:n])),
+							header.Len, header.TotalLen, header.ID, header.Flags)
+					}
 				} else if waterutil.IsIPv6(b[:n]) {
 					header, err := ipv6.ParseHeader(b[:n])
 					if err != nil {
@@ -74,10 +74,12 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 					}
 					src, dst = header.Src, header.Dst
 
-					log.Tracef("%s >> %s %s %d %d",
-						src, dst,
-						ipProtocol(waterutil.IPProtocol(header.NextHeader)),
-						header.PayloadLen, header.TrafficClass)
+					if log.IsLevelEnabled(logger.TraceLevel) {
+						log.Tracef("%s >> %s %s %d %d",
+							src, dst,
+							xip.Protocol(waterutil.IPProtocol(header.NextHeader)),
+							header.PayloadLen, header.TrafficClass)
+					}
 				} else {
 					log.Warnf("unknown packet, discarded(%d)", n)
 					return nil
@@ -105,12 +107,10 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 	}()
 
 	go func() {
+		var b [MaxMessageSize]byte
 		for {
 			err := func() error {
-				b := bufpool.Get(h.md.bufferSize)
-				defer bufpool.Put(b)
-
-				n, addr, err := conn.ReadFrom(b)
+				n, addr, err := conn.ReadFrom(b[:])
 				if err != nil {
 					return err
 				}
@@ -184,9 +184,11 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 					}
 					src, dst = header.Src, header.Dst
 
-					log.Tracef("%s >> %s %-4s %d/%-4d %-4x %d",
-						src, dst, ipProtocol(waterutil.IPv4Protocol(b[:n])),
-						header.Len, header.TotalLen, header.ID, header.Flags)
+					if log.IsLevelEnabled(logger.TraceLevel) {
+						log.Tracef("%s >> %s %-4s %d/%-4d %-4x %d",
+							src, dst, xip.Protocol(waterutil.IPv4Protocol(b[:n])),
+							header.Len, header.TotalLen, header.ID, header.Flags)
+					}
 				} else if waterutil.IsIPv6(b[:n]) {
 					header, err := ipv6.ParseHeader(b[:n])
 					if err != nil {
@@ -195,10 +197,12 @@ func (h *tunHandler) transportServer(ctx context.Context, tun io.ReadWriter, con
 					}
 					src, dst = header.Src, header.Dst
 
-					log.Tracef("%s > %s %s %d %d",
-						src, dst,
-						ipProtocol(waterutil.IPProtocol(header.NextHeader)),
-						header.PayloadLen, header.TrafficClass)
+					if log.IsLevelEnabled(logger.TraceLevel) {
+						log.Tracef("%s > %s %s %d %d",
+							src, dst,
+							xip.Protocol(waterutil.IPProtocol(header.NextHeader)),
+							header.PayloadLen, header.TrafficClass)
+					}
 				} else {
 					log.Warnf("unknown packet, discarded(%d): % x", n, b[:n])
 					return nil
@@ -263,9 +267,11 @@ func (h *tunHandler) findRouteFor(ctx context.Context, dst net.IP, router router
 		return nil
 	}
 
-	if route := router.GetRoute(ctx, dst); route != nil && route.Gateway != nil {
-		if v, ok := h.routes.Load(ipToTunRouteKey(route.Gateway)); ok {
-			return v.(net.Addr)
+	if route := router.GetRoute(ctx, dst.String()); route != nil {
+		if gw := net.ParseIP(route.Gateway); gw != nil {
+			if v, ok := h.routes.Load(ipToTunRouteKey(gw)); ok {
+				return v.(net.Addr)
+			}
 		}
 	}
 	return nil

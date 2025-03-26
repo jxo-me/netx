@@ -30,8 +30,10 @@ import (
 	logger_parser "github.com/jxo-me/netx/x/config/parsing/logger"
 	selector_parser "github.com/jxo-me/netx/x/config/parsing/selector"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
+	cache_limiter "github.com/jxo-me/netx/x/limiter/traffic/cache"
 	"github.com/jxo-me/netx/x/metadata"
 	mdutil "github.com/jxo-me/netx/x/metadata/util"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	xservice "github.com/jxo-me/netx/x/service"
 	"github.com/vishvananda/netns"
 )
@@ -101,10 +103,15 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 	ifce := cfg.Interface
 	var preUp, preDown, postUp, postDown []string
 	var ignoreChain bool
-	var pStats *stats.Stats
-	var observePeriod time.Duration
+	var pStats stats.Stats
+	var observerPeriod time.Duration
 	var netnsIn, netnsOut string
 	var dialTimeout time.Duration
+
+	var limiterRefreshInterval time.Duration
+	var limiterCleanupInterval time.Duration
+	var limiterScope string
+
 	if cfg.Metadata != nil {
 		md := metadata.NewMetadata(cfg.Metadata)
 		ppv = mdutil.GetInt(md, parsing.MDKeyProxyProtocol)
@@ -123,12 +130,18 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		ignoreChain = mdutil.GetBool(md, parsing.MDKeyIgnoreChain)
 
 		if mdutil.GetBool(md, parsing.MDKeyEnableStats) {
-			pStats = &stats.Stats{}
+			pStats = xstats.NewStats(mdutil.GetBool(md, parsing.MDKeyObserverResetTraffic))
 		}
-		observePeriod = mdutil.GetDuration(md, "observePeriod")
-		netnsIn = mdutil.GetString(md, "netns")
-		netnsOut = mdutil.GetString(md, "netns.out")
-		dialTimeout = mdutil.GetDuration(md, "dialTimeout")
+		observerPeriod = mdutil.GetDuration(md, parsing.MDKeyObserverPeriod, "observePeriod")
+
+		netnsIn = mdutil.GetString(md, parsing.MDKeyNetns)
+		netnsOut = mdutil.GetString(md, parsing.MDKeyNetnsOut)
+
+		dialTimeout = mdutil.GetDuration(md, parsing.MDKeyDialTimeout)
+
+		limiterRefreshInterval = mdutil.GetDuration(md, parsing.MDKeyLimiterRefreshInterval)
+		limiterCleanupInterval = mdutil.GetDuration(md, parsing.MDKeyLimiterCleanupInterval)
+		limiterScope = mdutil.GetString(md, parsing.MDKeyLimiterScope)
 	}
 
 	listenerLogger := serviceLogger.WithFields(map[string]any{
@@ -157,7 +170,14 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		listener.AuthOption(auth_parser.Info(cfg.Listener.Auth)),
 		listener.TLSConfigOption(tlsConfig),
 		listener.AdmissionOption(xadmission.AdmissionGroup(admissions...)),
-		listener.TrafficLimiterOption(app.Runtime.TrafficLimiterRegistry().Get(cfg.Limiter)),
+		listener.TrafficLimiterOption(
+			cache_limiter.NewCachedTrafficLimiter(
+				app.Runtime.TrafficLimiterRegistry().Get(cfg.Limiter),
+				cache_limiter.RefreshIntervalOption(limiterRefreshInterval),
+				cache_limiter.CleanupIntervalOption(limiterCleanupInterval),
+				cache_limiter.ScopeOption(limiterScope),
+			),
+		),
 		listener.ConnLimiterOption(app.Runtime.ConnLimiterRegistry().Get(cfg.CLimiter)),
 		listener.ServiceOption(cfg.Name),
 		listener.ProxyProtocolOption(ppv),
@@ -318,7 +338,7 @@ func ParseService(cfg *config.ServiceConfig) (service.IService, error) {
 		xservice.RecordersOption(recorders...),
 		xservice.StatsOption(pStats),
 		xservice.ObserverOption(app.Runtime.ObserverRegistry().Get(cfg.Observer)),
-		xservice.ObservePeriodOption(observePeriod),
+		xservice.ObserverPeriodOption(observerPeriod),
 		xservice.LoggerOption(serviceLogger),
 	)
 

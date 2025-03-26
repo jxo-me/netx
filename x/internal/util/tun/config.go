@@ -14,4 +14,5 @@ type Config struct {
 	MTU     int
 	Gateway net.IP
 	Router  router.IRouter
+	DNS     []net.IP
 }

@@ -29,6 +29,7 @@ import (
 
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/limiter/conn"
+	"github.com/jxo-me/netx/x/limiter/rate"
 	"github.com/jxo-me/netx/x/limiter/traffic"
 	mdx "github.com/jxo-me/netx/x/metadata"
 	mdutil "github.com/jxo-me/netx/x/metadata/util"
@@ -282,7 +283,7 @@ func buildConfigFromCmd(services, nodes stringList) (*config.Config, error) {
 			}
 			if in != "" || out != "" {
 				limiter.Limits = append(limiter.Limits,
-					fmt.Sprintf("%s %s %s", traffic.GlobalLimitKey, in, out))
+					fmt.Sprintf("%s %s %s", rate.GlobalLimitKey, in, out))
 			}
 			if cin != "" || cout != "" {
 				limiter.Limits = append(limiter.Limits,

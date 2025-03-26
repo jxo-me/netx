@@ -3,9 +3,9 @@ package sshd
 import (
 	"context"
 	"net"
+	"os"
 	"sync"
 	"time"
-	"os"
 
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"

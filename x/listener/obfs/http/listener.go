@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"github.com/jxo-me/netx/x/internal/net/proxyproto"
 	"net"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	"github.com/jxo-me/netx/x/internal/net/proxyproto"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
@@ -60,11 +59,7 @@ func (l *obfsListener) Init(md md.IMetaData) (err error) {
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = stats.WrapListener(ln, l.options.Stats)
 	ln = admission.WrapListener(l.options.Admission, ln)
-	ln = limiter_wrapper.WrapListener(
-		l.options.Service,
-		ln,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-	)
+	ln = limiter_wrapper.WrapListener(l.options.Service, ln, l.options.TrafficLimiter)
 	ln = climiter.WrapListener(l.options.ConnLimiter, ln)
 
 	l.Listener = ln
@@ -79,7 +74,7 @@ func (l *obfsListener) Accept() (net.Conn, error) {
 
 	conn = limiter_wrapper.WrapConn(
 		conn,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		l.options.TrafficLimiter,
 		conn.RemoteAddr().String(),
 		limiter.ScopeOption(limiter.ScopeConn),
 		limiter.ServiceOption(l.options.Service),

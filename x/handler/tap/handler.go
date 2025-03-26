@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	tap_util "github.com/jxo-me/netx/x/internal/util/tap"
 	"io"
 	"net"
 	"os"
@@ -12,13 +11,13 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/core/chain"
-	"github.com/jxo-me/netx/core/common/bufpool"
 	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	"github.com/jxo-me/netx/x/internal/util/ss"
+	tap_util "github.com/jxo-me/netx/x/internal/util/tap"
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/shadowsocks/go-shadowsocks2/shadowaead"
 	"github.com/songgao/water/waterutil"
@@ -29,7 +28,6 @@ type tapHandler struct {
 	routes  sync.Map
 	exit    chan struct{}
 	cipher  core.Cipher
-	router  *chain.Router
 	md      metadata
 	options handler.Options
 }
@@ -183,12 +181,10 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 	errc := make(chan error, 1)
 
 	go func() {
+		var b [MaxMessageSize]byte
 		for {
 			err := func() error {
-				b := bufpool.Get(h.md.bufferSize)
-				defer bufpool.Put(b)
-
-				n, err := tap.Read(b)
+				n, err := tap.Read(b[:])
 				if err != nil {
 					select {
 					case h.exit <- struct{}{}:
@@ -245,12 +241,10 @@ func (h *tapHandler) transport(tap net.Conn, conn net.PacketConn, raddr net.Addr
 	}()
 
 	go func() {
+		var b [MaxMessageSize]byte
 		for {
 			err := func() error {
-				b := bufpool.Get(h.md.bufferSize)
-				defer bufpool.Put(b)
-
-				n, addr, err := conn.ReadFrom(b)
+				n, addr, err := conn.ReadFrom(b[:])
 				if err != nil &&
 					err != shadowaead.ErrShortPacket {
 					return err

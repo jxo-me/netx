@@ -7,12 +7,16 @@ import (
 	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/bypass"
 	"github.com/jxo-me/netx/core/chain"
+	"github.com/jxo-me/netx/core/connector"
+	"github.com/jxo-me/netx/core/dialer"
+	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/core/hop"
 	"github.com/jxo-me/netx/core/hosts"
 	"github.com/jxo-me/netx/core/ingress"
 	"github.com/jxo-me/netx/core/limiter/conn"
 	"github.com/jxo-me/netx/core/limiter/rate"
 	"github.com/jxo-me/netx/core/limiter/traffic"
+	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/recorder"
@@ -34,14 +38,14 @@ type Application struct {
 	autherReg         reg.IRegistry[auth.IAuthenticator]
 	bypassReg         reg.IRegistry[bypass.IBypass]
 	chainReg          reg.IRegistry[chain.IChainer]
-	connectorReg      reg.IRegistry[registry.NewConnector]
+	connectorReg      reg.IRegistry[connector.NewConnector]
 	connLimiterReg    reg.IRegistry[conn.IConnLimiter]
-	dialerReg         reg.IRegistry[registry.NewDialer]
-	handlerReg        reg.IRegistry[registry.NewHandler]
+	dialerReg         reg.IRegistry[dialer.NewDialer]
+	handlerReg        reg.IRegistry[handler.NewHandler]
 	hopReg            reg.IRegistry[hop.IHop]
 	hostsReg          reg.IRegistry[hosts.IHostMapper]
 	ingressReg        reg.IRegistry[ingress.IIngress]
-	listenerReg       reg.IRegistry[registry.NewListener]
+	listenerReg       reg.IRegistry[listener.NewListener]
 	rateLimiterReg    reg.IRegistry[rate.IRateLimiter]
 	recorderReg       reg.IRegistry[recorder.IRecorder]
 	resolverReg       reg.IRegistry[resolver.IResolver]
@@ -102,7 +106,7 @@ func (a *Application) ChainRegistry() reg.IRegistry[chain.IChainer] {
 	return a.chainReg
 }
 
-func (a *Application) ConnectorRegistry() reg.IRegistry[registry.NewConnector] {
+func (a *Application) ConnectorRegistry() reg.IRegistry[connector.NewConnector] {
 	return a.connectorReg
 }
 
@@ -110,11 +114,11 @@ func (a *Application) ConnLimiterRegistry() reg.IRegistry[conn.IConnLimiter] {
 	return a.connLimiterReg
 }
 
-func (a *Application) DialerRegistry() reg.IRegistry[registry.NewDialer] {
+func (a *Application) DialerRegistry() reg.IRegistry[dialer.NewDialer] {
 	return a.dialerReg
 }
 
-func (a *Application) HandlerRegistry() reg.IRegistry[registry.NewHandler] {
+func (a *Application) HandlerRegistry() reg.IRegistry[handler.NewHandler] {
 	return a.handlerReg
 }
 
@@ -130,7 +134,7 @@ func (a *Application) IngressRegistry() reg.IRegistry[ingress.IIngress] {
 	return a.ingressReg
 }
 
-func (a *Application) ListenerRegistry() reg.IRegistry[registry.NewListener] {
+func (a *Application) ListenerRegistry() reg.IRegistry[listener.NewListener] {
 	return a.listenerReg
 }
 

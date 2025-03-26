@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-	"net"
 
 	"github.com/jxo-me/netx/core/router"
 )
@@ -31,7 +30,7 @@ type routerWrapper struct {
 	r    *RouterRegistry
 }
 
-func (w *routerWrapper) GetRoute(ctx context.Context, dst net.IP, opts ...router.Option) *router.Route {
+func (w *routerWrapper) GetRoute(ctx context.Context, dst string, opts ...router.Option) *router.Route {
 	v := w.r.get(w.name)
 	if v == nil {
 		return nil

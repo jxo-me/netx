@@ -6,11 +6,9 @@ toolchain go1.22.4
 
 //replace github.com/jxo-me/netx/x => ../x
 
-replace github.com/jxo-me/netx/x => ../x
-
 require (
-	github.com/jxo-me/netx/x v0.0.0-00010101000000-000000000000
-	google.golang.org/grpc v1.64.0
+	github.com/jxo-me/netx/x v0.0.16
+	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
 

@@ -6,9 +6,14 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/gosocks5"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, address string, log logger.ILogger) error {
@@ -24,6 +29,30 @@ func (h *socks5Handler) handleBind(ctx context.Context, conn net.Conn, network, 
 		log.Trace(reply)
 		log.Error("socks5: BIND is disabled")
 		return reply.Write(conn)
+	}
+
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		rw := traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			conn,
+			string(clientID),
+			limiter.ServiceOption(h.options.Service),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.NetworkOption(network),
+			limiter.AddrOption(address),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
+		conn = xnet.NewReadWriteConn(rw, rw, conn)
 	}
 
 	// BIND does not support chain.

@@ -27,7 +27,7 @@ const (
 type ConnectorOptions struct {
 	service string
 	sd      sd.ISD
-	stats   *stats.Stats
+	stats   stats.Stats
 	limiter traffic.ITrafficLimiter
 }
 
@@ -277,6 +277,7 @@ func (t *Tunnel) clean() {
 				t.connectors = connectors
 			}
 			t.mu.Unlock()
+
 		case <-t.close:
 			return
 		}

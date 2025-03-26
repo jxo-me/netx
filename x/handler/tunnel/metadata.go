@@ -31,13 +31,17 @@ type metadata struct {
 	sniffingWebsocket           bool
 	sniffingWebsocketSampleRate float64
 
-	directTunnel           bool
-	tunnelTTL              time.Duration
-	ingress                ingress.IIngress
-	sd                     sd.ISD
-	muxCfg                 *mux.Config
-	observePeriod          time.Duration
+	directTunnel bool
+	tunnelTTL    time.Duration
+	ingress      ingress.IIngress
+	sd           sd.ISD
+	muxCfg       *mux.Config
+
+	observerPeriod       time.Duration
+	observerResetTraffic bool
+
 	limiterRefreshInterval time.Duration
+	limiterCleanupInterval time.Duration
 }
 
 func (h *tunnelHandler) parseMetadata(md mdata.IMetaData) (err error) {
@@ -105,21 +109,17 @@ func (h *tunnelHandler) parseMetadata(md mdata.IMetaData) (err error) {
 		h.md.muxCfg.MaxStreamBuffer = 1048576
 	}
 
-	h.md.observePeriod = mdutil.GetDuration(md, "observePeriod", "observer.observePeriod")
-	if h.md.observePeriod == 0 {
-		h.md.observePeriod = 5 * time.Second
+	h.md.observerPeriod = mdutil.GetDuration(md, "observePeriod", "observer.period", "observer.observePeriod")
+	if h.md.observerPeriod == 0 {
+		h.md.observerPeriod = 5 * time.Second
 	}
-	if h.md.observePeriod < time.Second {
-		h.md.observePeriod = time.Second
+	if h.md.observerPeriod < time.Second {
+		h.md.observerPeriod = time.Second
 	}
+	h.md.observerResetTraffic = mdutil.GetBool(md, "observer.resetTraffic")
 
 	h.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
-	if h.md.limiterRefreshInterval == 0 {
-		h.md.limiterRefreshInterval = 30 * time.Second
-	}
-	if h.md.limiterRefreshInterval < time.Second {
-		h.md.limiterRefreshInterval = time.Second
-	}
+	h.md.limiterCleanupInterval = mdutil.GetDuration(md, "limiter.cleanupInterval")
 
 	return
 }

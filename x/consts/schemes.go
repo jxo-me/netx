@@ -8,6 +8,7 @@ const (
 	Http    = "http"
 	Http2   = "http2"
 	Relay   = "relay"
+	Router  = "router"
 	Serial  = "serial"
 	Sni     = "sni"
 	Socks4  = "socks4"
@@ -50,6 +51,7 @@ const (
 
 	// Auto Handler
 	Auto     = "auto"
+	Api      = "api"
 	Dns      = "dns"
 	File     = "file"
 	Rtcp     = "rtcp"

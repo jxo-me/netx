@@ -2,15 +2,25 @@ package recorder
 
 import (
 	"crypto/tls"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/x/config"
 	"github.com/jxo-me/netx/x/internal/plugin"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
-	recorderplugin "github.com/jxo-me/netx/x/recorder/plugin"
+	recorder_plugin "github.com/jxo-me/netx/x/recorder/plugin"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+type discardCloser struct{}
+
+func (discardCloser) Write(p []byte) (n int, err error) { return len(p), nil }
+func (discardCloser) Close() error                      { return nil }
 
 func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	if cfg == nil {
@@ -27,13 +37,13 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 		}
 		switch strings.ToLower(cfg.Plugin.Type) {
 		case "http":
-			return recorderplugin.NewHTTPPlugin(
+			return recorder_plugin.NewHTTPPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TLSConfigOption(tlsCfg),
 				plugin.TimeoutOption(cfg.Plugin.Timeout),
 			)
 		default:
-			return recorderplugin.NewGRPCPlugin(
+			return recorder_plugin.NewGRPCPlugin(
 				cfg.Name, cfg.Plugin.Addr,
 				plugin.TokenOption(cfg.Plugin.Token),
 				plugin.TLSConfigOption(tlsCfg),
@@ -42,9 +52,28 @@ func ParseRecorder(cfg *config.RecorderConfig) (r recorder.IRecorder) {
 	}
 
 	if cfg.File != nil && cfg.File.Path != "" {
-		return xrecorder.FileRecorder(cfg.File.Path,
-			xrecorder.SepRecorderOption(cfg.File.Sep),
-		)
+		var out io.WriteCloser = discardCloser{}
+
+		if cfg.File.Rotation != nil {
+			out = &lumberjack.Logger{
+				Filename:   cfg.File.Path,
+				MaxSize:    cfg.File.Rotation.MaxSize,
+				MaxAge:     cfg.File.Rotation.MaxAge,
+				MaxBackups: cfg.File.Rotation.MaxBackups,
+				LocalTime:  cfg.File.Rotation.LocalTime,
+				Compress:   cfg.File.Rotation.Compress,
+			}
+		} else {
+			os.MkdirAll(filepath.Dir(cfg.File.Path), 0755)
+			f, err := os.OpenFile(cfg.File.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			if err != nil {
+				logger.Default().Warn(err)
+			} else {
+				out = f
+			}
+		}
+
+		return xrecorder.FileRecorder(out, xrecorder.SepRecorderOption(cfg.File.Sep))
 	}
 
 	if cfg.TCP != nil && cfg.TCP.Addr != "" {

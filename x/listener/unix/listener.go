@@ -2,14 +2,12 @@ package unix
 
 import (
 	"net"
-	"time"
 
 	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
@@ -47,11 +45,7 @@ func (l *unixListener) Init(md md.IMetaData) (err error) {
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = stats.WrapListener(ln, l.options.Stats)
 	ln = admission.WrapListener(l.options.Admission, ln)
-	ln = limiter_wrapper.WrapListener(
-		l.options.Service,
-		ln,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-	)
+	ln = limiter_wrapper.WrapListener(l.options.Service, ln, l.options.TrafficLimiter)
 	ln = climiter.WrapListener(l.options.ConnLimiter, ln)
 	l.ln = ln
 
@@ -66,7 +60,7 @@ func (l *unixListener) Accept() (conn net.Conn, err error) {
 
 	conn = limiter_wrapper.WrapConn(
 		conn,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+		l.options.TrafficLimiter,
 		conn.RemoteAddr().String(),
 		limiter.ScopeOption(limiter.ScopeConn),
 		limiter.ServiceOption(l.options.Service),

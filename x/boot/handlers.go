@@ -1,7 +1,9 @@
 package boot
 
 import (
+	"github.com/jxo-me/netx/core/handler"
 	"github.com/jxo-me/netx/x/consts"
+	"github.com/jxo-me/netx/x/handler/api"
 	"github.com/jxo-me/netx/x/handler/auto"
 	"github.com/jxo-me/netx/x/handler/dns"
 	"github.com/jxo-me/netx/x/handler/file"
@@ -14,6 +16,7 @@ import (
 	redirect "github.com/jxo-me/netx/x/handler/redirect/tcp"
 	redirectUdp "github.com/jxo-me/netx/x/handler/redirect/udp"
 	handlerRelay "github.com/jxo-me/netx/x/handler/relay"
+	handlerRouter "github.com/jxo-me/netx/x/handler/router"
 	handlerSerial "github.com/jxo-me/netx/x/handler/serial"
 	handlerSni "github.com/jxo-me/netx/x/handler/sni"
 	handlerSocksV4 "github.com/jxo-me/netx/x/handler/socks/v4"
@@ -25,11 +28,11 @@ import (
 	"github.com/jxo-me/netx/x/handler/tun"
 	"github.com/jxo-me/netx/x/handler/tunnel"
 	"github.com/jxo-me/netx/x/handler/unix"
-	"github.com/jxo-me/netx/x/registry"
 )
 
-var Handlers = map[string]registry.NewHandler{
+var Handlers = map[string]handler.NewHandler{
 	consts.Auto:     auto.NewHandler,
+	consts.Api:      api.NewHandler,
 	consts.Dns:      dns.NewHandler,
 	consts.File:     file.NewHandler,
 	consts.Tcp:      local.NewHandler,
@@ -46,6 +49,7 @@ var Handlers = map[string]registry.NewHandler{
 	consts.Redirect: redirect.NewHandler,
 	consts.Redu:     redirectUdp.NewHandler,
 	consts.Relay:    handlerRelay.NewHandler,
+	consts.Router:   handlerRouter.NewHandler,
 	consts.Serial:   handlerSerial.NewHandler,
 	consts.Sni:      handlerSni.NewHandler,
 	consts.Socks4:   handlerSocksV4.NewHandler,

@@ -3,6 +3,7 @@ package mws
 import (
 	"context"
 	"errors"
+	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	"net"
 	"net/url"
 	"sync"
@@ -13,7 +14,6 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
 	"github.com/jxo-me/netx/x/internal/util/mux"
-	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 )
 
 type mwsDialer struct {

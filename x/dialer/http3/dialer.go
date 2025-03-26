@@ -64,7 +64,7 @@ func (d *http3Dialer) Dial(ctx context.Context, addr string, opts ...dialer.Dial
 			Host: host,
 			Client: &http.Client{
 				// Timeout:   60 * time.Second,
-				Transport: &http3.RoundTripper{
+				Transport: &http3.Transport{
 					TLSClientConfig: d.options.TLSConfig,
 					Dial: func(ctx context.Context, adr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
 						// d.options.Logger.Infof("dial: %s/%s, %s", addr, network, host)
@@ -86,7 +86,6 @@ func (d *http3Dialer) Dial(ctx context.Context, addr string, opts ...dialer.Dial
 						MaxIdleTimeout:       d.md.maxIdleTimeout,
 						Versions: []quic.Version{
 							quic.Version1,
-							quic.Version2,
 						},
 						MaxIncomingStreams: int64(d.md.maxStreams),
 					},

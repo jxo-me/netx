@@ -1,11 +1,13 @@
 package boot
 
 import (
+	"github.com/jxo-me/netx/core/connector"
 	direct "github.com/jxo-me/netx/x/connector/direct"
 	"github.com/jxo-me/netx/x/connector/forward"
 	"github.com/jxo-me/netx/x/connector/http"
 	"github.com/jxo-me/netx/x/connector/http2"
 	"github.com/jxo-me/netx/x/connector/relay"
+	"github.com/jxo-me/netx/x/connector/router"
 	"github.com/jxo-me/netx/x/connector/serial"
 	"github.com/jxo-me/netx/x/connector/sni"
 	v4 "github.com/jxo-me/netx/x/connector/socks/v4"
@@ -17,16 +19,16 @@ import (
 	"github.com/jxo-me/netx/x/connector/tunnel"
 	"github.com/jxo-me/netx/x/connector/unix"
 	"github.com/jxo-me/netx/x/consts"
-	"github.com/jxo-me/netx/x/registry"
 )
 
-var Connectors = map[string]registry.NewConnector{
+var Connectors = map[string]connector.NewConnector{
 	consts.Direct:  direct.NewConnector,
 	consts.Virtual: direct.NewConnector,
 	consts.Forward: forward.NewConnector,
 	consts.Http:    http.NewConnector,
 	consts.Http2:   http2.NewConnector,
 	consts.Relay:   relay.NewConnector,
+	consts.Router:  router.NewConnector,
 	consts.Serial:  serial.NewConnector,
 	consts.Sni:     sni.NewConnector,
 	consts.Socks4:  v4.NewConnector,

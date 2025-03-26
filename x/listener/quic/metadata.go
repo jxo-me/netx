@@ -17,10 +17,10 @@ type metadata struct {
 	handshakeTimeout time.Duration
 	maxIdleTimeout   time.Duration
 	maxStreams       int
+	enableDatagram   bool
 
-	cipherKey              []byte
-	backlog                int
-	limiterRefreshInterval time.Duration
+	cipherKey []byte
+	backlog   int
 }
 
 func (l *quicListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -53,14 +53,7 @@ func (l *quicListener) parseMetadata(md mdata.IMetaData) (err error) {
 	l.md.handshakeTimeout = mdutil.GetDuration(md, handshakeTimeout)
 	l.md.maxIdleTimeout = mdutil.GetDuration(md, maxIdleTimeout)
 	l.md.maxStreams = mdutil.GetInt(md, maxStreams)
-
-	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
-	if l.md.limiterRefreshInterval == 0 {
-		l.md.limiterRefreshInterval = 30 * time.Second
-	}
-	if l.md.limiterRefreshInterval < time.Second {
-		l.md.limiterRefreshInterval = time.Second
-	}
+	l.md.enableDatagram = mdutil.GetBool(md, "quic.enableDatagram", "enableDatagram")
 
 	return
 }

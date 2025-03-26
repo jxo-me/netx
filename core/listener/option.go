@@ -22,7 +22,7 @@ type Options struct {
 	TrafficLimiter traffic.ITrafficLimiter
 	ConnLimiter    conn.IConnLimiter
 	Chain          chain.IChainer
-	Stats          *stats.Stats
+	Stats          stats.Stats
 	Logger         logger.ILogger
 	Service        string
 	ProxyProtocol  int
@@ -74,7 +74,7 @@ func ConnLimiterOption(limiter conn.IConnLimiter) Option {
 	}
 }
 
-func StatsOption(stats *stats.Stats) Option {
+func StatsOption(stats stats.Stats) Option {
 	return func(opts *Options) {
 		opts.Stats = stats
 	}

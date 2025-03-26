@@ -1,6 +1,7 @@
 package boot
 
 import (
+	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/x/consts"
 	listenerDns "github.com/jxo-me/netx/x/listener/dns"
 	listenerDtls "github.com/jxo-me/netx/x/listener/dtls"
@@ -34,10 +35,9 @@ import (
 	listenerUdp "github.com/jxo-me/netx/x/listener/udp"
 	listenerUnix "github.com/jxo-me/netx/x/listener/unix"
 	listenerWs "github.com/jxo-me/netx/x/listener/ws"
-	"github.com/jxo-me/netx/x/registry"
 )
 
-var Listeners = map[string]registry.NewListener{
+var Listeners = map[string]listener.NewListener{
 	consts.Dns:      listenerDns.NewListener,
 	consts.Dtls:     listenerDtls.NewListener,
 	consts.Ftcp:     listenerFtcp.NewListener,

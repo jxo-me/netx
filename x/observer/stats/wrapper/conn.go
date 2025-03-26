@@ -19,13 +19,13 @@ var (
 
 type conn struct {
 	net.Conn
-	stats  *stats.Stats
+	stats  stats.Stats
 	closed chan struct{}
 	mu     sync.Mutex
 }
 
-func WrapConn(c net.Conn, pStats *stats.Stats) net.Conn {
-	if pStats == nil {
+func WrapConn(c net.Conn, pStats stats.Stats) net.Conn {
+	if c == nil || pStats == nil {
 		return c
 	}
 
@@ -84,10 +84,10 @@ func (c *conn) Metadata() metadata.IMetaData {
 
 type packetConn struct {
 	net.PacketConn
-	stats *stats.Stats
+	stats stats.Stats
 }
 
-func WrapPacketConn(pc net.PacketConn, stats *stats.Stats) net.PacketConn {
+func WrapPacketConn(pc net.PacketConn, stats stats.Stats) net.PacketConn {
 	if stats == nil {
 		return pc
 	}
@@ -118,10 +118,10 @@ func (c *packetConn) Metadata() metadata.IMetaData {
 
 type udpConn struct {
 	net.PacketConn
-	stats *stats.Stats
+	stats stats.Stats
 }
 
-func WrapUDPConn(pc net.PacketConn, stats *stats.Stats) udp.Conn {
+func WrapUDPConn(pc net.PacketConn, stats stats.Stats) udp.Conn {
 	return &udpConn{
 		PacketConn: pc,
 		stats:      stats,
@@ -152,7 +152,9 @@ func (c *udpConn) SetWriteBuffer(n int) error {
 func (c *udpConn) Read(b []byte) (n int, err error) {
 	if nc, ok := c.PacketConn.(io.Reader); ok {
 		n, err = nc.Read(b)
-		c.stats.Add(stats.KindInputBytes, int64(n))
+		if c.stats != nil {
+			c.stats.Add(stats.KindInputBytes, int64(n))
+		}
 		return
 	}
 	err = errUnsupport
@@ -161,14 +163,18 @@ func (c *udpConn) Read(b []byte) (n int, err error) {
 
 func (c *udpConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
 	n, addr, err = c.PacketConn.ReadFrom(p)
-	c.stats.Add(stats.KindInputBytes, int64(n))
+	if c.stats != nil {
+		c.stats.Add(stats.KindInputBytes, int64(n))
+	}
 	return
 }
 
 func (c *udpConn) ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error) {
 	if nc, ok := c.PacketConn.(udp.ReadUDP); ok {
 		n, addr, err = nc.ReadFromUDP(b)
-		c.stats.Add(stats.KindInputBytes, int64(n))
+		if c.stats != nil {
+			c.stats.Add(stats.KindInputBytes, int64(n))
+		}
 		return
 	}
 	err = errUnsupport
@@ -178,7 +184,9 @@ func (c *udpConn) ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error) {
 func (c *udpConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAddr, err error) {
 	if nc, ok := c.PacketConn.(udp.ReadUDP); ok {
 		n, oobn, flags, addr, err = nc.ReadMsgUDP(b, oob)
-		c.stats.Add(stats.KindInputBytes, int64(n))
+		if c.stats != nil {
+			c.stats.Add(stats.KindInputBytes, int64(n))
+		}
 		return
 	}
 	err = errUnsupport
@@ -188,7 +196,9 @@ func (c *udpConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAd
 func (c *udpConn) Write(b []byte) (n int, err error) {
 	if nc, ok := c.PacketConn.(io.Writer); ok {
 		n, err = nc.Write(b)
-		c.stats.Add(stats.KindOutputBytes, int64(n))
+		if c.stats != nil {
+			c.stats.Add(stats.KindOutputBytes, int64(n))
+		}
 		return
 	}
 	err = errUnsupport
@@ -197,14 +207,18 @@ func (c *udpConn) Write(b []byte) (n int, err error) {
 
 func (c *udpConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	n, err = c.PacketConn.WriteTo(p, addr)
-	c.stats.Add(stats.KindOutputBytes, int64(n))
+	if c.stats != nil {
+		c.stats.Add(stats.KindOutputBytes, int64(n))
+	}
 	return
 }
 
 func (c *udpConn) WriteToUDP(b []byte, addr *net.UDPAddr) (n int, err error) {
 	if nc, ok := c.PacketConn.(udp.WriteUDP); ok {
 		n, err = nc.WriteToUDP(b, addr)
-		c.stats.Add(stats.KindOutputBytes, int64(n))
+		if c.stats != nil {
+			c.stats.Add(stats.KindOutputBytes, int64(n))
+		}
 		return
 	}
 	err = errUnsupport
@@ -214,7 +228,9 @@ func (c *udpConn) WriteToUDP(b []byte, addr *net.UDPAddr) (n int, err error) {
 func (c *udpConn) WriteMsgUDP(b, oob []byte, addr *net.UDPAddr) (n, oobn int, err error) {
 	if nc, ok := c.PacketConn.(udp.WriteUDP); ok {
 		n, oobn, err = nc.WriteMsgUDP(b, oob, addr)
-		c.stats.Add(stats.KindOutputBytes, int64(n))
+		if c.stats != nil {
+			c.stats.Add(stats.KindOutputBytes, int64(n))
+		}
 		return
 	}
 	err = errUnsupport

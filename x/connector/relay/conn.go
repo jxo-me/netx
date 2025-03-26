@@ -192,14 +192,13 @@ func (c *bindUDPConn) Write(b []byte) (n int, err error) {
 		return
 	}
 
-	// 2-byte data length header
-	var bh [2]byte
-	binary.BigEndian.PutUint16(bh[:], uint16(len(b)))
-	_, err = c.Conn.Write(bh[:])
-	if err != nil {
-		return
-	}
-	return c.Conn.Write(b)
+	buf := bufpool.Get(len(b) + 2)
+	defer bufpool.Put(buf)
+
+	binary.BigEndian.PutUint16(buf[:2], uint16(len(b)))
+	n = copy(buf[2:], b)
+
+	return c.Conn.Write(buf)
 }
 
 func (c *bindUDPConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
@@ -220,7 +219,7 @@ func (c *bindUDPConn) RemoteAddr() net.Addr {
 	return c.remoteAddr
 }
 
-// Metadata implements metadata.IMetaDatable interface.
+// Metadata implements metadata.Metadatable interface.
 func (c *bindUDPConn) Metadata() mdata.IMetaData {
 	return c.md
 }

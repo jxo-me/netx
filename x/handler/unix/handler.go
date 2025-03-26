@@ -21,6 +21,7 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/util/sniffing"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
@@ -90,7 +91,7 @@ func (h *unixHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {

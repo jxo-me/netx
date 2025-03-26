@@ -26,6 +26,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/core/recorder"
 	xbypass "github.com/jxo-me/netx/x/bypass"
@@ -34,13 +35,14 @@ import (
 	xio "github.com/jxo-me/netx/x/internal/io"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	xhttp "github.com/jxo-me/netx/x/internal/net/http"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	"github.com/jxo-me/netx/x/internal/util/sniffing"
 	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	cache_limiter "github.com/jxo-me/netx/x/limiter/traffic/cache"
 	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"golang.org/x/net/http/httpguts"
@@ -66,7 +68,6 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &httpHandler{
 		options: options,
-		stats:   stats_util.NewHandlerStats(options.Service),
 	}
 }
 
@@ -79,12 +80,16 @@ func (h *httpHandler) Init(md md.IMetaData) error {
 	h.cancel = cancel
 
 	if h.options.Observer != nil {
-		h.stats = stats_util.NewHandlerStats(h.options.Service)
+		h.stats = stats_util.NewHandlerStats(h.options.Service, h.md.observerResetTraffic)
 		go h.observeStats(ctx)
 	}
 
-	if limiter := h.options.Limiter; limiter != nil {
-		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
+	if h.options.Limiter != nil {
+		h.limiter = cache_limiter.NewCachedTrafficLimiter(h.options.Limiter,
+			cache_limiter.RefreshIntervalOption(h.md.limiterRefreshInterval),
+			cache_limiter.CleanupIntervalOption(h.md.limiterCleanupInterval),
+			cache_limiter.ScopeOption(limiter.ScopeClient),
+		)
 	}
 
 	for _, ro := range h.options.Recorders {
@@ -139,7 +144,7 @@ func (h *httpHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {
@@ -244,9 +249,6 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	if resp.Header == nil {
 		resp.Header = http.Header{}
 	}
-	if resp.Header.Get("Proxy-Agent") == "" {
-		resp.Header.Set("Proxy-Agent", h.md.proxyAgent)
-	}
 
 	ro.HTTP = &xrecorder.HTTPRecorderObject{
 		Host:   req.Host,
@@ -280,6 +282,11 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 	if !ok {
 		return errors.New("authentication failed")
 	}
+
+	if resp.Header.Get("Proxy-Agent") == "" {
+		resp.Header.Set("Proxy-Agent", h.md.proxyAgent)
+	}
+
 	ctx = ctxvalue.ContextWithClientID(ctx, ctxvalue.ClientID(clientID))
 
 	if h.options.Bypass != nil &&
@@ -416,7 +423,7 @@ func (h *httpHandler) handleRequest(ctx context.Context, conn net.Conn, req *htt
 }
 
 func (h *httpHandler) handleProxy(ctx context.Context, conn net.Conn, req *http.Request, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	ro.Time = time.Time{}
@@ -448,7 +455,7 @@ func (h *httpHandler) handleProxy(ctx context.Context, conn net.Conn, req *http.
 	}
 }
 
-func (h *httpHandler) proxyRoundTrip(ctx context.Context, rw io.ReadWriter, req *http.Request, ro *xrecorder.HandlerRecorderObject, pStats *stats.Stats, log logger.ILogger) (close bool, err error) {
+func (h *httpHandler) proxyRoundTrip(ctx context.Context, rw io.ReadWriter, req *http.Request, ro *xrecorder.HandlerRecorderObject, pStats stats.Stats, log logger.ILogger) (close bool, err error) {
 	close = true
 
 	ro2 := &xrecorder.HandlerRecorderObject{}
@@ -945,13 +952,26 @@ func (h *httpHandler) observeStats(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(h.md.observePeriod)
+	var events []observer.Event
+
+	ticker := time.NewTicker(h.md.observerPeriod)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			h.options.Observer.Observe(ctx, h.stats.Events())
+			if len(events) > 0 {
+				if err := h.options.Observer.Observe(ctx, events); err == nil {
+					events = nil
+				}
+				break
+			}
+
+			evs := h.stats.Events()
+			if err := h.options.Observer.Observe(ctx, evs); err != nil {
+				events = evs
+			}
+
 		case <-ctx.Done():
 			return
 		}

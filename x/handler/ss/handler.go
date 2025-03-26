@@ -20,6 +20,7 @@ import (
 	"github.com/jxo-me/netx/x/internal/util/ss"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"github.com/shadowsocks/go-shadowsocks2/core"
@@ -101,7 +102,7 @@ func (h *ssHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.H
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {

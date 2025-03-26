@@ -23,6 +23,7 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/core/recorder"
 	xbypass "github.com/jxo-me/netx/x/bypass"
@@ -30,9 +31,9 @@ import (
 	xio "github.com/jxo-me/netx/x/internal/io"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	xhttp "github.com/jxo-me/netx/x/internal/net/http"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	cache_limiter "github.com/jxo-me/netx/x/limiter/traffic/cache"
 	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
@@ -55,7 +56,6 @@ func NewHandler(opts ...handler.Option) handler.IHandler {
 
 	return &http2Handler{
 		options: options,
-		stats:   stats_util.NewHandlerStats(options.Service),
 	}
 }
 
@@ -68,12 +68,16 @@ func (h *http2Handler) Init(md md.IMetaData) error {
 	h.cancel = cancel
 
 	if h.options.Observer != nil {
-		h.stats = stats_util.NewHandlerStats(h.options.Service)
+		h.stats = stats_util.NewHandlerStats(h.options.Service, h.md.observerResetTraffic)
 		go h.observeStats(ctx)
 	}
 
-	if limiter := h.options.Limiter; limiter != nil {
-		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
+	if h.options.Limiter != nil {
+		h.limiter = cache_limiter.NewCachedTrafficLimiter(h.options.Limiter,
+			cache_limiter.RefreshIntervalOption(h.md.limiterRefreshInterval),
+			cache_limiter.CleanupIntervalOption(h.md.limiterCleanupInterval),
+			cache_limiter.ScopeOption(limiter.ScopeClient),
+		)
 	}
 
 	for _, ro := range h.options.Recorders {
@@ -479,13 +483,26 @@ func (h *http2Handler) observeStats(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(h.md.observePeriod)
+	var events []observer.Event
+
+	ticker := time.NewTicker(h.md.observerPeriod)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			h.options.Observer.Observe(ctx, h.stats.Events())
+			if len(events) > 0 {
+				if err := h.options.Observer.Observe(ctx, events); err == nil {
+					events = nil
+				}
+				break
+			}
+
+			evs := h.stats.Events()
+			if err := h.options.Observer.Observe(ctx, evs); err != nil {
+				events = evs
+			}
+
 		case <-ctx.Done():
 			return
 		}

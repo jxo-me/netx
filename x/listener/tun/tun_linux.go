@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os/exec"
+	"strings"
 
 	"github.com/vishvananda/netlink"
 )
@@ -44,14 +46,33 @@ func (l *tunListener) createTun() (dev io.ReadWriteCloser, name string, ip net.I
 		return
 	}
 
+	var dnsServers []string
+	for _, dns := range l.md.config.DNS {
+		dnsServers = append(dnsServers, dns.String())
+	}
+	if len(dnsServers) > 0 {
+		cmd := fmt.Sprintf("resolvectl dns %s %s", name, strings.Join(dnsServers, " "))
+		l.logger.Debug(cmd)
+
+		args := strings.Split(cmd, " ")
+		if er := exec.Command(args[0], args[1:]...).Run(); er != nil {
+			err = fmt.Errorf("%s: %v", cmd, er)
+			return
+		}
+	}
+
 	return
 }
 
 func (l *tunListener) addRoutes(ifce *net.Interface) error {
 	for _, route := range l.routes {
+		if route.Net == nil {
+			continue
+		}
+
 		r := netlink.Route{
 			Dst: route.Net,
-			Gw:  route.Gateway,
+			Gw:  net.ParseIP(route.Gateway),
 		}
 		if r.Gw == nil {
 			r.LinkIndex = ifce.Index

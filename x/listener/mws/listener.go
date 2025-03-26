@@ -3,6 +3,7 @@ package mws
 import (
 	"context"
 	"crypto/tls"
+	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -16,13 +17,11 @@ import (
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
-	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
 )
 
 type mwsListener struct {
@@ -106,11 +105,7 @@ func (l *mwsListener) Init(md md.IMetaData) (err error) {
 	ln = metrics.WrapListener(l.options.Service, ln)
 	ln = stats.WrapListener(ln, l.options.Stats)
 	ln = admission.WrapListener(l.options.Admission, ln)
-	ln = limiter_wrapper.WrapListener(
-		l.options.Service,
-		ln,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-	)
+	ln = limiter_wrapper.WrapListener(l.options.Service, ln, l.options.TrafficLimiter)
 	ln = climiter.WrapListener(l.options.ConnLimiter, ln)
 
 	if l.tlsEnabled {
@@ -136,13 +131,14 @@ func (l *mwsListener) Accept() (conn net.Conn, err error) {
 	case conn = <-l.cqueue:
 		conn = limiter_wrapper.WrapConn(
 			conn,
-			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			l.options.TrafficLimiter,
 			conn.RemoteAddr().String(),
 			limiter.ScopeOption(limiter.ScopeConn),
 			limiter.ServiceOption(l.options.Service),
 			limiter.NetworkOption(conn.LocalAddr().Network()),
 			limiter.SrcOption(conn.RemoteAddr().String()),
 		)
+
 	case err, ok = <-l.errChan:
 		if !ok {
 			err = listener.ErrClosed

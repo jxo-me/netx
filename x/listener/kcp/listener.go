@@ -11,7 +11,7 @@ import (
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	kcp_util "github.com/jxo-me/netx/x/internal/util/kcp"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	traffic_limiter "github.com/jxo-me/netx/x/limiter/traffic"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
@@ -77,8 +77,8 @@ func (l *kcpListener) Init(md md.IMetaData) (err error) {
 	conn = admission.WrapUDPConn(l.options.Admission, conn)
 	conn = limiter_wrapper.WrapUDPConn(
 		conn,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-		"",
+		l.options.TrafficLimiter,
+		traffic_limiter.ServiceLimitKey,
 		limiter.ScopeOption(limiter.ScopeService),
 		limiter.ServiceOption(l.options.Service),
 		limiter.NetworkOption(conn.LocalAddr().Network()),
@@ -119,7 +119,7 @@ func (l *kcpListener) Accept() (conn net.Conn, err error) {
 	case conn = <-l.cqueue:
 		conn = limiter_wrapper.WrapConn(
 			conn,
-			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			l.options.TrafficLimiter,
 			conn.RemoteAddr().String(),
 			limiter.ScopeOption(limiter.ScopeConn),
 			limiter.ServiceOption(l.options.Service),

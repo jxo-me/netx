@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ import (
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/core/sd"
 	"github.com/jxo-me/netx/relay"
+	dissector "github.com/jxo-me/netx/tls-dissector"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	ctx_internal "github.com/jxo-me/netx/x/internal/ctx"
@@ -32,9 +34,11 @@ import (
 	xhttp "github.com/jxo-me/netx/x/internal/net/http"
 	"github.com/jxo-me/netx/x/internal/net/proxyproto"
 	"github.com/jxo-me/netx/x/internal/util/sniffing"
+	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	climiter "github.com/jxo-me/netx/x/limiter/conn/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"golang.org/x/net/http/httpguts"
@@ -58,6 +62,8 @@ type entrypoint struct {
 
 	sniffingWebsocket   bool
 	websocketSampleRate float64
+
+	readTimeout time.Duration
 }
 
 func (ep *entrypoint) Handle(ctx context.Context, conn net.Conn) (err error) {
@@ -81,7 +87,7 @@ func (ep *entrypoint) Handle(ctx context.Context, conn net.Conn) (err error) {
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {
@@ -103,7 +109,6 @@ func (ep *entrypoint) Handle(ctx context.Context, conn net.Conn) (err error) {
 	}()
 
 	br := bufio.NewReader(conn)
-
 	v, err := br.Peek(1)
 	if err != nil {
 		return err
@@ -112,6 +117,9 @@ func (ep *entrypoint) Handle(ctx context.Context, conn net.Conn) (err error) {
 	conn = xnet.NewReadWriteConn(br, conn, conn)
 	if v[0] == relay.Version1 {
 		return ep.handleConnect(ctx, conn, ro, log)
+	}
+	if v[0] == dissector.Handshake {
+		return ep.HandleTLS(ctx, conn, ro, log)
 	}
 	return ep.handleHTTP(ctx, conn, ro, log)
 }
@@ -188,7 +196,7 @@ func (ep *entrypoint) dial(ctx context.Context, network, addr string) (conn net.
 }
 
 func (ep *entrypoint) handleHTTP(ctx context.Context, conn net.Conn, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) (err error) {
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	br := bufio.NewReader(conn)
@@ -243,7 +251,7 @@ func (ep *entrypoint) handleHTTP(ctx context.Context, conn net.Conn, ro *xrecord
 	}
 }
 
-func (ep *entrypoint) httpRoundTrip(ctx context.Context, rw io.ReadWriter, req *http.Request, ro *xrecorder.HandlerRecorderObject, pStats *stats.Stats, log logger.ILogger) (err error) {
+func (ep *entrypoint) httpRoundTrip(ctx context.Context, rw io.ReadWriter, req *http.Request, ro *xrecorder.HandlerRecorderObject, pStats stats.Stats, log logger.ILogger) (err error) {
 	ro2 := &xrecorder.HandlerRecorderObject{}
 	*ro2 = *ro
 	ro = ro2
@@ -546,6 +554,70 @@ func (ep *entrypoint) copyWebsocketFrame(w io.Writer, r io.Reader, buf *bytes.Bu
 	}
 
 	return nil
+}
+
+func (ep *entrypoint) HandleTLS(ctx context.Context, conn net.Conn, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) error {
+	buf := new(bytes.Buffer)
+	clientHello, err := dissector.ParseClientHello(io.TeeReader(conn, buf))
+	if err != nil {
+		return err
+	}
+
+	ro.TLS = &xrecorder.TLSRecorderObject{
+		ServerName:  clientHello.ServerName,
+		ClientHello: hex.EncodeToString(buf.Bytes()),
+	}
+	if len(clientHello.SupportedProtos) > 0 {
+		ro.TLS.Proto = clientHello.SupportedProtos[0]
+	}
+
+	host := clientHello.ServerName
+	if host != "" {
+		if _, _, err := net.SplitHostPort(host); err != nil {
+			host = net.JoinHostPort(strings.Trim(host, "[]"), "443")
+		}
+		ro.Host = host
+	}
+
+	ctx = ctxvalue.ContextWithClientAddr(ctx, ctxvalue.ClientAddr(ro.RemoteAddr))
+	ctx = ctx_internal.ContextWithRecorderObject(ctx, ro)
+	ctx = ctxvalue.ContextWithLogger(ctx, log)
+
+	cc, err := ep.dial(ctx, "tcp", host)
+	if err != nil {
+		return err
+	}
+	defer cc.Close()
+
+	if _, err := buf.WriteTo(cc); err != nil {
+		return err
+	}
+
+	xio.SetReadDeadline(cc, time.Now().Add(ep.readTimeout))
+	serverHello, err := dissector.ParseServerHello(io.TeeReader(cc, buf))
+	xio.SetReadDeadline(cc, time.Time{})
+
+	if serverHello != nil {
+		ro.TLS.CipherSuite = tls_util.CipherSuite(serverHello.CipherSuite).String()
+		ro.TLS.CompressionMethod = serverHello.CompressionMethod
+		if serverHello.Proto != "" {
+			ro.TLS.Proto = serverHello.Proto
+		}
+		if serverHello.Version > 0 {
+			ro.TLS.Version = tls_util.Version(serverHello.Version).String()
+		}
+	}
+
+	if buf.Len() > 0 {
+		ro.TLS.ServerHello = hex.EncodeToString(buf.Bytes())
+	}
+
+	if _, err := buf.WriteTo(conn); err != nil {
+		return err
+	}
+
+	xnet.Transport(conn, cc)
+	return err
 }
 
 func (ep *entrypoint) handleConnect(ctx context.Context, conn net.Conn, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) (err error) {

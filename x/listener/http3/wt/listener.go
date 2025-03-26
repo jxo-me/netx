@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"time"
 
 	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
@@ -12,8 +11,8 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	wt_util "github.com/jxo-me/netx/x/internal/util/wt"
+	traffic_limiter "github.com/jxo-me/netx/x/limiter/traffic"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
@@ -74,8 +73,8 @@ func (l *wtListener) Init(md md.IMetaData) (err error) {
 	pc = admission.WrapPacketConn(l.options.Admission, pc)
 	pc = limiter_wrapper.WrapPacketConn(
 		pc,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-		"",
+		l.options.TrafficLimiter,
+		traffic_limiter.ServiceLimitKey,
 		limiter.ScopeOption(limiter.ScopeService),
 		limiter.ServiceOption(l.options.Service),
 		limiter.NetworkOption(network),
@@ -125,7 +124,7 @@ func (l *wtListener) Accept() (conn net.Conn, err error) {
 	case conn = <-l.cqueue:
 		conn = limiter_wrapper.WrapConn(
 			conn,
-			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			l.options.TrafficLimiter,
 			conn.RemoteAddr().String(),
 			limiter.ScopeOption(limiter.ScopeConn),
 			limiter.ServiceOption(l.options.Service),

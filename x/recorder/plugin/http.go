@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/jxo-me/netx/core/logger"
@@ -84,7 +83,7 @@ func (p *httpPlugin) Record(ctx context.Context, b []byte, opts ...recorder.Reco
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s", resp.Status)
+		return errors.New(resp.Status)
 	}
 
 	res := httpPluginResponse{}

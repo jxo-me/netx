@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"io"
 	"net"
 	"time"
@@ -22,7 +23,6 @@ import (
 	"github.com/jxo-me/netx/x/internal/util/sniffing"
 	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
-	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network, address string, ro *xrecorder.HandlerRecorderObject, log logger.ILogger) (err error) {
@@ -39,6 +39,30 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 	})
 
 	log.Debugf("%s >> %s/%s", conn.RemoteAddr(), address, network)
+
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		rw := traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			conn,
+			string(clientID),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.ServiceOption(h.options.Service),
+			limiter.NetworkOption(network),
+			limiter.AddrOption(address),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
+		conn = xnet.NewReadWriteConn(rw, rw, conn)
+	}
 
 	resp := relay.Response{
 		Version: relay.Version1,
@@ -120,30 +144,6 @@ func (h *relayHandler) handleConnect(ctx context.Context, conn net.Conn, network
 			}
 			conn = rc
 		}
-	}
-
-	{
-		clientID := ctxvalue.ClientIDFromContext(ctx)
-		rw := traffic_wrapper.WrapReadWriter(
-			h.limiter,
-			conn,
-			string(clientID),
-			limiter.ScopeOption(limiter.ScopeClient),
-			limiter.ServiceOption(h.options.Service),
-			limiter.NetworkOption(network),
-			limiter.AddrOption(address),
-			limiter.ClientOption(string(clientID)),
-			limiter.SrcOption(conn.RemoteAddr().String()),
-		)
-		if h.options.Observer != nil {
-			pstats := h.stats.Stats(string(clientID))
-			pstats.Add(stats.KindTotalConns, 1)
-			pstats.Add(stats.KindCurrentConns, 1)
-			defer pstats.Add(stats.KindCurrentConns, -1)
-			rw = stats_wrapper.WrapReadWriter(rw, pstats)
-		}
-
-		conn = xnet.NewReadWriteConn(rw, rw, conn)
 	}
 
 	if h.md.sniffing {

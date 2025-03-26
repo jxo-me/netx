@@ -1,5 +1,7 @@
 package logger
 
+import "sync/atomic"
+
 // LogFormat is format type
 type LogFormat string
 
@@ -45,15 +47,16 @@ type ILogger interface {
 }
 
 var (
-	defaultLogger ILogger
+	defaultLogger atomic.Value
 )
 
 func Default() ILogger {
-	return defaultLogger
+	v, _ := defaultLogger.Load().(ILogger)
+	return v
 }
 
 func SetDefault(logger ILogger) {
-	defaultLogger = logger
+	defaultLogger.Store(logger)
 }
 
 type loggerGroup struct {

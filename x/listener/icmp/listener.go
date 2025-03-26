@@ -3,7 +3,6 @@ package quic
 import (
 	"context"
 	"net"
-	"time"
 
 	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
@@ -11,7 +10,7 @@ import (
 	md "github.com/jxo-me/netx/core/metadata"
 	admission "github.com/jxo-me/netx/x/admission/wrapper"
 	icmp_pkg "github.com/jxo-me/netx/x/internal/util/icmp"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	traffic_limiter "github.com/jxo-me/netx/x/limiter/traffic"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
@@ -77,8 +76,8 @@ func (l *icmpListener) Init(md md.IMetaData) (err error) {
 	conn = admission.WrapPacketConn(l.options.Admission, conn)
 	conn = limiter_wrapper.WrapPacketConn(
 		conn,
-		limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-		"",
+		l.options.TrafficLimiter,
+		traffic_limiter.ServiceLimitKey,
 		limiter.ScopeOption(limiter.ScopeService),
 		limiter.ServiceOption(l.options.Service),
 		limiter.NetworkOption(conn.LocalAddr().Network()),
@@ -117,7 +116,7 @@ func (l *icmpListener) Accept() (conn net.Conn, err error) {
 	case conn = <-l.cqueue:
 		conn = limiter_wrapper.WrapConn(
 			conn,
-			limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
+			l.options.TrafficLimiter,
 			conn.RemoteAddr().String(),
 			limiter.ScopeOption(limiter.ScopeConn),
 			limiter.ServiceOption(l.options.Service),

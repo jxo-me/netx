@@ -20,17 +20,18 @@ const (
 )
 
 type metadata struct {
-	readTimeout            time.Duration
-	keepalive              bool
-	compression            bool
-	probeResistance        *probeResistance
-	enableUDP              bool
-	header                 http.Header
-	hash                   string
-	authBasicRealm         string
-	proxyAgent             string
-	observePeriod          time.Duration
-	limiterRefreshInterval time.Duration
+	readTimeout     time.Duration
+	keepalive       bool
+	compression     bool
+	probeResistance *probeResistance
+	enableUDP       bool
+	header          http.Header
+	hash            string
+	authBasicRealm  string
+	proxyAgent      string
+
+	observerPeriod       time.Duration
+	observerResetTraffic bool
 
 	sniffing                    bool
 	sniffingTimeout             time.Duration
@@ -41,6 +42,9 @@ type metadata struct {
 	privateKey  crypto.PrivateKey
 	alpn        string
 	mitmBypass  bypass.IBypass
+
+	limiterRefreshInterval time.Duration
+	limiterCleanupInterval time.Duration
 }
 
 func (h *httpHandler) parseMetadata(md mdata.IMetaData) error {
@@ -73,21 +77,15 @@ func (h *httpHandler) parseMetadata(md mdata.IMetaData) error {
 	h.md.hash = mdutil.GetString(md, "hash")
 	h.md.authBasicRealm = mdutil.GetString(md, "authBasicRealm")
 
-	h.md.observePeriod = mdutil.GetDuration(md, "observePeriod", "observer.observePeriod")
-	if h.md.observePeriod == 0 {
-		h.md.observePeriod = 5 * time.Second
+	h.md.observerPeriod = mdutil.GetDuration(md, "observePeriod", "observer.period", "observer.observePeriod")
+	if h.md.observerPeriod == 0 {
+		h.md.observerPeriod = 5 * time.Second
 	}
-	if h.md.observePeriod < time.Second {
-		h.md.observePeriod = time.Second
+	if h.md.observerPeriod < time.Second {
+		h.md.observerPeriod = time.Second
 	}
 
-	h.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
-	if h.md.limiterRefreshInterval == 0 {
-		h.md.limiterRefreshInterval = 30 * time.Second
-	}
-	if h.md.limiterRefreshInterval < time.Second {
-		h.md.limiterRefreshInterval = time.Second
-	}
+	h.md.observerResetTraffic = mdutil.GetBool(md, "observer.resetTraffic")
 
 	h.md.proxyAgent = mdutil.GetString(md, "http.proxyAgent", "proxyAgent")
 	if h.md.proxyAgent == "" {
@@ -114,6 +112,9 @@ func (h *httpHandler) parseMetadata(md mdata.IMetaData) error {
 	}
 	h.md.alpn = mdutil.GetString(md, "mitm.alpn")
 	h.md.mitmBypass = app.Runtime.BypassRegistry().Get(mdutil.GetString(md, "mitm.bypass"))
+
+	h.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
+	h.md.limiterCleanupInterval = mdutil.GetDuration(md, "limiter.cleanupInterval")
 
 	return nil
 }

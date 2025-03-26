@@ -16,8 +16,7 @@ type metadata struct {
 	handshakeTimeout time.Duration
 	maxIdleTimeout   time.Duration
 
-	backlog                int
-	limiterRefreshInterval time.Duration
+	backlog int
 }
 
 func (l *icmpListener) parseMetadata(md mdata.IMetaData) (err error) {
@@ -34,14 +33,6 @@ func (l *icmpListener) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 	l.md.handshakeTimeout = mdutil.GetDuration(md, "handshakeTimeout")
 	l.md.maxIdleTimeout = mdutil.GetDuration(md, "maxIdleTimeout")
-
-	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
-	if l.md.limiterRefreshInterval == 0 {
-		l.md.limiterRefreshInterval = 30 * time.Second
-	}
-	if l.md.limiterRefreshInterval < time.Second {
-		l.md.limiterRefreshInterval = time.Second
-	}
 
 	return
 }

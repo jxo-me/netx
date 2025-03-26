@@ -9,17 +9,14 @@ import (
 
 	"github.com/jxo-me/netx/core/handler"
 	md "github.com/jxo-me/netx/core/metadata"
-	"github.com/jxo-me/netx/core/recorder"
-	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
 
 type fileHandler struct {
-	handler  http.Handler
-	server   *http.Server
-	ln       *singleConnListener
-	md       metadata
-	options  handler.Options
-	recorder recorder.RecorderObject
+	handler http.Handler
+	server  *http.Server
+	ln      *singleConnListener
+	md      metadata
+	options handler.Options
 }
 
 func NewHandler(opts ...handler.Option) handler.IHandler {
@@ -41,13 +38,6 @@ func (h *fileHandler) Init(md md.IMetaData) (err error) {
 	h.handler = http.FileServer(http.Dir(h.md.dir))
 	h.server = &http.Server{
 		Handler: http.HandlerFunc(h.handleFunc),
-	}
-
-	for _, ro := range h.options.Recorders {
-		if ro.Record == xrecorder.RecorderServiceHandler {
-			h.recorder = ro
-			break
-		}
 	}
 
 	h.ln = &singleConnListener{
@@ -75,54 +65,8 @@ func (h *fileHandler) Close() error {
 }
 
 func (h *fileHandler) handleFunc(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-
-	ro := &xrecorder.HandlerRecorderObject{
-		Service:    h.options.Service,
-		RemoteAddr: r.RemoteAddr,
-		Network:    "tcp",
-		Host:       r.Host,
-		Proto:      "http",
-		HTTP: &xrecorder.HTTPRecorderObject{
-			Host:   r.Host,
-			Method: r.Method,
-			Proto:  r.Proto,
-			Scheme: r.URL.Scheme,
-			URI:    r.RequestURI,
-			Request: xrecorder.HTTPRequestRecorderObject{
-				ContentLength: r.ContentLength,
-				Header:        r.Header,
-			},
-		},
-		Time: start,
-	}
-	ro.ClientIP, _, _ = net.SplitHostPort(r.RemoteAddr)
-
-	log := h.options.Logger.WithFields(map[string]any{
-		"remote": r.RemoteAddr,
-	})
-
-	rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-
-	defer func() {
-		ro.Duration = time.Since(start)
-		ro.HTTP.StatusCode = rw.statusCode
-		ro.HTTP.Response = xrecorder.HTTPResponseRecorderObject{
-			ContentLength: rw.contentLength,
-			Header:        rw.Header(),
-		}
-		if err := ro.Record(context.Background(), h.recorder.Recorder); err != nil {
-			log.Errorf("record: %v", err)
-		}
-
-		log.WithFields(map[string]any{
-			"duration": time.Since(start),
-		}).Infof("%s %s %s %d %d", r.Method, r.RequestURI, r.Proto, rw.statusCode, rw.contentLength)
-	}()
-
 	if auther := h.options.Auther; auther != nil {
 		u, p, _ := r.BasicAuth()
-		ro.ClientID = u
 		if _, ok := auther.Authenticate(r.Context(), u, p); !ok {
 			w.Header().Set("WWW-Authenticate", "Basic")
 			w.WriteHeader(http.StatusUnauthorized)
@@ -130,7 +74,16 @@ func (h *fileHandler) handleFunc(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.handler.ServeHTTP(rw, r)
+	log := h.options.Logger
+	start := time.Now()
+
+	h.handler.ServeHTTP(w, r)
+
+	log = log.WithFields(map[string]any{
+		"remote":   r.RemoteAddr,
+		"duration": time.Since(start),
+	})
+	log.Infof("%s %s", r.Method, r.RequestURI)
 }
 
 type singleConnListener struct {
@@ -173,21 +126,4 @@ func (l *singleConnListener) send(conn net.Conn) {
 	case <-l.done:
 		return
 	}
-}
-
-type responseWriter struct {
-	http.ResponseWriter
-	statusCode    int
-	contentLength int64
-}
-
-func (w *responseWriter) Write(p []byte) (int, error) {
-	n, err := w.ResponseWriter.Write(p)
-	w.contentLength += int64(n)
-	return n, err
-}
-
-func (w *responseWriter) WriteHeader(statusCode int) {
-	w.statusCode = statusCode
-	w.ResponseWriter.WriteHeader(statusCode)
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	serial "github.com/jxo-me/netx/x/internal/util/serial"
+	traffic_limiter "github.com/jxo-me/netx/x/limiter/traffic"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
 	stats "github.com/jxo-me/netx/x/observer/stats/wrapper"
@@ -96,8 +96,8 @@ func (l *serialListener) listenLoop() {
 			conn = stats.WrapConn(conn, l.options.Stats)
 			conn = limiter_wrapper.WrapConn(
 				conn,
-				limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-				"",
+				l.options.TrafficLimiter,
+				traffic_limiter.ServiceLimitKey,
 				limiter.ScopeOption(limiter.ScopeService),
 				limiter.ServiceOption(l.options.Service),
 				limiter.NetworkOption(conn.LocalAddr().Network()),

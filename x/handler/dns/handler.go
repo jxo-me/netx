@@ -22,6 +22,7 @@ import (
 	xhop "github.com/jxo-me/netx/x/hop"
 	resolver_util "github.com/jxo-me/netx/x/internal/util/resolver"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"github.com/jxo-me/netx/x/resolver/exchanger"
@@ -158,7 +159,7 @@ func (h *dnsHandler) Handle(ctx context.Context, conn net.Conn, opts ...handler.
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {

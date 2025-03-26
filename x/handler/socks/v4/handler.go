@@ -14,17 +14,19 @@ import (
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/core/recorder"
 	"github.com/jxo-me/netx/gosocks4"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	"github.com/jxo-me/netx/x/internal/util/sniffing"
 	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	cache_limiter "github.com/jxo-me/netx/x/limiter/traffic/cache"
 	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
@@ -64,12 +66,16 @@ func (h *socks4Handler) Init(md md.IMetaData) (err error) {
 	h.cancel = cancel
 
 	if h.options.Observer != nil {
-		h.stats = stats_util.NewHandlerStats(h.options.Service)
+		h.stats = stats_util.NewHandlerStats(h.options.Service, h.md.observerResetTraffic)
 		go h.observeStats(ctx)
 	}
 
-	if limiter := h.options.Limiter; limiter != nil {
-		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
+	if h.options.Limiter != nil {
+		h.limiter = cache_limiter.NewCachedTrafficLimiter(h.options.Limiter,
+			cache_limiter.RefreshIntervalOption(h.md.limiterRefreshInterval),
+			cache_limiter.CleanupIntervalOption(h.md.limiterCleanupInterval),
+			cache_limiter.ScopeOption(limiter.ScopeClient),
+		)
 	}
 
 	for _, ro := range h.options.Recorders {
@@ -116,7 +122,7 @@ func (h *socks4Handler) Handle(ctx context.Context, conn net.Conn, opts ...handl
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {
@@ -195,37 +201,6 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 	})
 	log.Debugf("%s >> %s", conn.RemoteAddr(), addr)
 
-	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", addr) {
-		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
-		log.Trace(resp)
-		log.Debug("bypass: ", addr)
-		return resp.Write(conn)
-	}
-
-	switch h.md.hash {
-	case "host":
-		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr})
-	}
-
-	var buf bytes.Buffer
-	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", addr)
-	ro.Route = buf.String()
-	if err != nil {
-		resp := gosocks4.NewReply(gosocks4.Failed, nil)
-		log.Trace(resp)
-		resp.Write(conn)
-		return err
-	}
-
-	defer cc.Close()
-
-	resp := gosocks4.NewReply(gosocks4.Granted, nil)
-	log.Trace(resp)
-	if err := resp.Write(conn); err != nil {
-		log.Error(err)
-		return err
-	}
-
 	{
 		clientID := ctxvalue.ClientIDFromContext(ctx)
 		rw := traffic_wrapper.WrapReadWriter(
@@ -248,6 +223,36 @@ func (h *socks4Handler) handleConnect(ctx context.Context, conn net.Conn, req *g
 		}
 
 		conn = xnet.NewReadWriteConn(rw, rw, conn)
+	}
+
+	if h.options.Bypass != nil && h.options.Bypass.Contains(ctx, "tcp", addr) {
+		resp := gosocks4.NewReply(gosocks4.Rejected, nil)
+		log.Trace(resp)
+		log.Debug("bypass: ", addr)
+		return resp.Write(conn)
+	}
+
+	switch h.md.hash {
+	case "host":
+		ctx = ctxvalue.ContextWithHash(ctx, &ctxvalue.Hash{Source: addr})
+	}
+
+	var buf bytes.Buffer
+	cc, err := h.options.Router.Dial(ctxvalue.ContextWithBuffer(ctx, &buf), "tcp", addr)
+	ro.Route = buf.String()
+	if err != nil {
+		resp := gosocks4.NewReply(gosocks4.Failed, nil)
+		log.Trace(resp)
+		resp.Write(conn)
+		return err
+	}
+	defer cc.Close()
+
+	resp := gosocks4.NewReply(gosocks4.Granted, nil)
+	log.Trace(resp)
+	if err := resp.Write(conn); err != nil {
+		log.Error(err)
+		return err
 	}
 
 	if h.md.sniffing {
@@ -333,13 +338,26 @@ func (h *socks4Handler) observeStats(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(h.md.observePeriod)
+	var events []observer.Event
+
+	ticker := time.NewTicker(h.md.observerPeriod)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			h.options.Observer.Observe(ctx, h.stats.Events())
+			if len(events) > 0 {
+				if err := h.options.Observer.Observe(ctx, events); err == nil {
+					events = nil
+				}
+				break
+			}
+
+			evs := h.stats.Events()
+			if err := h.options.Observer.Observe(ctx, evs); err != nil {
+				events = evs
+			}
+
 		case <-ctx.Done():
 			return
 		}

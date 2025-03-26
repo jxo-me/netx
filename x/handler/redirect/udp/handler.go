@@ -15,6 +15,7 @@ import (
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
@@ -73,7 +74,7 @@ func (h *redirectHandler) Handle(ctx context.Context, conn net.Conn, opts ...han
 
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {

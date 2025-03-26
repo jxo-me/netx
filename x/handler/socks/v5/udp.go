@@ -9,6 +9,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/gosocks5"
@@ -16,6 +17,8 @@ import (
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/socks"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
@@ -77,19 +80,38 @@ func (h *socks5Handler) handleUDP(ctx context.Context, conn net.Conn, ro *xrecor
 		return err
 	}
 
-	clientID := ctxvalue.ClientIDFromContext(ctx)
-	if h.options.Observer != nil {
-		pstats := h.stats.Stats(string(clientID))
-		pstats.Add(stats.KindTotalConns, 1)
-		pstats.Add(stats.KindCurrentConns, 1)
-		defer pstats.Add(stats.KindCurrentConns, -1)
-		cc = stats_wrapper.WrapPacketConn(cc, pstats)
+	pStats := xstats.Stats{}
+	cc = stats_wrapper.WrapPacketConn(cc, &pStats)
+
+	defer func() {
+		ro.InputBytes = pStats.Get(stats.KindInputBytes)
+		ro.OutputBytes = pStats.Get(stats.KindOutputBytes)
+	}()
+
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		cc = traffic_wrapper.WrapPacketConn(
+			cc,
+			h.limiter,
+			string(clientID),
+			limiter.ServiceOption(h.options.Service),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.NetworkOption("udp"),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			cc = stats_wrapper.WrapPacketConn(cc, pstats)
+		}
 	}
 
-	r := udp.NewRelay(socks.UDPConn(cc, h.md.udpBufferSize), pc).
+	r := udp.NewRelay(socks.UDPConn(cc), pc).
 		WithBypass(h.options.Bypass).
 		WithLogger(log)
-	r.SetBufferSize(h.md.udpBufferSize)
 
 	go r.Run(ctx)
 

@@ -24,6 +24,7 @@ import (
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
 	mdutil "github.com/jxo-me/netx/x/metadata/util"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 )
@@ -102,7 +103,6 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 		"sid":    ro.SID,
 		"client": ro.ClientIP,
 	})
-
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
 	network := "tcp"
@@ -111,7 +111,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	}
 	ro.Network = network
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {
@@ -197,6 +197,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 			)
 		}
 	}
+
 	var target *chain.Node
 	if host != "" {
 		target = &chain.Node{

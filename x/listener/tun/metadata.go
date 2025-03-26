@@ -4,7 +4,6 @@ import (
 	"github.com/jxo-me/netx/x/app"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
@@ -15,46 +14,28 @@ import (
 )
 
 const (
-	defaultMTU            = 1350
-	defaultReadBufferSize = 4096
+	defaultMTU = 1420
 )
 
 type metadata struct {
-	config                 *tun_util.Config
-	readBufferSize         int
-	limiterRefreshInterval time.Duration
+	config *tun_util.Config
 }
 
 func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
-	const (
-		name    = "name"
-		netKey  = "net"
-		peer    = "peer"
-		mtu     = "mtu"
-		route   = "route"
-		routes  = "routes"
-		gateway = "gw"
-	)
-
-	l.md.readBufferSize = mdutil.GetInt(md, "tun.rbuf", "rbuf", "readBufferSize")
-	if l.md.readBufferSize <= 0 {
-		l.md.readBufferSize = defaultReadBufferSize
-	}
-
 	config := &tun_util.Config{
-		Name:   mdutil.GetString(md, name),
-		Peer:   mdutil.GetString(md, peer),
-		MTU:    mdutil.GetInt(md, mtu),
-		Router: app.Runtime.RouterRegistry().Get(mdutil.GetString(md, "router")),
+		Name:   mdutil.GetString(md, "name", "tun.name"),
+		Peer:   mdutil.GetString(md, "peer", "tun.peer"),
+		MTU:    mdutil.GetInt(md, "mtu", "tun.mtu"),
+		Router: app.Runtime.RouterRegistry().Get(mdutil.GetString(md, "router", "tun.router")),
 	}
 	if config.MTU <= 0 {
 		config.MTU = defaultMTU
 	}
-	if gw := mdutil.GetString(md, gateway); gw != "" {
+	if gw := mdutil.GetString(md, "gw", "tun.gw"); gw != "" {
 		config.Gateway = net.ParseIP(gw)
 	}
 
-	for _, s := range strings.Split(mdutil.GetString(md, netKey), ",") {
+	for _, s := range strings.Split(mdutil.GetString(md, "net", "tun.net"), ",") {
 		if s = strings.TrimSpace(s); s == "" {
 			continue
 		}
@@ -68,36 +49,44 @@ func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 		})
 	}
 
-	for _, s := range strings.Split(mdutil.GetString(md, route), ",") {
-		_, ipNet, _ := net.ParseCIDR(strings.TrimSpace(s))
-		if ipNet == nil {
-			continue
+	for _, s := range strings.Split(mdutil.GetString(md, "route", "tun.route"), ",") {
+		gw := ""
+		if config.Gateway != nil {
+			gw = config.Gateway.String()
 		}
-
-		l.routes = append(l.routes, &router.Route{
-			Net:     ipNet,
-			Gateway: config.Gateway,
-		})
+		if route := xrouter.ParseRoute(strings.TrimSpace(s), gw); route != nil {
+			l.routes = append(l.routes, route)
+		}
 	}
 
-	for _, s := range mdutil.GetStrings(md, routes) {
+	for _, s := range mdutil.GetStrings(md, "routes", "tun.routes") {
 		ss := strings.SplitN(s, " ", 2)
 		if len(ss) == 2 {
-			var route router.Route
 			_, ipNet, _ := net.ParseCIDR(strings.TrimSpace(ss[0]))
 			if ipNet == nil {
 				continue
 			}
-			route.Net = ipNet
 			gw := net.ParseIP(ss[1])
 			if gw == nil {
 				gw = config.Gateway
 			}
 
+			gateway := ""
+			if gw != nil {
+				gateway = gw.String()
+			}
+
 			l.routes = append(l.routes, &router.Route{
 				Net:     ipNet,
-				Gateway: gw,
+				Dst:     ipNet.String(),
+				Gateway: gateway,
 			})
+		}
+	}
+
+	for _, v := range strings.Split(mdutil.GetString(md, "dns", "tun.dns"), ",") {
+		if ip := net.ParseIP(strings.TrimSpace(v)); ip != nil {
+			config.DNS = append(config.DNS, ip)
 		}
 	}
 
@@ -112,14 +101,6 @@ func (l *tunListener) parseMetadata(md mdata.IMetaData) (err error) {
 	}
 
 	l.md.config = config
-
-	l.md.limiterRefreshInterval = mdutil.GetDuration(md, "limiter.refreshInterval")
-	if l.md.limiterRefreshInterval == 0 {
-		l.md.limiterRefreshInterval = 30 * time.Second
-	}
-	if l.md.limiterRefreshInterval < time.Second {
-		l.md.limiterRefreshInterval = time.Second
-	}
 
 	return
 }

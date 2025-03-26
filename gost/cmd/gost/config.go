@@ -3,11 +3,9 @@ package main
 import (
 	"github.com/jxo-me/netx/api"
 	iApi "github.com/jxo-me/netx/core/api"
-	"github.com/jxo-me/netx/core/auth"
 	"github.com/jxo-me/netx/core/logger"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/x/app"
-	xauth "github.com/jxo-me/netx/x/auth"
 	"github.com/jxo-me/netx/x/config"
 	admission_parser "github.com/jxo-me/netx/x/config/parsing/admission"
 	auth_parser "github.com/jxo-me/netx/x/config/parsing/auth"
@@ -24,8 +22,6 @@ import (
 	router_parser "github.com/jxo-me/netx/x/config/parsing/router"
 	sd_parser "github.com/jxo-me/netx/x/config/parsing/sd"
 	service_parser "github.com/jxo-me/netx/x/config/parsing/service"
-	metrics "github.com/jxo-me/netx/x/metrics/service"
-	"strings"
 )
 
 func buildService(cfg *config.Config) (services []service.IService) {
@@ -155,27 +151,11 @@ func buildService(cfg *config.Config) (services []service.IService) {
 }
 
 func buildAPIService(cfg *config.APIConfig) (iApi.IApi, error) {
-	var authers []auth.IAuthenticator
-	if auther := auth_parser.ParseAutherFromAuth(cfg.Auth); auther != nil {
-		authers = append(authers, auther)
-	}
+	auther := auth_parser.ParseAutherFromAuth(cfg.Auth)
 	if cfg.Auther != "" {
-		authers = append(authers, app.Runtime.AutherRegistry().Get(cfg.Auther))
-	}
-
-	var auther auth.IAuthenticator
-	if len(authers) > 0 {
-		auther = xauth.AuthenticatorGroup(authers...)
-	}
-
-	network := "tcp"
-	addr := cfg.Addr
-	if strings.HasPrefix(addr, "unix://") {
-		network = "unix"
-		addr = strings.TrimPrefix(addr, "unix://")
+		auther = app.Runtime.AutherRegistry().Get(cfg.Auther)
 	}
 	return api.NewService(
-		network,
 		cfg.Addr,
 		api.PathPrefixOption(cfg.PathPrefix),
 		api.AccessLogOption(cfg.AccessLog),
@@ -183,25 +163,5 @@ func buildAPIService(cfg *config.APIConfig) (iApi.IApi, error) {
 		api.BotEnableOption(cfg.BotEnable),
 		api.DomainOption(cfg.Domain),
 		api.TokenOption(cfg.BotToken),
-	)
-}
-
-func buildMetricsService(cfg *config.MetricsConfig) (service.IService, error) {
-	auther := auth_parser.ParseAutherFromAuth(cfg.Auth)
-	if cfg.Auther != "" {
-		auther = app.Runtime.AutherRegistry().Get(cfg.Auther)
-	}
-
-	network := "tcp"
-	addr := cfg.Addr
-	if strings.HasPrefix(addr, "unix://") {
-		network = "unix"
-		addr = strings.TrimPrefix(addr, "unix://")
-	}
-	return metrics.NewService(
-		network,
-		cfg.Addr,
-		metrics.PathOption(cfg.Path),
-		metrics.AutherOption(auther),
 	)
 }

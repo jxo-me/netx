@@ -2,6 +2,7 @@ package ws
 
 import (
 	"context"
+	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 	"net"
 	"net/url"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/jxo-me/netx/core/dialer"
 	md "github.com/jxo-me/netx/core/metadata"
-	ws_util "github.com/jxo-me/netx/x/internal/util/ws"
 )
 
 type wsDialer struct {

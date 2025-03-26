@@ -24,6 +24,7 @@ import (
 	sshd_util "github.com/jxo-me/netx/x/internal/util/sshd"
 	tls_util "github.com/jxo-me/netx/x/internal/util/tls"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
+	xstats "github.com/jxo-me/netx/x/observer/stats"
 	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"golang.org/x/crypto/ssh"
@@ -93,7 +94,7 @@ func (h *forwardHandler) Handle(ctx context.Context, conn net.Conn, opts ...hand
 	})
 	log.Infof("%s <> %s", conn.RemoteAddr(), conn.LocalAddr())
 
-	pStats := stats.Stats{}
+	pStats := xstats.Stats{}
 	conn = stats_wrapper.WrapConn(conn, &pStats)
 
 	defer func() {

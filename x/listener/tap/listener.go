@@ -10,7 +10,7 @@ import (
 	"github.com/jxo-me/netx/core/logger"
 	mdata "github.com/jxo-me/netx/core/metadata"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
+	traffic_limiter "github.com/jxo-me/netx/x/limiter/traffic"
 	limiter_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	mdx "github.com/jxo-me/netx/x/metadata"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
@@ -91,8 +91,8 @@ func (l *tapListener) listenLoop() {
 			c = stats.WrapConn(c, l.options.Stats)
 			c = limiter_wrapper.WrapConn(
 				c,
-				limiter_util.NewCachedTrafficLimiter(l.options.TrafficLimiter, l.md.limiterRefreshInterval, 60*time.Second),
-				c.RemoteAddr().String(),
+				l.options.TrafficLimiter,
+				traffic_limiter.ServiceLimitKey,
 				limiter.ScopeOption(limiter.ScopeService),
 				limiter.ServiceOption(l.options.Service),
 				limiter.NetworkOption(c.LocalAddr().Network()),

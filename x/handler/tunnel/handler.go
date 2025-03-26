@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	xrecorder "github.com/jxo-me/netx/x/recorder"
 	"net"
 	"net/http"
 	"strconv"
@@ -11,18 +12,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/limiter/traffic"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
 	md "github.com/jxo-me/netx/core/metadata"
+	"github.com/jxo-me/netx/core/observer"
 	"github.com/jxo-me/netx/core/service"
 	"github.com/jxo-me/netx/relay"
 	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
-	limiter_util "github.com/jxo-me/netx/x/internal/util/limiter"
 	stats_util "github.com/jxo-me/netx/x/internal/util/stats"
 	rate_limiter "github.com/jxo-me/netx/x/limiter/rate"
-	xrecorder "github.com/jxo-me/netx/x/recorder"
+	cache_limiter "github.com/jxo-me/netx/x/limiter/traffic/cache"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -87,6 +89,7 @@ func (h *tunnelHandler) Init(md md.IMetaData) (err error) {
 		}),
 		sniffingWebsocket:   h.md.sniffingWebsocket,
 		websocketSampleRate: h.md.sniffingWebsocketSampleRate,
+		readTimeout:         h.md.entryPointReadTimeout,
 	}
 	h.ep.transport = &http.Transport{
 		DialContext:           h.ep.dial,
@@ -110,12 +113,16 @@ func (h *tunnelHandler) Init(md md.IMetaData) (err error) {
 	h.cancel = cancel
 
 	if h.options.Observer != nil {
-		h.stats = stats_util.NewHandlerStats(h.options.Service)
+		h.stats = stats_util.NewHandlerStats(h.options.Service, h.md.observerResetTraffic)
 		go h.observeStats(ctx)
 	}
 
-	if limiter := h.options.Limiter; limiter != nil {
-		h.limiter = limiter_util.NewCachedTrafficLimiter(limiter, h.md.limiterRefreshInterval, 60*time.Second)
+	if h.options.Limiter != nil {
+		h.limiter = cache_limiter.NewCachedTrafficLimiter(h.options.Limiter,
+			cache_limiter.RefreshIntervalOption(h.md.limiterRefreshInterval),
+			cache_limiter.CleanupIntervalOption(h.md.limiterCleanupInterval),
+			cache_limiter.ScopeOption(limiter.ScopeClient),
+		)
 	}
 
 	return nil
@@ -315,13 +322,26 @@ func (h *tunnelHandler) observeStats(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(h.md.observePeriod)
+	var events []observer.Event
+
+	ticker := time.NewTicker(h.md.observerPeriod)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			h.options.Observer.Observe(ctx, h.stats.Events())
+			if len(events) > 0 {
+				if err := h.options.Observer.Observe(ctx, events); err == nil {
+					events = nil
+				}
+				break
+			}
+
+			evs := h.stats.Events()
+			if err := h.options.Observer.Observe(ctx, evs); err != nil {
+				events = evs
+			}
+
 		case <-ctx.Done():
 			return
 		}

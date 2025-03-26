@@ -7,14 +7,19 @@ import (
 	"time"
 
 	"github.com/jxo-me/netx/core/handler"
+	"github.com/jxo-me/netx/core/limiter"
 	"github.com/jxo-me/netx/core/listener"
 	"github.com/jxo-me/netx/core/logger"
+	"github.com/jxo-me/netx/core/observer/stats"
 	"github.com/jxo-me/netx/relay"
+	ctxvalue "github.com/jxo-me/netx/x/ctx"
 	xnet "github.com/jxo-me/netx/x/internal/net"
 	"github.com/jxo-me/netx/x/internal/net/udp"
 	"github.com/jxo-me/netx/x/internal/util/mux"
 	relay_util "github.com/jxo-me/netx/x/internal/util/relay"
+	traffic_wrapper "github.com/jxo-me/netx/x/limiter/traffic/wrapper"
 	metrics "github.com/jxo-me/netx/x/metrics/wrapper"
+	stats_wrapper "github.com/jxo-me/netx/x/observer/stats/wrapper"
 	xservice "github.com/jxo-me/netx/x/service"
 )
 
@@ -25,6 +30,30 @@ func (h *relayHandler) handleBind(ctx context.Context, conn net.Conn, network, a
 	})
 
 	log.Debugf("%s >> %s", conn.RemoteAddr(), address)
+
+	{
+		clientID := ctxvalue.ClientIDFromContext(ctx)
+		rw := traffic_wrapper.WrapReadWriter(
+			h.limiter,
+			conn,
+			string(clientID),
+			limiter.ScopeOption(limiter.ScopeClient),
+			limiter.ServiceOption(h.options.Service),
+			limiter.NetworkOption(network),
+			limiter.AddrOption(address),
+			limiter.ClientOption(string(clientID)),
+			limiter.SrcOption(conn.RemoteAddr().String()),
+		)
+		if h.options.Observer != nil {
+			pstats := h.stats.Stats(string(clientID))
+			pstats.Add(stats.KindTotalConns, 1)
+			pstats.Add(stats.KindCurrentConns, 1)
+			defer pstats.Add(stats.KindCurrentConns, -1)
+			rw = stats_wrapper.WrapReadWriter(rw, pstats)
+		}
+
+		conn = xnet.NewReadWriteConn(rw, rw, conn)
+	}
 
 	resp := relay.Response{
 		Version: relay.Version1,
@@ -174,7 +203,6 @@ func (h *relayHandler) bindUDP(ctx context.Context, conn net.Conn, network, addr
 	r := udp.NewRelay(relay_util.UDPTunServerConn(conn), pc).
 		WithBypass(h.options.Bypass).
 		WithLogger(log)
-	r.SetBufferSize(h.md.udpBufferSize)
 
 	t := time.Now()
 	log.Debugf("%s <-> %s", conn.RemoteAddr(), pc.LocalAddr())
